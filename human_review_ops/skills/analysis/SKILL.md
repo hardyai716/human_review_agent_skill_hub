@@ -26,12 +26,14 @@ disallowed-tools:
 - 分析摘要
 - 候选根因
 - source_footer
+- tool_call_record（仅 mock / 只读预检阶段）
 - 质量检查结果
 
 ## 调试约束
 
 - 默认只读。
 - 查询前必须生成 QueryPlan。
+- 阶段 1 P1 只能生成 mock / 只读 `tool_call_record`，不得执行真实查询。
 - 输出必须包含 source_footer。
 - 不使用未授权数据源。
 

@@ -13,6 +13,7 @@
 - 读取 Skill 内调试快照。
 - 生成 QueryPlan。
 - 生成 source_footer。
+- 调用 mock / 只读预检 Tool 并生成 `tool_call_record`。
 - 生成通知草稿。
 - 记录调试检查清单。
 

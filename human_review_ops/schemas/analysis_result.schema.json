@@ -111,6 +111,13 @@
             "type": "string"
           }
         },
+        "tool_calls": {
+          "type": "array",
+          "description": "关联的 tool_call_record ID 列表。阶段 1 P1 仅用于 mock / 只读预检记录。",
+          "items": {
+            "type": "string"
+          }
+        },
         "allowed_sources": {
           "type": "array",
           "description": "允许使用的数据源。",

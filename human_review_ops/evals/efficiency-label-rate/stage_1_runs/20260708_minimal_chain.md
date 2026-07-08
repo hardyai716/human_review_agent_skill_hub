@@ -72,7 +72,7 @@
 
 阶段 1 后续可以继续做：
 
-- 接入 mock / 只读 Tool，生成 tool_call_record。
+- 接入 mock / 只读 Tool，生成 tool_call_record。（已在 `20260708_mock_tool_chain.md` 中完成）
 - 引入真实 Semantic Layer / Aeolus 指标 ID。
 - 将角色级 Owner 替换为具体治理 Owner、群或值班机制。
 - 在接真实查询前继续保持 `debug_only`。

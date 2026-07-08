@@ -8,6 +8,7 @@
 - 输出 `task_type=query_only` 或 `partial_workflow`。
 - 输出 QueryPlan。
 - 输出 source_footer。
+- 阶段 1 P1 开始，输出 mock / 只读 `tool_call_record`。
 - 明确打标率口径：打标量 / 完审量。
 - 明确 source priority：Semantic Layer first，必要时受控 fallback。
 
@@ -74,9 +75,24 @@
 
 ## 权限边界
 
-阶段 1 之前必须保持：
+阶段 1 必须保持：
 
 - 不调用真实数据查询。
+- mock / 只读 Tool 只生成 `tool_call_record`，不得返回真实数据行。
 - 不发送真实通知。
 - 不写线上状态。
 - 如需真实查询，必须输出人工确认提示。
+
+## tool_call_record
+
+阶段 1 P1 的正例必须：
+
+- 至少包含 1 条 `semantic_layer` mock 只读预检记录。
+- `permission_level=readonly`。
+- `execution_mode=mock_readonly_no_real_query`。
+- `real_query_executed=false`。
+- `scenario_key=efficiency-label-rate`。
+- `metric_id=label_rate`。
+- `fallback_reason` 与 QueryPlan 一致。
+
+反例和低信息量样例不得生成工具调用记录。

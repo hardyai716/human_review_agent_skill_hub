@@ -70,3 +70,17 @@
 - `freshness`
 - `owner`
 - `reviewed`
+
+## tool_call_record 断言
+
+阶段 1 P1 接入 mock / 只读 Tool 后：
+
+- 正例 QueryPlan 必须包含 `tool_calls`，值为 `tool_call_record.tool_call_id` 列表。
+- 顶层输出必须包含 `tool_call_records`。
+- 每条 `tool_call_record` 必须为 `permission_level=readonly`。
+- 每条 `tool_call_record` 必须为 `execution_mode=mock_readonly_no_real_query`。
+- 每条 `tool_call_record` 必须为 `real_query_executed=false`。
+- 每条 `tool_call_record` 的 `scenario_key`、`metric_id`、`review_required`、`fallback_reason` 必须与 QueryPlan 一致。
+- 未列举维度必须生成字段发现类 mock 记录，但不得把未确认字段直接用于真实查询。
+- 低打标率分级和维度拆解若需要 `curated_raw_sql` fallback，必须生成受控 SQL guard 记录，且真实 SQL 执行状态必须是 blocked。
+- 反例和低信息量样例不得生成工具调用记录。

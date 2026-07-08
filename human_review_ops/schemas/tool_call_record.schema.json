@@ -2,7 +2,20 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "ToolCallRecord",
   "type": "object",
-  "required": ["tool_call_id", "caller", "tool_name", "permission_level", "status"],
+  "required": [
+    "tool_call_id",
+    "caller",
+    "tool_name",
+    "permission_level",
+    "source_tier",
+    "scenario_key",
+    "metric_id",
+    "review_required",
+    "fallback_reason",
+    "execution_mode",
+    "real_query_executed",
+    "status"
+  ],
   "properties": {
     "tool_call_id": {
       "type": "string"
@@ -19,6 +32,39 @@
     "permission_level": {
       "type": "string",
       "enum": ["readonly", "writable", "confirmation_required", "high_risk"]
+    },
+    "source_tier": {
+      "type": "string",
+      "enum": [
+        "semantic_layer",
+        "governed_dataset",
+        "curated_raw_sql",
+        "raw_exploration",
+        "scenario_reference_preflight"
+      ]
+    },
+    "scenario_key": {
+      "type": "string"
+    },
+    "metric_id": {
+      "type": "string"
+    },
+    "review_required": {
+      "type": "boolean"
+    },
+    "fallback_reason": {
+      "type": "string"
+    },
+    "execution_mode": {
+      "type": "string",
+      "enum": [
+        "mock_readonly_no_real_query",
+        "readonly_no_real_query",
+        "real_readonly_query"
+      ]
+    },
+    "real_query_executed": {
+      "type": "boolean"
     },
     "input_summary": {
       "type": "string"

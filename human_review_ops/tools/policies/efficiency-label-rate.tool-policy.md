@@ -15,6 +15,7 @@
 - 生成 QueryPlan。
 - 生成 source_footer。
 - 生成打标率趋势、排序、低打标率分级或维度拆解的查询计划。
+- 调用 mock / 只读预检 Tool 并生成 `tool_call_record`。
 - 生成通知草稿。
 - 记录调试检查清单。
 
@@ -47,4 +48,8 @@
 - `permission_level`
 - `review_required`
 - `fallback_reason`
+- `execution_mode`
+- `real_query_executed`
 - `status`
+
+阶段 1 P1 中，`execution_mode` 必须为 `mock_readonly_no_real_query`，`real_query_executed` 必须为 `false`。这些记录只能证明 QueryPlan 已通过 mock / 只读预检，不得作为真实数据结论。

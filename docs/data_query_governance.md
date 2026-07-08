@@ -248,7 +248,7 @@ Runbook Skill 不允许绕过 Knowledge Skill 直接查表。
 | --- | --- | --- |
 | 1. 接收治理实体 | 只能使用感知输出的 resolved_entities 和 allowed_sources | 禁止重新自由搜索表 |
 | 2. 生成查询计划 | 先描述指标、粒度、过滤条件、时间窗口 | 查询计划缺口未补齐时不得执行 |
-| 3. 执行只读查询 | 使用 Tool/MCP/CLI 查询治理数据源 | 禁止写入或变更业务状态 |
+| 3. 只读工具预检 | 阶段 1 P1 只生成 mock / 只读 `tool_call_record`；接入真实工具后才允许查询治理数据源 | 未经人工确认不得执行真实查询；禁止写入或变更业务状态 |
 | 4. 数据质量检查 | 新鲜度、完整性、异常值、分母为 0、口径版本 | 检查失败必须降级置信度 |
 | 5. 规则命中 | 对照场景定级/升级规则 | 不允许模型自由解释 P1/P2 |
 | 6. 对抗性复核 | 对高风险或领导口径输出进行复核 | 未复核不得标记高置信 |
@@ -279,6 +279,7 @@ Runbook Skill 不允许绕过 Knowledge Skill 直接查表。
   },
   "filters": [],
   "required_hygiene_filters": [],
+  "tool_calls": [],
   "allowed_sources": [],
   "forbidden_sources": [],
   "quality_checks": [

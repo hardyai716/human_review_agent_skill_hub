@@ -577,6 +577,13 @@ human_review_ops/skills/analysis/references/scenarios/efficiency-label-rate.exam
 - `tool_name`
 - `command_name`
 - `permission_level`
+- `source_tier`
+- `scenario_key`
+- `metric_id`
+- `review_required`
+- `fallback_reason`
+- `execution_mode`
+- `real_query_executed`
 - `input_summary`
 - `output_summary`
 - `status`
@@ -737,7 +744,7 @@ human_review_ops/evals/efficiency-label-rate/eval_samples.jsonl
 
 ### 12.1 当前架构合规结论
 
-当前架构与本实施方案的核心要求一致，阶段 0.5 TRAE 调试验证已完成，阶段 1 感知 + 分析最小链路已围绕打标率场景跑通。
+当前架构与本实施方案的核心要求一致，阶段 0.5 TRAE 调试验证已完成，阶段 1 感知 + 分析最小链路已围绕打标率场景跑通，阶段 1 P1 已接入 mock / 只读 Tool 记录能力。
 
 | 检查项 | 当前状态 | 结论 |
 | --- | --- | --- |
@@ -752,6 +759,7 @@ human_review_ops/evals/efficiency-label-rate/eval_samples.jsonl
 | 打包和校验脚本 | 已具备最小 packager 和 validator 脚本。 | 通过 |
 | TRAE 调试验证 | 已在 TRAE 中确认「人审运营智能体 / human-review-operator」存在，阶段 0.5 样例记录与校验通过；用户已手动复核并保存提示词和调用条件。 | 通过 |
 | 阶段 1 最小链路 | 打标率场景已生成 `scenario_key`、`task_type`、QueryPlan、source_footer，并通过只读校验。 | 通过 |
+| 阶段 1 P1 mock Tool | 已生成 mock / 只读 `tool_call_record`，并校验不会执行真实查询、通知或写状态。 | 通过 |
 
 ### 12.2 已完成任务
 
@@ -773,6 +781,8 @@ human_review_ops/evals/efficiency-label-rate/eval_samples.jsonl
 - [x] 完成打标率 Claude 数据层合规评估：`human_review_ops/evals/efficiency-label-rate/claude_data_layer_compliance.md`。
 - [x] 完成阶段 1 感知 + 分析最小链路运行记录：`human_review_ops/evals/efficiency-label-rate/stage_1_runs/20260708_minimal_chain.md`。
 - [x] 新增阶段 1 runner 和校验脚本：`run_stage_1_minimal_chain.py`、`validate_stage_1_minimal_chain.py`。
+- [x] 完成阶段 1 P1 mock / 只读 Tool 接入记录：`human_review_ops/evals/efficiency-label-rate/stage_1_runs/20260708_mock_tool_chain.md`。
+- [x] 新增阶段 1 P1 runner 和校验脚本：`run_stage_1_mock_tool_chain.py`、`validate_stage_1_mock_tool_chain.py`。
 
 ### 12.3 下一阶段实施计划
 
@@ -782,7 +792,7 @@ human_review_ops/evals/efficiency-label-rate/eval_samples.jsonl
 | P0 | 阶段 0.5 | 使用 5 条样例跑调试闭环。 | 每条样例都有 `trae_debug_checklist.md` 格式记录。 | 已完成（本轮覆盖 6 条样例） |
 | P0 | 阶段 0.5 | 验证 `human_review_ops/references/scenarios/` 跨目录读取。 | 成功读取则优先使用目标态场景包；失败则记录原因并使用 Skill 内快照。 | 已完成（根目录读取通过，Skill 快照可回退） |
 | P0 | 阶段 1 | 以打标率为主线，跑通感知 + 分析最小链路。 | 输出 `scenario_key`、`task_type`、QueryPlan、source_footer。 | 已完成（不接真实查询） |
-| P1 | 阶段 1 | 接入 mock / 只读 Tool。 | 只读工具调用有 tool_call_record，且不会写状态。 | 待开始 |
+| P1 | 阶段 1 | 接入 mock / 只读 Tool。 | 只读工具调用有 tool_call_record，且不会写状态。 | 已完成（mock 预检，不做真实查询） |
 | P1 | 阶段 1 | 生成通知草稿和 Owner 建议。 | 不发送真实通知，输出 Owner 依据和置信度。 | 待开始 |
 | P1 | 阶段 1 | 记录人工处理状态。 | 输出 manual_tracking，不写线上状态。 | 待开始 |
 | P2 | 阶段 2 | 支持局部调度。 | `query_only`、`owner_lookup_only`、`notification_only`、`resolution_only` 均可独立执行。 | 待开始 |
