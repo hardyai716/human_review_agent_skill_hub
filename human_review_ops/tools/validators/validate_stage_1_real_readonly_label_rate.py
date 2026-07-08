@@ -16,10 +16,28 @@ DEFAULT_RESULTS = (
     / "evals"
     / SCENARIO_KEY
     / "stage_1_runs"
-    / "20260708_real_readonly_label_rate_results.jsonl"
 )
-REQUIRED_SQL_SNIPPETS = [
-    "`[p_date]` >= today() - 7",
+OUTPUT_DATE = "20260708"
+DEFAULT_DAYS = 7
+DEFAULT_DIMENSIONS = "reason"
+DEFAULT_QUERY_MODE = "ranking"
+QUERY_MODE_CHOICES = ("ranking", "group_count")
+DIMENSION_SPECS = {
+    "reason": {"name": "reason", "source_field": "`[reason]`"},
+    "p_date": {"name": "p_date", "source_field": "`[p_date]`"},
+    "scene": {"name": "scene", "source_field": "`[scene]`"},
+    "project_title": {"name": "project_title", "source_field": "`[project_title]`"},
+    "mach_root_label_name": {
+        "name": "mach_root_label_name",
+        "source_field": "`[机审一级标签]`",
+    },
+}
+DIMENSION_ALIASES = {
+    "date": "p_date",
+    "mach_root_label": "mach_root_label_name",
+    "mach_root_label_name": "mach_root_label_name",
+}
+REQUIRED_SQL_SNIPPETS_STATIC = [
     "`[p_date]` < today()",
     "`[project_title]` NOT LIKE '%虚假%'",
     "`[project_title]` NOT LIKE '%标注%'",
@@ -41,6 +59,92 @@ REQUIRED_SQL_SNIPPETS = [
 ]
 
 
+def parse_dimensions(raw_dimensions: str) -> list[dict[str, str]]:
+    dimension_names = [
+        item.strip()
+        for item in raw_dimensions.split(",")
+        if item.strip()
+    ]
+    if not dimension_names:
+        raise SystemExit("--dimensions must include at least one dimension.")
+
+    dimensions: list[dict[str, str]] = []
+    seen: set[str] = set()
+    for raw_name in dimension_names:
+        canonical_name = DIMENSION_ALIASES.get(raw_name, raw_name)
+        spec = DIMENSION_SPECS.get(canonical_name)
+        if spec is None:
+            supported = ", ".join(sorted(DIMENSION_SPECS))
+            raise SystemExit(
+                f"Unsupported dimension '{raw_name}'. Supported dimensions: {supported}."
+            )
+        if spec["name"] in seen:
+            continue
+        seen.add(spec["name"])
+        dimensions.append(spec)
+    return dimensions
+
+
+def dimensions_slug(dimensions: list[dict[str, str]]) -> str:
+    return "_".join(dimension["name"] for dimension in dimensions)
+
+
+def is_default_shape(dimensions: list[dict[str, str]], query_mode: str) -> bool:
+    return dimensions_slug(dimensions) == DEFAULT_DIMENSIONS and query_mode == DEFAULT_QUERY_MODE
+
+
+def analysis_mode_for(query_mode: str) -> str:
+    if query_mode == "group_count":
+        return "low_label_rate_group_count"
+    return "label_rate_ranking"
+
+
+def default_results_path(
+    days: int,
+    dimensions: list[dict[str, str]],
+    query_mode: str,
+) -> Path:
+    if is_default_shape(dimensions, query_mode):
+        filename = f"{OUTPUT_DATE}_real_readonly_label_rate_{days}d_results.jsonl"
+    else:
+        filename = (
+            f"{OUTPUT_DATE}_real_readonly_label_rate_{days}d_"
+            f"{dimensions_slug(dimensions)}_{query_mode}_results.jsonl"
+        )
+    return DEFAULT_RESULTS / filename
+
+
+def required_sql_snippets(
+    days: int,
+    dimensions: list[dict[str, str]],
+    query_mode: str,
+) -> list[str]:
+    dimension_snippets = [
+        f"{dimension['source_field']} AS {dimension['name']}"
+        for dimension in dimensions
+    ]
+    group_by_snippet = "GROUP BY " + ", ".join(
+        dimension["name"] for dimension in dimensions
+    )
+    mode_snippets = [group_by_snippet]
+    if query_mode == "group_count":
+        mode_snippets += [
+            "SELECT count() AS low_label_rate_group_cnt",
+            ") AS low_label_rate_groups",
+        ]
+    else:
+        mode_snippets += [
+            "ORDER BY review_done_cnt DESC",
+            "LIMIT 1000",
+        ]
+    return (
+        [f"`[p_date]` >= today() - {days}"]
+        + dimension_snippets
+        + REQUIRED_SQL_SNIPPETS_STATIC
+        + mode_snippets
+    )
+
+
 def load_jsonl(path: Path) -> list[dict[str, Any]]:
     return [
         json.loads(line)
@@ -49,7 +153,12 @@ def load_jsonl(path: Path) -> list[dict[str, Any]]:
     ]
 
 
-def validate(results_path: Path) -> None:
+def validate(
+    results_path: Path,
+    days: int,
+    dimensions: list[dict[str, str]],
+    query_mode: str,
+) -> None:
     records = load_jsonl(results_path)
     environment = next(
         (record for record in records if record.get("record_type") == "environment"),
@@ -70,9 +179,9 @@ def validate(results_path: Path) -> None:
         raise AssertionError("Environment must mark real_query_executed=true.")
 
     assert_permission(sample)
-    assert_query_plan(sample)
+    assert_query_plan(sample, days, dimensions, query_mode)
     assert_tool_call(sample)
-    assert_readonly_execution(sample)
+    assert_readonly_execution(sample, dimensions, query_mode)
     assert_analysis_result(sample)
     assert_no_side_effect_outputs(sample)
 
@@ -89,8 +198,14 @@ def assert_permission(sample: dict[str, Any]) -> None:
         raise AssertionError("Online writes must stay blocked.")
 
 
-def assert_query_plan(sample: dict[str, Any]) -> None:
+def assert_query_plan(
+    sample: dict[str, Any],
+    days: int,
+    dimensions: list[dict[str, str]],
+    query_mode: str,
+) -> None:
     query_plan = sample.get("QueryPlan")
+    expected_dimensions = [dimension["name"] for dimension in dimensions]
     if not isinstance(query_plan, dict):
         raise AssertionError("Missing QueryPlan.")
     if query_plan.get("scenario_key") != SCENARIO_KEY:
@@ -101,9 +216,30 @@ def assert_query_plan(sample: dict[str, Any]) -> None:
         raise AssertionError("Readonly query should not require manual confirmation.")
     if query_plan.get("execution_mode") != "real_readonly_query":
         raise AssertionError("QueryPlan execution_mode mismatch.")
+    if query_plan.get("analysis_mode") != analysis_mode_for(query_mode):
+        raise AssertionError("QueryPlan analysis_mode mismatch.")
+    if query_plan.get("query_mode") != query_mode:
+        raise AssertionError("QueryPlan query_mode mismatch.")
+    if query_plan.get("dimensions") != expected_dimensions:
+        raise AssertionError("QueryPlan dimensions mismatch.")
+    expected_mappings = [
+        {
+            "dimension_id": dimension["name"],
+            "source_field": dimension["source_field"],
+            "source_tier": "governed_dataset",
+        }
+        for dimension in dimensions
+    ]
+    if query_plan.get("dimension_mappings") != expected_mappings:
+        raise AssertionError("QueryPlan dimension_mappings mismatch.")
+    if query_plan.get("time_range", {}).get("days") != days:
+        raise AssertionError("QueryPlan days mismatch.")
+    expected_where = f"`[p_date]` >= today() - {days} AND `[p_date]` < today()"
+    if query_plan.get("time_range", {}).get("where") != expected_where:
+        raise AssertionError("QueryPlan where mismatch.")
 
     sql = query_plan.get("sql", "")
-    for snippet in REQUIRED_SQL_SNIPPETS:
+    for snippet in required_sql_snippets(days, dimensions, query_mode):
         if snippet not in sql:
             raise AssertionError(f"SQL missing required snippet: {snippet}")
 
@@ -132,7 +268,11 @@ def assert_tool_call(sample: dict[str, Any]) -> None:
         raise AssertionError("Tool call must mark real_query_executed=true.")
 
 
-def assert_readonly_execution(sample: dict[str, Any]) -> None:
+def assert_readonly_execution(
+    sample: dict[str, Any],
+    dimensions: list[dict[str, str]],
+    query_mode: str,
+) -> None:
     execution = sample.get("readonly_execution")
     if not isinstance(execution, dict):
         raise AssertionError("Missing readonly_execution.")
@@ -147,15 +287,33 @@ def assert_readonly_execution(sample: dict[str, Any]) -> None:
     if execution.get("row_count", 0) <= 0:
         raise AssertionError("Result must include rows.")
 
-    for field in ("reason", "review_done_cnt", "label_cnt", "label_rate"):
+    expected_dimension_fields = [dimension["name"] for dimension in dimensions]
+    if query_mode == "group_count":
+        required_fields = ["low_label_rate_group_cnt"]
+    else:
+        required_fields = expected_dimension_fields + [
+            "review_done_cnt",
+            "label_cnt",
+            "label_rate",
+        ]
+    for field in required_fields:
         if field not in execution.get("evidence_fields", []):
             raise AssertionError(f"Missing evidence field: {field}")
 
-    for row in execution["rows"]:
-        if row["review_done_cnt"] <= 0:
-            raise AssertionError("review_done_cnt must be positive.")
-        if not (0 <= row["label_rate"] < 0.1):
-            raise AssertionError(f"label_rate out of range: {row}")
+    if query_mode == "group_count":
+        if len(execution["rows"]) != 1:
+            raise AssertionError("group_count query must return exactly one row.")
+        if execution["rows"][0]["low_label_rate_group_cnt"] < 0:
+            raise AssertionError("low_label_rate_group_cnt must be non-negative.")
+    else:
+        for row in execution["rows"]:
+            for dimension_field in expected_dimension_fields:
+                if dimension_field not in row:
+                    raise AssertionError(f"Missing dimension field: {dimension_field}")
+            if row["review_done_cnt"] <= 0:
+                raise AssertionError("review_done_cnt must be positive.")
+            if not (0 <= row["label_rate"] < 0.1):
+                raise AssertionError(f"label_rate out of range: {row}")
 
 
 def assert_analysis_result(sample: dict[str, Any]) -> None:
@@ -182,6 +340,8 @@ def assert_analysis_result(sample: dict[str, Any]) -> None:
         raise AssertionError("provenance dataset_id mismatch.")
     if provenance.get("app_id") != "1128":
         raise AssertionError("provenance app_id mismatch.")
+    if provenance.get("dimensions") != sample["QueryPlan"]["dimensions"]:
+        raise AssertionError("provenance dimensions mismatch.")
     if provenance.get("tool_call_ids") != sample["QueryPlan"]["tool_calls"]:
         raise AssertionError("provenance tool_call_ids mismatch.")
 
@@ -194,10 +354,21 @@ def assert_no_side_effect_outputs(sample: dict[str, Any]) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("results_path", nargs="?", default=str(DEFAULT_RESULTS))
+    parser.add_argument("results_path", nargs="?")
+    parser.add_argument("--days", type=int, default=DEFAULT_DAYS)
+    parser.add_argument("--dimensions", default=DEFAULT_DIMENSIONS)
+    parser.add_argument("--query-mode", default=DEFAULT_QUERY_MODE, choices=QUERY_MODE_CHOICES)
     args = parser.parse_args()
-    validate(Path(args.results_path))
-    print(f"Stage 1 real readonly label-rate OK: {args.results_path}")
+    if args.days <= 0:
+        raise SystemExit("--days must be a positive integer.")
+    dimensions = parse_dimensions(args.dimensions)
+    results_path = (
+        Path(args.results_path)
+        if args.results_path
+        else default_results_path(args.days, dimensions, args.query_mode)
+    )
+    validate(results_path, args.days, dimensions, args.query_mode)
+    print(f"Stage 1 real readonly label-rate OK: {results_path}")
 
 
 if __name__ == "__main__":

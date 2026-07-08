@@ -110,7 +110,12 @@
 - `tool_call_record.permission_level=readonly`。
 - `tool_call_record.real_query_executed=true`。
 - QueryPlan 必须绑定 `aeolus_dataset_id=3888816` 和 `aeolus_metric_id=10000036292379`。
+- `QueryPlan.dimensions` 必须来自用户问题解析后的已治理维度，默认 `reason`。
+- `QueryPlan.dimension_mappings` 必须记录每个维度对应的 Aeolus 字段。
+- 明细型问题使用 `query_mode=ranking`，SQL 必须按 `dimensions` 生成 `SELECT` 和 `GROUP BY`。
+- “有多少”一类分组计数问题使用 `query_mode=group_count`，SQL 必须先生成低打标率分组子查询或 CTE，再统计分组数。
 - SQL 必须包含 A/B/C/D 基础过滤。
 - `readonly_execution.truncated=false`。
-- `readonly_execution.rows[*].label_rate < 0.1`。
+- `query_mode=ranking` 时，`readonly_execution.rows[*].label_rate < 0.1`。
+- `query_mode=group_count` 时，`readonly_execution.rows[0].low_label_rate_group_cnt >= 0`。
 - 不生成 `notification_draft`、`owner_recommendation` 或 `manual_tracking`。

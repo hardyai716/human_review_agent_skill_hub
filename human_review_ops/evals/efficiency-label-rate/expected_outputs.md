@@ -124,7 +124,10 @@
 
 - 使用 `bytedcli -j aeolus query -r cn 3888816 "<SQL>" --limit 1000`。
 - SQL 包含 A/B/C/D 基础过滤。
-- 输出 `reason`、`review_done_cnt`、`label_cnt`、`label_rate`。
-- 所有返回行必须满足 `review_done_cnt > 0` 且 `label_rate < 0.1`。
+- 将用户问题中的分析粒度写入 `QueryPlan.dimensions`；默认维度为 `reason`。
+- 已治理维度可直接使用：`reason`、`p_date`、`scene`、`project_title`、`mach_root_label_name`。
+- 明细查询默认 `query_mode=ranking`，输出用户指定维度、`review_done_cnt`、`label_cnt`、`label_rate`。
+- 分组计数问题使用 `query_mode=group_count`，通过分组子查询或 CTE 后再 `count()` 统计命中分组数。
+- 明细查询所有返回行必须满足 `review_done_cnt > 0` 且 `label_rate < 0.1`。
 - 返回结果必须 `truncated=false`。
 - 查询失败时输出失败原因，不得解释为“无低打标率 reason”。
