@@ -702,7 +702,7 @@ human_review_ops/evals/efficiency-auto-disposal-accuracy/eval_samples.jsonl
 
 ### 12.1 当前架构合规结论
 
-当前架构与本实施方案的核心要求基本一致，已满足进入阶段 0.5 TRAE 调试的条件。
+当前架构与本实施方案的核心要求一致，阶段 0.5 TRAE 调试验证的可自动验证项已完成，已具备进入阶段 1 最小链路开发的条件。
 
 | 检查项 | 当前状态 | 结论 |
 | --- | --- | --- |
@@ -715,7 +715,7 @@ human_review_ops/evals/efficiency-auto-disposal-accuracy/eval_samples.jsonl
 | Schema 契约 | 已具备 event、analysis_result、resolution_result、retrieval_policy、tool_call_record。 | 通过 |
 | Tool 策略 | 已具备自动处置准确率只读工具策略。 | 通过 |
 | 打包和校验脚本 | 已具备最小 packager 和 validator 脚本。 | 通过 |
-| TRAE 真实调试 | 尚未创建并运行「人审运营智能体」。 | 待执行 |
+| TRAE 调试验证 | 已在 TRAE 中确认「人审运营智能体 / human-review-operator」存在，阶段 0.5 样例记录与校验通过；配置详情需阶段 1 前人工复核。 | 通过（需复核配置） |
 
 ### 12.2 已完成任务
 
@@ -730,14 +730,16 @@ human_review_ops/evals/efficiency-auto-disposal-accuracy/eval_samples.jsonl
 - [x] 创建工具权限策略。
 - [x] 创建打包和校验脚本的最小实现。
 - [x] 更新 HTML 架构演示和核心文档路径。
+- [x] 完成阶段 0.5 TRAE 调试验证记录：`human_review_ops/evals/efficiency-auto-disposal-accuracy/trae_debug_runs/20260708_stage_0_5.md`。
+- [x] 新增阶段 0.5 校验脚本：`human_review_ops/tools/validators/validate_trae_stage_0_5.py`。
 
 ### 12.3 下一阶段实施计划
 
 | 优先级 | 阶段 | 任务 | 验收标准 | 状态 |
 | --- | --- | --- | --- | --- |
-| P0 | 阶段 0.5 | 在 TRAE 创建自定义智能体「人审运营智能体」。 | 能加载 Agent 调试配置和四类 Skill。 | 待开始 |
-| P0 | 阶段 0.5 | 使用 5 条样例跑调试闭环。 | 每条样例都有 `trae_debug_checklist.md` 格式记录。 | 待开始 |
-| P0 | 阶段 0.5 | 验证 `human_review_ops/references/scenarios/` 跨目录读取。 | 成功读取则优先使用目标态场景包；失败则记录原因并使用 Skill 内快照。 | 待开始 |
+| P0 | 阶段 0.5 | 在 TRAE 创建自定义智能体「人审运营智能体」。 | 能加载 Agent 调试配置和四类 Skill。 | 已完成（UI 已确认，配置详情需人工复核） |
+| P0 | 阶段 0.5 | 使用 5 条样例跑调试闭环。 | 每条样例都有 `trae_debug_checklist.md` 格式记录。 | 已完成（本轮覆盖 6 条样例） |
+| P0 | 阶段 0.5 | 验证 `human_review_ops/references/scenarios/` 跨目录读取。 | 成功读取则优先使用目标态场景包；失败则记录原因并使用 Skill 内快照。 | 已完成（根目录读取通过，Skill 快照可回退） |
 | P0 | 阶段 1 | 跑通感知 + 分析最小链路。 | 输出 `scenario_key`、`task_type`、QueryPlan、source_footer。 | 待开始 |
 | P1 | 阶段 1 | 接入 mock / 只读 Tool。 | 只读工具调用有 tool_call_record，且不会写状态。 | 待开始 |
 | P1 | 阶段 1 | 生成通知草稿和 Owner 建议。 | 不发送真实通知，输出 Owner 依据和置信度。 | 待开始 |
