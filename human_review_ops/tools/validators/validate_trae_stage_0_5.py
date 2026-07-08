@@ -45,6 +45,8 @@ def assert_environment(record: dict | None) -> None:
 
     required_true_fields = [
         "custom_agent_visible_in_trae",
+        "config_manually_reviewed",
+        "prompt_and_invocation_updated",
         "root_package_read",
         "skill_snapshot_available",
         "real_notification_blocked",
