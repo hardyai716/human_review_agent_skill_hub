@@ -20,6 +20,8 @@
 - 混淆字段、禁止字段、跨场景冲突、低置信度场景能被阻断或转人工确认。
 - 场景包变更必须通过结构校验、评估样例、查询计划断言和人工验收后才能启用。
 
+开发过程必须遵循 YAGNI 原则：每一步只开发当前阶段明确需要的能力，不预先设计或开发未来“可能用到”的逻辑、抽象、框架或泛化适配层。若下一步能力缺少真实输入、工具绑定或验收依据，应先生成准备度检查和阻断原因，而不是提前写空泛实现。
+
 ## 3. 开发范围
 
 ### 3.1 第一阶段纳入范围
@@ -797,6 +799,8 @@ human_review_ops/evals/efficiency-label-rate/eval_samples.jsonl
 - [x] 新增阶段 1 P1 runner 和校验脚本：`run_stage_1_mock_tool_chain.py`、`validate_stage_1_mock_tool_chain.py`。
 - [x] 完成阶段 1 P1 mock 只读执行结果记录：`human_review_ops/evals/efficiency-label-rate/stage_1_runs/20260708_readonly_execution.md`。
 - [x] 新增阶段 1 P1 只读执行 runner 和校验脚本：`run_stage_1_readonly_execution_chain.py`、`validate_stage_1_readonly_execution_chain.py`。
+- [x] 完成阶段 1 P1 真实只读 Tool 接入准备度检查：`human_review_ops/evals/efficiency-label-rate/stage_1_runs/20260708_real_readonly_readiness.md`。
+- [x] 新增真实只读 Tool 准备度 runner 和校验脚本：`run_stage_1_real_readonly_readiness.py`、`validate_stage_1_real_readonly_readiness.py`。
 
 ### 12.3 下一阶段实施计划
 
@@ -808,7 +812,7 @@ human_review_ops/evals/efficiency-label-rate/eval_samples.jsonl
 | P0 | 阶段 1 | 以打标率为主线，跑通感知 + 分析最小链路。 | 输出 `scenario_key`、`task_type`、QueryPlan、source_footer。 | 已完成（不接真实查询） |
 | P1 | 阶段 1 | 接入 mock / 只读 Tool。 | 只读工具调用有 tool_call_record，且不会写状态。 | 已完成（mock 预检，不做真实查询） |
 | P1 | 阶段 1 | 基于 QueryPlan 执行只读查询并输出分析结果与依据。 | 输出数据来源、指标口径、证据字段、source_footer 和 provenance；不写状态、不发送通知。 | 已完成（mock 只读执行，未接真实数据） |
-| P1 | 阶段 1 | 接入真实只读 Tool。 | 替换 mock fixture，保留 QueryPlan、tool_call_record、analysis_result 和 provenance 契约。 | 待开始 |
+| P1 | 阶段 1 | 接入真实只读 Tool。 | 替换 mock fixture，保留 QueryPlan、tool_call_record、analysis_result 和 provenance 契约。 | 阻断（缺真实指标 ID、治理数据集 ID 和只读工具绑定） |
 | P2 | 阶段 2 | 按需生成通知草稿和 Owner 建议。 | 仅在用户明确要求或分析结果触发治理/升级条件时生成；不发送真实通知，输出 Owner 依据和置信度。 | 待开始 |
 | P2 | 阶段 2 | 记录人工处理状态。 | 仅在进入处置/跟进任务时输出 manual_tracking，不写线上状态。 | 待开始 |
 | P2 | 阶段 2 | 支持局部调度。 | `query_only`、`owner_lookup_only`、`notification_only`、`resolution_only` 均可独立执行。 | 待开始 |

@@ -1,0 +1,146 @@
+{
+  "record_type": "real_readonly_readiness",
+  "scenario_key": "efficiency-label-rate",
+  "status": "blocked",
+  "principle": "YAGNI",
+  "decision": "Do not build a real readonly adapter until blockers are resolved.",
+  "checks": [
+    {
+      "check_id": "local_metric_contract",
+      "status": "pass",
+      "required_for_real_tool": true,
+      "summary": "Local metric contract defines label_rate and its formula.",
+      "evidence": [
+        "`metric_id`：`label_rate`",
+        "SUM(打标量) / SUM(完审量)"
+      ]
+    },
+    {
+      "check_id": "real_semantic_metric_id",
+      "status": "block",
+      "required_for_real_tool": true,
+      "summary": "Real Semantic Layer metric ID is required before replacing mock fixtures.",
+      "evidence": [
+        "no concrete semantic_metric_id / canonical_metric_id found"
+      ]
+    },
+    {
+      "check_id": "governed_dataset_id",
+      "status": "block",
+      "required_for_real_tool": true,
+      "summary": "Governed dataset/report ID is required for a real governed source fallback.",
+      "evidence": [
+        "no concrete Aeolus governed dataset/report ID found"
+      ]
+    },
+    {
+      "check_id": "curated_raw_source",
+      "status": "pass",
+      "required_for_real_tool": true,
+      "summary": "Curated raw source is documented for controlled fallback.",
+      "evidence": [
+        "olap_content_security_community.dws_sft_tcs_review_task_detail_di",
+        "ClickHouse"
+      ]
+    },
+    {
+      "check_id": "readonly_tool_binding",
+      "status": "block",
+      "required_for_real_tool": true,
+      "summary": "Real readonly execution requires an explicit Tool/MCP/CLI binding.",
+      "evidence": [
+        "no pre-registered readonly tool or CLI binding found"
+      ]
+    },
+    {
+      "check_id": "freshness_gate",
+      "status": "pass",
+      "required_for_real_tool": true,
+      "summary": "Freshness gate must be defined before real readonly execution.",
+      "evidence": [
+        "MAX(p_date)",
+        "目标分区行数"
+      ]
+    },
+    {
+      "check_id": "field_mapping",
+      "status": "pass",
+      "required_for_real_tool": true,
+      "summary": "Required logical field mapping must be available.",
+      "evidence": [
+        "reason",
+        "p_date",
+        "project_title",
+        "scene",
+        "mach_root_label_name",
+        "review_done_cnt",
+        "label_cnt"
+      ]
+    },
+    {
+      "check_id": "sensitive_scope_guard",
+      "status": "pass",
+      "required_for_real_tool": true,
+      "summary": "Sensitive detail scope must be excluded before real readonly execution.",
+      "evidence": [
+        "person detail excluded",
+        "open_id excluded",
+        "sensitive detail policy present"
+      ]
+    },
+    {
+      "check_id": "specific_owner",
+      "status": "warn",
+      "required_for_real_tool": false,
+      "summary": "Specific owner is not required for mock execution, but should be resolved before production use.",
+      "evidence": [
+        "role-level Owner only"
+      ]
+    }
+  ],
+  "blockers": [
+    {
+      "check_id": "real_semantic_metric_id",
+      "status": "block",
+      "required_for_real_tool": true,
+      "summary": "Real Semantic Layer metric ID is required before replacing mock fixtures.",
+      "evidence": [
+        "no concrete semantic_metric_id / canonical_metric_id found"
+      ]
+    },
+    {
+      "check_id": "governed_dataset_id",
+      "status": "block",
+      "required_for_real_tool": true,
+      "summary": "Governed dataset/report ID is required for a real governed source fallback.",
+      "evidence": [
+        "no concrete Aeolus governed dataset/report ID found"
+      ]
+    },
+    {
+      "check_id": "readonly_tool_binding",
+      "status": "block",
+      "required_for_real_tool": true,
+      "summary": "Real readonly execution requires an explicit Tool/MCP/CLI binding.",
+      "evidence": [
+        "no pre-registered readonly tool or CLI binding found"
+      ]
+    }
+  ],
+  "warnings": [
+    {
+      "check_id": "specific_owner",
+      "status": "warn",
+      "required_for_real_tool": false,
+      "summary": "Specific owner is not required for mock execution, but should be resolved before production use.",
+      "evidence": [
+        "role-level Owner only"
+      ]
+    }
+  ],
+  "next_required_inputs": [
+    "real Semantic Layer metric ID or Aeolus dataset/report ID",
+    "pre-registered readonly tool binding or CLI command",
+    "specific data/metric owner or approved ownership mechanism"
+  ]
+}

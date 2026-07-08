@@ -12,6 +12,7 @@
 - `validate_stage_1_minimal_chain.py`：校验阶段 1 感知 + 分析最小链路是否输出 `scenario_key`、`task_type`、QueryPlan 和 source_footer，且不触发真实查询或写入。
 - `validate_stage_1_mock_tool_chain.py`：校验阶段 1 P1 的 mock 只读 Tool 调用记录，确保 `tool_call_record` 与 QueryPlan 对齐，且不会执行真实查询、通知或写状态。
 - `validate_stage_1_readonly_execution_chain.py`：校验阶段 1 P1 的 mock 只读执行结果，确保输出 `readonly_execution`、`analysis_result` 和 `provenance`，且不发送通知、不写状态。
+- `validate_stage_1_real_readonly_readiness.py`：校验真实只读 Tool 接入准备度报告，确保缺少真实指标 ID、治理数据集 ID 或只读工具绑定时不会误判为 ready。
 
 ## 使用约束
 
