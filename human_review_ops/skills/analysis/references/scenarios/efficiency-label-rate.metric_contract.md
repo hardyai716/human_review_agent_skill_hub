@@ -33,10 +33,57 @@
 
 默认样本池圈定“社区人工审核”有效样本：
 
-- 排除测试、质检、离线、模型、自动处置等非常规审核项目。
-- 默认保留社区审核场景：`community_audit_safe`、`community_audit_style`、`community_audit_moderate`。
-- 排除特殊 reason：`recall_skip_L6`、`fatal_output`。
-- 机审一级标签白名单过滤时，空标签必须显式保留。
+### A. `project_title` 黑名单
+
+以下项目标题关键词必须排除，逻辑为 `project_title NOT LIKE '%关键词%'`：
+
+- `虚假`
+- `标注`
+- `虚假不实`
+- `封面`
+- `自动处置`
+- `演绎`
+- `模型`
+- `run`
+- `质检`
+- `QA`
+- `测试`
+- `大模型`
+- `离线`
+
+### B. `scene` 白名单
+
+仅保留以下社区审核场景，逻辑为 `scene IN (...)`：
+
+- `community_audit_safe`
+- `community_audit_style`
+- `community_audit_moderate`
+
+### C. `reason` 排除项
+
+以下 reason 必须排除，逻辑为 `reason NOT IN (...)`：
+
+- `recall_skip_L6`
+- `fatal_output`
+
+### D. `mach_root_label_name` 空值保留 + 白名单
+
+机审一级标签必须显式保留空值，并只允许以下白名单，逻辑为 `mach_root_label_name IS NULL OR mach_root_label_name IN (...)`：
+
+- `不良行为或争议价值观`
+- `侵犯未成年权益`
+- `偏激社会情绪和涉外言论`
+- `党和国家形象负面`
+- `危险行为`
+- `国家安全`
+- `引人不适`
+- `指令舆情相关`
+- `短期策略迁移`
+- `色情性化`
+- `违法违规`
+- `领导人`
+
+默认情况下，打标率查询、排序、低打标率分级和维度拆解都必须使用以上 A/B/C/D 基础过滤。若用户明确要求覆盖样本池，必须在 QueryPlan 的 `filters` 和 source_footer 中标明覆盖原因，并要求人工确认。
 
 ## 支持维度
 

@@ -38,10 +38,12 @@
 必须包含或等价表达：
 
 - `standard_review_scope`
-- 非常规审核项目排除。
-- 社区审核场景白名单。
-- 特殊 reason 排除。
-- NULL 机审标签保留。
+- A. `project_title` 黑名单：`虚假`、`标注`、`虚假不实`、`封面`、`自动处置`、`演绎`、`模型`、`run`、`质检`、`QA`、`测试`、`大模型`、`离线`。
+- B. `scene` 白名单：`community_audit_safe`、`community_audit_style`、`community_audit_moderate`。
+- C. `reason` 排除项：`recall_skip_L6`、`fatal_output`。
+- D. `mach_root_label_name` 空值保留 + 白名单：空值必须保留，白名单包含 `不良行为或争议价值观`、`侵犯未成年权益`、`偏激社会情绪和涉外言论`、`党和国家形象负面`、`危险行为`、`国家安全`、`引人不适`、`指令舆情相关`、`短期策略迁移`、`色情性化`、`违法违规`、`领导人`。
+
+默认情况下，打标率查询、排序、低打标率分级和维度拆解都必须使用以上 A/B/C/D 基础过滤。若覆盖样本池，必须在 QueryPlan 和 source_footer 中记录覆盖原因并要求人工确认。
 
 ## 维度断言
 
