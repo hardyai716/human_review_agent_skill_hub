@@ -22,6 +22,7 @@ disallowed-tools:
 ## 输出
 
 - 通知草稿。
+- 飞书 Card 2.0 草稿。
 - 建议 Owner。
 - 升级建议。
 - 证据引用。
@@ -36,3 +37,7 @@ disallowed-tools:
 
 - `references/common.md`
 - `references/scenario-index.md`
+- `assets/efficiency-label-rate/low_efficiency_grading_card_template.json`
+- `assets/efficiency-label-rate/card_schema_notes.md`
+- `scripts/render_label_rate_grading_card.py`
+- `scripts/card_hash.py`

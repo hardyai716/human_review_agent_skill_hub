@@ -807,12 +807,15 @@ human_review_ops/evals/efficiency-label-rate/eval_samples.jsonl
 | 阶段 1 | P1 | 完成真实只读打标率查询参数化。 | 支持 `--days`、`--dimensions`、`--query-mode=ranking/group_count`；生成 7 天、14 天、多维度和计数回归产物。 | 已完成 |
 | 阶段 1 | P1 | 接入低打标率分级注册 SQL。 | 基于真实只读入口输出 notice/P2/P1/P0 分级结果，保留 evidence 与 provenance；结果文件：`20260708_real_readonly_label_rate_grading_results.jsonl`。 | 已完成 |
 | 阶段 1 | P1 | 新增真实只读低打标率分级 runner 和校验脚本。 | `run_stage_1_real_readonly_label_rate_grading.py`、`validate_stage_1_real_readonly_label_rate_grading.py`。 | 已完成 |
+| 阶段 2 | P2 | 生成低打标率分级通知卡片草稿。 | 生成 summary、notice/P2/P1/P0/综合 CSV、xlsx、Card 2.0、hash 校验和 publish summary。 | 已完成 |
+| 阶段 2 | P2 | 新增通知卡片草稿 runner 和校验脚本。 | `run_stage_2_label_rate_notification_draft.py`、`validate_stage_2_label_rate_notification_draft.py`。 | 已完成 |
+| 阶段 2 | P2 | 完成单人飞书卡片预览推送。 | 以用户明确要求为前提，导入飞书表格并单独推送给用户本人；发送前剥离 `_meta`。 | 已完成 |
 
 ### 12.3 下一阶段实施计划
 
 | 优先级 | 阶段 | 任务 | 验收标准 | 状态 |
 | --- | --- | --- | --- | --- |
-| P2 | 阶段 2 | 按需生成通知草稿和 Owner 建议。 | 仅在用户明确要求或分析结果触发治理/升级条件时生成；不发送真实通知，输出 Owner 依据和置信度。 | 待开始 |
+| P2 | 阶段 2 | 生成 Owner 建议和升级对象。 | 基于 `owner_routing.md` 输出 Owner 依据、置信度和升级建议；真实群推送前仍需人工确认。 | 待开始 |
 | P2 | 阶段 2 | 记录人工处理状态。 | 仅在进入处置/跟进任务时输出 manual_tracking，不写线上状态。 | 待开始 |
 | P2 | 阶段 2 | 支持局部调度。 | `query_only`、`owner_lookup_only`、`notification_only`、`resolution_only` 均可独立执行。 | 待开始 |
 | P2 | 阶段 3 | 增加发布治理和回滚。 | 场景包有 draft、reviewing、enabled、disabled、rollback 状态。 | 待开始 |

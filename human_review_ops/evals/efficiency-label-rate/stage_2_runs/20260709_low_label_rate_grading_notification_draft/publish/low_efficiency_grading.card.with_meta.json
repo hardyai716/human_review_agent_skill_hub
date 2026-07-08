@@ -1,0 +1,469 @@
+{
+  "schema": "2.0",
+  "config": {
+    "update_multi": true,
+    "width_mode": "fill",
+    "summary": {
+      "content": "近7天低效打标策略全等级结果"
+    },
+    "style": {
+      "text_size": {
+        "title": {
+          "default": "heading-2",
+          "pc": "heading-2",
+          "mobile": "heading-3"
+        },
+        "body": {
+          "default": "normal",
+          "pc": "normal",
+          "mobile": "normal"
+        },
+        "caption": {
+          "default": "notation",
+          "pc": "notation",
+          "mobile": "notation"
+        }
+      }
+    }
+  },
+  "header": {
+    "title": {
+      "tag": "plain_text",
+      "content": "近7天低效打标策略全等级结果"
+    },
+    "subtitle": {
+      "tag": "plain_text",
+      "content": "reason 粒度 · 2026-07-01 ~ 2026-07-07"
+    },
+    "template": "blue",
+    "icon": {
+      "tag": "standard_icon",
+      "token": "chart_colorful"
+    },
+    "text_tag_list": [
+      {
+        "tag": "text_tag",
+        "text": {
+          "tag": "plain_text",
+          "content": "全等级"
+        },
+        "color": "blue"
+      },
+      {
+        "tag": "text_tag",
+        "text": {
+          "tag": "plain_text",
+          "content": "P0/P1/P2/notice"
+        },
+        "color": "wathet"
+      }
+    ]
+  },
+  "body": {
+    "direction": "vertical",
+    "padding": "12px 12px 20px 12px",
+    "vertical_spacing": "12px",
+    "elements": [
+      {
+        "tag": "column_set",
+        "flex_mode": "flow",
+        "horizontal_spacing": "12px",
+        "columns": [
+          {
+            "tag": "column",
+            "width": "weighted",
+            "weight": 1,
+            "background_style": "red-50",
+            "padding": "12px",
+            "vertical_spacing": "2px",
+            "elements": [
+              {
+                "tag": "markdown",
+                "content": "## <font color='red'>4</font>",
+                "text_align": "center"
+              },
+              {
+                "tag": "markdown",
+                "content": "<font color='grey'>P0</font>",
+                "text_align": "center",
+                "text_size": "notation"
+              }
+            ]
+          },
+          {
+            "tag": "column",
+            "width": "weighted",
+            "weight": 1,
+            "background_style": "orange-50",
+            "padding": "12px",
+            "vertical_spacing": "2px",
+            "elements": [
+              {
+                "tag": "markdown",
+                "content": "## <font color='orange'>6</font>",
+                "text_align": "center"
+              },
+              {
+                "tag": "markdown",
+                "content": "<font color='grey'>P1</font>",
+                "text_align": "center",
+                "text_size": "notation"
+              }
+            ]
+          },
+          {
+            "tag": "column",
+            "width": "weighted",
+            "weight": 1,
+            "background_style": "yellow-50",
+            "padding": "12px",
+            "vertical_spacing": "2px",
+            "elements": [
+              {
+                "tag": "markdown",
+                "content": "## <font color='yellow'>7</font>",
+                "text_align": "center"
+              },
+              {
+                "tag": "markdown",
+                "content": "<font color='grey'>P2</font>",
+                "text_align": "center",
+                "text_size": "notation"
+              }
+            ]
+          },
+          {
+            "tag": "column",
+            "width": "weighted",
+            "weight": 1,
+            "background_style": "blue-50",
+            "padding": "12px",
+            "vertical_spacing": "2px",
+            "elements": [
+              {
+                "tag": "markdown",
+                "content": "## <font color='blue'>410</font>",
+                "text_align": "center"
+              },
+              {
+                "tag": "markdown",
+                "content": "<font color='grey'>notice</font>",
+                "text_align": "center",
+                "text_size": "notation"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "tag": "chart",
+        "height": "220px",
+        "color_theme": "primary",
+        "chart_spec": {
+          "type": "bar",
+          "title": {
+            "visible": true,
+            "text": "各等级命中 reason 数"
+          },
+          "data": {
+            "values": [
+              {
+                "level": "P0",
+                "count": 4
+              },
+              {
+                "level": "P1",
+                "count": 6
+              },
+              {
+                "level": "P2",
+                "count": 7
+              },
+              {
+                "level": "notice",
+                "count": 410
+              }
+            ]
+          },
+          "xField": "level",
+          "yField": "count",
+          "label": {
+            "visible": true
+          },
+          "axes": [
+            {
+              "orient": "left",
+              "title": {
+                "visible": true,
+                "text": "命中数"
+              }
+            },
+            {
+              "orient": "bottom",
+              "title": {
+                "visible": false
+              }
+            }
+          ]
+        }
+      },
+      {
+        "tag": "table",
+        "page_size": 5,
+        "row_height": "auto",
+        "freeze_first_column": true,
+        "header_style": {
+          "background_style": "grey",
+          "bold": true,
+          "text_size": "notation",
+          "lines": 1
+        },
+        "columns": [
+          {
+            "name": "rank",
+            "display_name": "排名",
+            "data_type": "number",
+            "width": "80px"
+          },
+          {
+            "name": "level",
+            "display_name": "最高等级",
+            "data_type": "options",
+            "width": "100px"
+          },
+          {
+            "name": "reason",
+            "display_name": "reason",
+            "data_type": "text",
+            "width": "340px"
+          },
+          {
+            "name": "avg_in",
+            "display_name": "日均进审",
+            "data_type": "number",
+            "width": "110px",
+            "format": {
+              "precision": 0,
+              "separator": true
+            }
+          },
+          {
+            "name": "avg_done",
+            "display_name": "日均完审",
+            "data_type": "number",
+            "width": "110px",
+            "format": {
+              "precision": 0,
+              "separator": true
+            }
+          },
+          {
+            "name": "avg_labeled",
+            "display_name": "日均打标",
+            "data_type": "number",
+            "width": "110px",
+            "format": {
+              "precision": 0,
+              "separator": true
+            }
+          },
+          {
+            "name": "label_rate",
+            "display_name": "打标率",
+            "data_type": "number",
+            "width": "90px",
+            "format": {
+              "precision": 4
+            }
+          }
+        ],
+        "rows": [
+          {
+            "rank": 1,
+            "level": [
+              {
+                "text": "P0",
+                "color": "red"
+              }
+            ],
+            "reason": "core_protection_gov_user",
+            "avg_in": 4720,
+            "avg_done": 4722,
+            "avg_labeled": 1,
+            "label_rate": 0.0001512767759893501
+          },
+          {
+            "rank": 2,
+            "level": [
+              {
+                "text": "P0",
+                "color": "red"
+              }
+            ],
+            "reason": "LS_regular_BASE_OCR_words_review",
+            "avg_in": 4341,
+            "avg_done": 4288,
+            "avg_labeled": 72,
+            "label_rate": 0.0167232993537211
+          },
+          {
+            "rank": 3,
+            "level": [
+              {
+                "text": "P0",
+                "color": "red"
+              }
+            ],
+            "reason": "is_govB_media",
+            "avg_in": 2594,
+            "avg_done": 2597,
+            "avg_labeled": 6,
+            "label_rate": 0.0023106123122627496
+          },
+          {
+            "rank": 4,
+            "level": [
+              {
+                "text": "P0",
+                "color": "red"
+              }
+            ],
+            "reason": "LS_regular_COVER_OCR_words_review",
+            "avg_in": 2035,
+            "avg_done": 2010,
+            "avg_labeled": 29,
+            "label_rate": 0.01435780794654915
+          },
+          {
+            "rank": 5,
+            "level": [
+              {
+                "text": "P1",
+                "color": "orange"
+              }
+            ],
+            "reason": "N1_chuxing_model_llm_pe_review",
+            "avg_in": 2237,
+            "avg_done": 2319,
+            "avg_labeled": 27,
+            "label_rate": 0.011644204851752021
+          },
+          {
+            "rank": 6,
+            "level": [
+              {
+                "text": "P1",
+                "color": "orange"
+              }
+            ],
+            "reason": "national_security_recall_rewords_review",
+            "avg_in": 2077,
+            "avg_done": 2079,
+            "avg_labeled": 44,
+            "label_rate": 0.021095306809592523
+          },
+          {
+            "rank": 7,
+            "level": [
+              {
+                "text": "P2",
+                "color": "yellow"
+              }
+            ],
+            "reason": "fence_recall",
+            "avg_in": 6925,
+            "avg_done": 6903,
+            "avg_labeled": 247,
+            "label_rate": 0.03576010926700054
+          },
+          {
+            "rank": 8,
+            "level": [
+              {
+                "text": "P2",
+                "color": "yellow"
+              }
+            ],
+            "reason": "model_llm_gandalf_8class_p2_ls_manual",
+            "avg_in": 3861,
+            "avg_done": 3842,
+            "avg_labeled": 187,
+            "label_rate": 0.048709749386480254
+          },
+          {
+            "rank": 9,
+            "level": [
+              {
+                "text": "notice",
+                "color": "blue"
+              }
+            ],
+            "reason": "title_leader_table_8578",
+            "avg_in": 9244,
+            "avg_done": 9148,
+            "avg_labeled": 631,
+            "label_rate": 0.06894343983259939
+          },
+          {
+            "rank": 10,
+            "level": [
+              {
+                "text": "notice",
+                "color": "blue"
+              }
+            ],
+            "reason": "national_security_regular_OCR_words_review",
+            "avg_in": 7395,
+            "avg_done": 7323,
+            "avg_labeled": 445,
+            "label_rate": 0.060765074225074614
+          }
+        ]
+      },
+      {
+        "tag": "button",
+        "text": {
+          "tag": "plain_text",
+          "content": "查看完整飞书电子表格"
+        },
+        "type": "primary_filled",
+        "width": "fill",
+        "behaviors": [
+          {
+            "type": "open_url",
+            "default_url": "https://bytedance.larkoffice.com/sheets/HyPHsQn31hXTzOtoq8Rc1Akhnru",
+            "pc_url": "https://bytedance.larkoffice.com/sheets/HyPHsQn31hXTzOtoq8Rc1Akhnru",
+            "ios_url": "https://bytedance.larkoffice.com/sheets/HyPHsQn31hXTzOtoq8Rc1Akhnru",
+            "android_url": "https://bytedance.larkoffice.com/sheets/HyPHsQn31hXTzOtoq8Rc1Akhnru"
+          }
+        ]
+      },
+      {
+        "tag": "collapsible_panel",
+        "expanded": false,
+        "background_color": "grey-50",
+        "padding": "10px",
+        "header": {
+          "title": {
+            "tag": "plain_text",
+            "content": "口径与溯源"
+          }
+        },
+        "elements": [
+          {
+            "tag": "markdown",
+            "content": "- 数据集：`3888816` / `cn`\n- 当前窗口：`2026-07-01` ~ `2026-07-07`\n- 打标率：`SUM(打标量) / SUM(完审量)`\n- fallback_reason：`complex_grading_rule_not_covered_by_semantic_layer`\n- source：`evals/efficiency-label-rate/stage_1_runs/20260708_real_readonly_label_rate_grading_results.jsonl`",
+            "text_size": "notation"
+          }
+        ]
+      }
+    ]
+  },
+  "_meta": {
+    "_data_hash": "c2561a70eb0b57e27e6efa828a7c95c2e525c8e708b3da38d50cd150a1fd78de",
+    "report_type": "low_efficiency_grading",
+    "scenario_key": "efficiency-label-rate",
+    "top_rows_count": 10,
+    "sheet_url": "https://bytedance.larkoffice.com/sheets/HyPHsQn31hXTzOtoq8Rc1Akhnru"
+  }
+}

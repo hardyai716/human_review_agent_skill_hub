@@ -1,0 +1,23 @@
+{
+  "report_type": "low_efficiency_grading",
+  "scenario_key": "efficiency-label-rate",
+  "source_stage_1_result": "evals/efficiency-label-rate/stage_1_runs/20260708_real_readonly_label_rate_grading_results.jsonl",
+  "output_dir": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_notification_draft",
+  "summary_json": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_notification_draft/summary.json",
+  "workbook": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_notification_draft/low_label_rate_grading_2026-07-01_2026-07-07.xlsx",
+  "sheet_url": "https://bytedance.larkoffice.com/sheets/HyPHsQn31hXTzOtoq8Rc1Akhnru",
+  "card_json": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_notification_draft/publish/low_efficiency_grading.card.json",
+  "card_json_with_meta": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_notification_draft/publish/low_efficiency_grading.card.with_meta.json",
+  "card_hash_check": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_notification_draft/publish/card_hash_check.json",
+  "sent": true,
+  "send_identity": "bot",
+  "target_user": "self",
+  "target_user_open_id_prefix": "ou_7677e7...",
+  "message_id": "om_x100b6bd3bc59f0a0b241ae0ae5ad8fb",
+  "send_result": {
+    "ok": true,
+    "identity": "bot",
+    "message_id": "om_x100b6bd3bc59f0a0b241ae0ae5ad8fb",
+    "create_time": "2026-07-09 00:47:37"
+  }
+}

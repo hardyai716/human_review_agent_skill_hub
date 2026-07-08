@@ -23,3 +23,10 @@
 目标态场景包：
 
 - `../../../references/scenarios/efficiency-label-rate/`
+
+卡片资产与脚本：
+
+- `../../assets/efficiency-label-rate/low_efficiency_grading_card_template.json`
+- `../../assets/efficiency-label-rate/card_schema_notes.md`
+- `../../scripts/render_label_rate_grading_card.py`
+- `../../scripts/card_hash.py`

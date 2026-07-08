@@ -10,6 +10,7 @@
 - `run_stage_1_real_readonly_readiness.py`：检查真实只读 Tool 接入准备度，按 YAGNI 原则阻断缺少真实资产的提前实现。
 - `run_stage_1_real_readonly_label_rate.py`：使用 `bytedcli -j aeolus query -r cn 3888816` 执行真实只读打标率查询，支持 `--days`、`--dimensions` 和 `--query-mode` 参数。
 - `run_stage_1_real_readonly_label_rate_grading.py`：使用真实只读 Aeolus 查询执行低打标率 notice/P2/P1/P0 分级，输出等级结果、综合去重结果和 provenance。
+- `run_stage_2_label_rate_notification_draft.py`：将阶段 1 低打标率分级结果转换为通知草稿产物、xlsx、飞书 Card 2.0，并可在用户明确要求时单人推送。
 
 ## 使用约束
 
@@ -36,4 +37,6 @@ python3 human_review_ops/tools/runners/run_stage_1_real_readonly_label_rate.py -
 python3 human_review_ops/tools/validators/validate_stage_1_real_readonly_label_rate.py --days 14 --dimensions reason,scene --query-mode ranking
 python3 human_review_ops/tools/runners/run_stage_1_real_readonly_label_rate_grading.py
 python3 human_review_ops/tools/validators/validate_stage_1_real_readonly_label_rate_grading.py
+python3 human_review_ops/tools/runners/run_stage_2_label_rate_notification_draft.py --sheet-url 'https://bytedance.larkoffice.com/sheets/dry_run_sheet_token'
+python3 human_review_ops/tools/validators/validate_stage_2_label_rate_notification_draft.py
 ```
