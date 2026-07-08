@@ -100,3 +100,17 @@
 - `provenance.references` 必须包含 `metric_contract`、`dataset_reference` 和 `analysis_rule`。
 - 当前 mock 阶段必须标明 `mock_fixture_not_real_data`，不得声称真实分区新鲜度。
 - 反例和低信息量样例不得生成 `readonly_execution`、`analysis_result` 或 `provenance`。
+
+## 真实只读查询断言
+
+真实只读打标率查询必须：
+
+- `QueryPlan.execution_mode=real_readonly_query`。
+- `tool_call_record.tool_name=bytedcli_aeolus_query`。
+- `tool_call_record.permission_level=readonly`。
+- `tool_call_record.real_query_executed=true`。
+- QueryPlan 必须绑定 `aeolus_dataset_id=3888816` 和 `aeolus_metric_id=10000036292379`。
+- SQL 必须包含 A/B/C/D 基础过滤。
+- `readonly_execution.truncated=false`。
+- `readonly_execution.rows[*].label_rate < 0.1`。
+- 不生成 `notification_draft`、`owner_recommendation` 或 `manual_tracking`。

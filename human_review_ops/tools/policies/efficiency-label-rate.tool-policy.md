@@ -18,6 +18,7 @@
 - 调用 mock / 只读预检 Tool 并生成 `tool_call_record`。
 - 在 QueryPlan 通过断言、数据源属于允许来源、工具权限为只读时，执行治理数据源的只读查询。
 - 使用 `bytedcli -j aeolus query -r cn 3888816 "<SQL>" --limit 1000` 执行打标率只读查询。
+- 使用 `bytedcli -j aeolus dataset-fields -r cn 3888816` 校验字段和指标。
 - 生成通知草稿。
 - 记录调试检查清单。
 
@@ -40,6 +41,9 @@
 - 输出未脱敏线上明细。
 - 查询审核员个人敏感信息。
 - 把查询失败解释为“无异常”或“无低打标率策略”。
+- 用 `viz-query` 承载 `NOT LIKE`、复杂 `HAVING`、多阶段聚合或低效分级查询。
+- 在 `viz-query` 的 `expr` 已含 `sum(`、`count(`、`avg(` 或比率表达式时额外传 `aggregation`。
+- 使用 `4284992` 等标注准确率数据集替代 `3888816` 查询打标率。
 
 ## tool_call_record 要求
 

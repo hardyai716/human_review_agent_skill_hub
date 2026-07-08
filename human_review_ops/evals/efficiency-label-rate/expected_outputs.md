@@ -117,3 +117,14 @@
 - `row_count=0`。
 - 输出字段发现后续要求。
 - 不输出业务结论。
+
+## 真实只读打标率查询
+
+阶段 1 P1 真实只读查询必须：
+
+- 使用 `bytedcli -j aeolus query -r cn 3888816 "<SQL>" --limit 1000`。
+- SQL 包含 A/B/C/D 基础过滤。
+- 输出 `reason`、`review_done_cnt`、`label_cnt`、`label_rate`。
+- 所有返回行必须满足 `review_done_cnt > 0` 且 `label_rate < 0.1`。
+- 返回结果必须 `truncated=false`。
+- 查询失败时输出失败原因，不得解释为“无低打标率 reason”。

@@ -8,6 +8,7 @@
 - `run_stage_1_mock_tool_chain.py`：在最小链路基础上接入 mock 只读 Tool 记录，生成 `tool_call_record`，但不执行真实查询。
 - `run_stage_1_readonly_execution_chain.py`：在 mock Tool 记录基础上生成 mock 只读执行结果、`analysis_result` 和 `provenance`。
 - `run_stage_1_real_readonly_readiness.py`：检查真实只读 Tool 接入准备度，按 YAGNI 原则阻断缺少真实资产的提前实现。
+- `run_stage_1_real_readonly_label_rate.py`：使用 `bytedcli -j aeolus query -r cn 3888816` 执行真实只读打标率 reason 查询。
 
 ## 使用约束
 
@@ -26,4 +27,6 @@ python3 human_review_ops/tools/runners/run_stage_1_readonly_execution_chain.py
 python3 human_review_ops/tools/validators/validate_stage_1_readonly_execution_chain.py
 python3 human_review_ops/tools/runners/run_stage_1_real_readonly_readiness.py
 python3 human_review_ops/tools/validators/validate_stage_1_real_readonly_readiness.py
+python3 human_review_ops/tools/runners/run_stage_1_real_readonly_label_rate.py
+python3 human_review_ops/tools/validators/validate_stage_1_real_readonly_label_rate.py
 ```

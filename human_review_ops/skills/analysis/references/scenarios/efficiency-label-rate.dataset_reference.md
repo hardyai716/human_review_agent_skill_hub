@@ -16,6 +16,28 @@
 | `governed_dataset` | Aeolus 治理数据集 | 语义层未覆盖但数据集已治理时使用 | 可回退 |
 | `curated_raw_sql` | `olap_content_security_community.dws_sft_tcs_review_task_detail_di` | 低打标率分级、维度拆解 | 受控回退 |
 
+## 真实风神入口
+
+- Region：`cn`
+- App ID：`1128`
+- Dataset ID：`3888816`
+- Dataset 名称：`[重点模型]-社区_人工审核明细数据`
+- 查询命令：`bytedcli -j aeolus query -r cn 3888816 "<SQL>" --limit 1000`
+- 查字段命令：`bytedcli -j aeolus dataset-fields -r cn 3888816`
+- `label_rate` 对应风神指标：`打标率__reviewid`
+- Aeolus metric ID：`10000036292379`
+- 分子指标：`打标量__reviewid`
+- 分母指标：`完审量_reviewid`
+
+## 风神使用注意事项
+
+- JSON 输出必须使用 `-j`，且 `-j` 是 bytedcli 全局参数，位置必须在 `aeolus` 前：`bytedcli -j aeolus ...`。
+- 查数优先使用 `bytedcli -j aeolus query -r cn 3888816 "<SQL>" --limit 1000`。
+- 复杂过滤、`NOT LIKE`、`HAVING`、分级规则和多阶段聚合必须走 `aeolus query`，不要用 `viz-query` 兜复杂 SQL。
+- `viz-query` 仅适合字段验证、简单聚合或快速探测；若 `expr` 已自带 `sum(`、`count(`、`avg(` 或比率表达式，不要再传 `aggregation`。
+- 查询失败不能解释成“无低打标率 reason”；必须区分权限失败、字段错误、分区缺失、过滤过严和真实空结果。
+- 不要误用 `4284992` 等标注准确率数据集替代 `3888816`。
+
 ## 物理表参考
 
 - 表：`olap_content_security_community.dws_sft_tcs_review_task_detail_di`
@@ -55,6 +77,7 @@
 - 禁止裸 `[Name]`。
 - 禁止在最终聚合中 `SUM(rate)`。
 - 打标率必须用 `SUM(label_cnt) / SUM(review_done_cnt)` 重算。
+- 使用风神语义指标时，可用 `` `[打标率__reviewid]` ``，但必须同时输出 `` `[完审量_reviewid]` `` 和 `` `[打标量__reviewid]` `` 作为 evidence。
 - 日均量必须用 `COUNT(DISTINCT p_date)`，不得硬编码 `/7`。
 - NULL 机审标签必须用 `field IS NULL OR field IN (...)`，不得写 `IN (NULL, ...)`。
 

@@ -90,6 +90,14 @@
                   "readonly_exploration"
                 ],
                 "description": "指标来源层级。"
+              },
+              "aeolus_dataset_id": {
+                "type": "string",
+                "description": "风神数据集 ID。"
+              },
+              "aeolus_metric_id": {
+                "type": "string",
+                "description": "风神指标 ID。"
               }
             }
           }
@@ -487,7 +495,8 @@
             "human_reviewed",
             "debug_only_no_real_query",
             "debug_only_mock_readonly_execution",
-            "debug_only_execution_blocked"
+            "debug_only_execution_blocked",
+            "real_readonly_query_executed"
           ],
           "description": "复核状态。"
         },
