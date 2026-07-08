@@ -1,0 +1,2442 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>人审运营 Agent（调度器） + Skill（能力模块） + Tool/MCP/CLI（工具连接与命令执行）架构演示</title>
+  <style>
+    :root {
+      --bg: #071014;
+      --panel: rgba(12, 25, 31, 0.82);
+      --panel-strong: rgba(16, 38, 46, 0.94);
+      --line: rgba(130, 236, 255, 0.24);
+      --line-hot: rgba(132, 241, 255, 0.72);
+      --text: #ecfbff;
+      --muted: #8fb0ba;
+      --faint: #5f7e87;
+      --cyan: #67e8f9;
+      --amber: #f6c76a;
+      --green: #76e4a6;
+      --red: #ff8c8c;
+      --shadow: 0 24px 80px rgba(0, 0, 0, 0.46);
+      --radius-xl: 32px;
+      --radius-lg: 22px;
+      --radius-md: 16px;
+      --max: 1440px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 18% 12%, rgba(103, 232, 249, 0.22), transparent 28%),
+        radial-gradient(circle at 82% 8%, rgba(246, 199, 106, 0.16), transparent 24%),
+        linear-gradient(135deg, #061014 0%, #081820 44%, #05090c 100%);
+      font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.75), transparent 82%);
+      z-index: -2;
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: linear-gradient(120deg, transparent 0%, rgba(103, 232, 249, 0.05) 45%, transparent 75%);
+      mix-blend-mode: screen;
+      animation: scan 9s linear infinite;
+      z-index: -1;
+    }
+
+    @keyframes scan {
+      0% { transform: translateX(-40%); opacity: 0.25; }
+      50% { opacity: 0.55; }
+      100% { transform: translateX(40%); opacity: 0.25; }
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .shell {
+      width: min(var(--max), calc(100vw - 48px));
+      margin: 0 auto;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      border-bottom: 1px solid rgba(103, 232, 249, 0.18);
+      background: rgba(7, 16, 20, 0.74);
+      backdrop-filter: blur(18px);
+    }
+
+    .topbar-inner {
+      width: min(var(--max), calc(100vw - 48px));
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      min-height: 72px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 260px;
+    }
+
+    .brand-mark {
+      width: 40px;
+      height: 40px;
+      border: 1px solid rgba(103, 232, 249, 0.5);
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      color: var(--cyan);
+      background: linear-gradient(135deg, rgba(103, 232, 249, 0.16), rgba(118, 228, 166, 0.08));
+      box-shadow: 0 0 30px rgba(103, 232, 249, 0.14);
+      font-weight: 800;
+      letter-spacing: -0.05em;
+    }
+
+    .brand-title {
+      font-size: 14px;
+      letter-spacing: 0.14em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .brand strong {
+      display: block;
+      margin-top: 3px;
+      color: var(--text);
+      letter-spacing: 0.02em;
+      font-size: 15px;
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .nav a {
+      padding: 9px 12px;
+      border: 1px solid transparent;
+      border-radius: 999px;
+      color: var(--muted);
+      font-size: 13px;
+      transition: 180ms ease;
+    }
+
+    .nav a:hover,
+    .nav a.active {
+      color: var(--text);
+      border-color: rgba(103, 232, 249, 0.34);
+      background: rgba(103, 232, 249, 0.08);
+    }
+
+    .hero {
+      padding: 80px 0 44px;
+      display: grid;
+      grid-template-columns: minmax(0, 1.18fr) minmax(360px, 0.82fr);
+      gap: 32px;
+      align-items: stretch;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border: 1px solid rgba(103, 232, 249, 0.24);
+      border-radius: 999px;
+      color: var(--cyan);
+      background: rgba(103, 232, 249, 0.07);
+      font-size: 13px;
+      letter-spacing: 0.1em;
+    }
+
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 18px var(--green);
+    }
+
+    h1, h2, h3, p {
+      margin: 0;
+    }
+
+    h1 {
+      margin-top: 28px;
+      font-family: "Songti SC", "STSong", "SimSun", serif;
+      font-size: clamp(42px, 7vw, 96px);
+      line-height: 0.96;
+      letter-spacing: -0.07em;
+      max-width: 980px;
+    }
+
+    .hero-lead {
+      margin-top: 28px;
+      max-width: 850px;
+      color: #c7dde4;
+      font-size: 18px;
+      line-height: 1.78;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 32px;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      min-height: 46px;
+      padding: 0 18px;
+      border-radius: 999px;
+      border: 1px solid rgba(103, 232, 249, 0.34);
+      background: rgba(103, 232, 249, 0.1);
+      color: var(--text);
+      font-weight: 700;
+      font-size: 14px;
+      transition: 180ms ease;
+    }
+
+    .button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 40px rgba(103, 232, 249, 0.14);
+    }
+
+    .button.primary {
+      background: linear-gradient(135deg, rgba(103, 232, 249, 0.95), rgba(118, 228, 166, 0.86));
+      color: #031115;
+      border-color: transparent;
+    }
+
+    .mission-card {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(103, 232, 249, 0.22);
+      border-radius: var(--radius-xl);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.025)),
+        rgba(8, 22, 28, 0.82);
+      box-shadow: var(--shadow);
+      padding: 28px;
+    }
+
+    .mission-card::before {
+      content: "";
+      position: absolute;
+      inset: -70px -80px auto auto;
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      background: rgba(103, 232, 249, 0.14);
+      filter: blur(12px);
+    }
+
+    .mission-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 26px;
+    }
+
+    .metric {
+      min-height: 126px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+      background: rgba(4, 13, 17, 0.52);
+      padding: 18px;
+    }
+
+    .metric b {
+      display: block;
+      color: var(--cyan);
+      font-size: 28px;
+      line-height: 1;
+      margin-bottom: 12px;
+    }
+
+    .metric span {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .section {
+      padding: 56px 0;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    .section-kicker {
+      color: var(--cyan);
+      font-size: 12px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    h2 {
+      font-family: "Songti SC", "STSong", "SimSun", serif;
+      font-size: clamp(30px, 4.2vw, 58px);
+      line-height: 1.06;
+      letter-spacing: -0.05em;
+    }
+
+    .section-note {
+      color: var(--muted);
+      max-width: 520px;
+      line-height: 1.7;
+      font-size: 14px;
+    }
+
+    .boundary-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    .boundary {
+      padding: 14px 16px;
+      border: 1px solid rgba(246, 199, 106, 0.28);
+      border-radius: 16px;
+      color: #ffe2a8;
+      background: rgba(246, 199, 106, 0.08);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .architecture-board {
+      position: relative;
+      border: 1px solid rgba(103, 232, 249, 0.2);
+      border-radius: var(--radius-xl);
+      background:
+        linear-gradient(180deg, rgba(9, 26, 34, 0.92), rgba(5, 13, 17, 0.92)),
+        radial-gradient(circle at 50% 0%, rgba(103, 232, 249, 0.18), transparent 42%);
+      box-shadow: var(--shadow);
+      padding: 28px;
+      overflow: hidden;
+    }
+
+    .architecture-board::after {
+      content: "";
+      position: absolute;
+      inset: 26px;
+      border: 1px dashed rgba(103, 232, 249, 0.13);
+      border-radius: 26px;
+      pointer-events: none;
+    }
+
+    .layer-grid {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: 0.92fr 1.1fr 1fr 1fr 0.96fr 0.96fr;
+      gap: 14px;
+      align-items: stretch;
+    }
+
+    .layer {
+      position: relative;
+      min-height: 390px;
+      padding: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 24px;
+      background: rgba(6, 16, 21, 0.74);
+      transition: 220ms ease;
+    }
+
+    .layer:hover {
+      border-color: rgba(103, 232, 249, 0.45);
+      transform: translateY(-3px);
+      box-shadow: 0 18px 42px rgba(0, 0, 0, 0.28);
+    }
+
+    .layer-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .layer-label b {
+      font-size: 16px;
+    }
+
+    .layer-label span {
+      color: var(--faint);
+      font-size: 12px;
+      letter-spacing: 0.12em;
+    }
+
+    .node-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .node {
+      padding: 12px;
+      border-radius: 15px;
+      border: 1px solid rgba(103, 232, 249, 0.15);
+      background: rgba(103, 232, 249, 0.05);
+      color: #d7edf3;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .agent-core {
+      border-color: rgba(103, 232, 249, 0.36);
+      background:
+        radial-gradient(circle at 50% 22%, rgba(103, 232, 249, 0.2), transparent 42%),
+        rgba(7, 24, 30, 0.86);
+    }
+
+    .agent-orb {
+      width: 144px;
+      height: 144px;
+      margin: 10px auto 18px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      border: 1px solid rgba(103, 232, 249, 0.5);
+      background:
+        radial-gradient(circle at 35% 32%, rgba(255, 255, 255, 0.28), transparent 18%),
+        radial-gradient(circle, rgba(103, 232, 249, 0.22), rgba(103, 232, 249, 0.03) 68%);
+      box-shadow:
+        inset 0 0 46px rgba(103, 232, 249, 0.14),
+        0 0 70px rgba(103, 232, 249, 0.18);
+      animation: breathe 4s ease-in-out infinite;
+      color: var(--text);
+      font-weight: 900;
+      line-height: 1.35;
+      letter-spacing: 0.02em;
+    }
+
+    @keyframes breathe {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.04); }
+    }
+
+    .flow-arrow {
+      position: absolute;
+      top: 50%;
+      right: -18px;
+      width: 34px;
+      height: 2px;
+      background: linear-gradient(90deg, rgba(103, 232, 249, 0.25), rgba(103, 232, 249, 0.95));
+      z-index: 2;
+    }
+
+    .flow-arrow::after {
+      content: "";
+      position: absolute;
+      right: 0;
+      top: -4px;
+      border-left: 8px solid rgba(103, 232, 249, 0.95);
+      border-top: 5px solid transparent;
+      border-bottom: 5px solid transparent;
+    }
+
+    .layer:last-child .flow-arrow {
+      display: none;
+    }
+
+    .interaction-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 16px;
+    }
+
+    .interaction-card {
+      position: relative;
+      border: 1px solid rgba(103, 232, 249, 0.18);
+      border-radius: var(--radius-lg);
+      background: rgba(9, 23, 29, 0.82);
+      padding: 20px;
+      min-height: 310px;
+      overflow: hidden;
+      transition: 200ms ease;
+    }
+
+    .interaction-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(103, 232, 249, 0.44);
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.3);
+    }
+
+    .step-num {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border-radius: 14px;
+      border: 1px solid rgba(103, 232, 249, 0.35);
+      color: var(--cyan);
+      background: rgba(103, 232, 249, 0.08);
+      font-weight: 900;
+      margin-bottom: 18px;
+    }
+
+    .interaction-card h3,
+    .data-card h3,
+    .road-card h3 {
+      font-size: 18px;
+      margin-bottom: 12px;
+      letter-spacing: -0.02em;
+    }
+
+    .interaction-card p,
+    .data-card p,
+    .road-card p {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.65;
+      margin-bottom: 12px;
+    }
+
+    .io {
+      display: grid;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .io-row {
+      border-left: 2px solid rgba(103, 232, 249, 0.44);
+      padding-left: 10px;
+      color: #dceff4;
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .io-row b {
+      color: var(--cyan);
+    }
+
+    .state-panel {
+      border: 1px solid rgba(103, 232, 249, 0.18);
+      border-radius: var(--radius-xl);
+      background: rgba(9, 23, 29, 0.82);
+      padding: 26px;
+      box-shadow: var(--shadow);
+    }
+
+    .swimlanes {
+      display: grid;
+      grid-template-columns: 0.7fr 1.3fr;
+      gap: 16px;
+      align-items: stretch;
+    }
+
+    .lane {
+      position: relative;
+      padding: 20px;
+      border-radius: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(5, 14, 18, 0.58);
+      overflow: hidden;
+    }
+
+    .lane h3 {
+      margin-bottom: 18px;
+      color: var(--text);
+    }
+
+    .state-flow {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .state {
+      position: relative;
+      padding: 10px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(103, 232, 249, 0.18);
+      color: #d8eef4;
+      background: rgba(103, 232, 249, 0.055);
+      font-size: 12px;
+      line-height: 1.25;
+      max-width: 100%;
+      white-space: normal;
+    }
+
+    .state.manual {
+      border-color: rgba(246, 199, 106, 0.38);
+      color: #ffe0a2;
+      background: rgba(246, 199, 106, 0.09);
+    }
+
+    .state.done {
+      border-color: rgba(118, 228, 166, 0.36);
+      color: #aef5ca;
+      background: rgba(118, 228, 166, 0.08);
+    }
+
+    .state.escalate {
+      border-color: rgba(255, 140, 140, 0.38);
+      color: #ffc4c4;
+      background: rgba(255, 140, 140, 0.08);
+    }
+
+    .callout-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-top: 16px;
+    }
+
+    .callout {
+      padding: 18px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.045);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .callout strong {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+
+    .callout span {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .data-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .data-card,
+    .road-card {
+      border: 1px solid rgba(103, 232, 249, 0.16);
+      border-radius: var(--radius-lg);
+      background: rgba(8, 20, 26, 0.8);
+      padding: 22px;
+      transition: 180ms ease;
+    }
+
+    .data-card:hover,
+    .road-card:hover {
+      border-color: rgba(103, 232, 249, 0.4);
+      transform: translateY(-3px);
+    }
+
+    .field-list {
+      display: grid;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .field {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 9px 10px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.04);
+      color: #dceff4;
+      font-size: 12px;
+    }
+
+    .field span:last-child {
+      color: var(--faint);
+      text-align: right;
+    }
+
+    .principle-grid,
+    .scenario-grid,
+    .deep-grid,
+    .asset-grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .principle-grid {
+      grid-template-columns: repeat(4, 1fr);
+    }
+
+    .scenario-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .deep-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .asset-grid {
+      grid-template-columns: 1.1fr 0.9fr;
+      align-items: stretch;
+    }
+
+    .principle-card,
+    .scenario-card,
+    .deep-card,
+    .stack-card,
+    .asset-card {
+      border: 1px solid rgba(103, 232, 249, 0.16);
+      border-radius: var(--radius-lg);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.02)),
+        rgba(8, 20, 26, 0.82);
+      padding: 22px;
+      transition: 180ms ease;
+    }
+
+    .principle-card:hover,
+    .scenario-card:hover,
+    .deep-card:hover,
+    .stack-card:hover,
+    .asset-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(103, 232, 249, 0.42);
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
+    }
+
+    .principle-card h3,
+    .scenario-card h3,
+    .deep-card h3,
+    .stack-card h3,
+    .asset-card h3 {
+      margin-bottom: 12px;
+      font-size: 18px;
+      letter-spacing: -0.02em;
+    }
+
+    .principle-card p,
+    .scenario-card p,
+    .deep-card p,
+    .stack-card p,
+    .asset-card p {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.7;
+      margin-bottom: 12px;
+    }
+
+    .tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 26px;
+      padding: 5px 10px;
+      border: 1px solid rgba(103, 232, 249, 0.18);
+      border-radius: 999px;
+      color: #dff6fb;
+      background: rgba(103, 232, 249, 0.055);
+      font-size: 12px;
+      line-height: 1.25;
+    }
+
+    .tag.hot {
+      border-color: rgba(246, 199, 106, 0.3);
+      color: #ffe1a5;
+      background: rgba(246, 199, 106, 0.08);
+    }
+
+    .detail-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .detail-item {
+      display: grid;
+      grid-template-columns: 108px 1fr;
+      gap: 12px;
+      padding: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.035);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .detail-item b {
+      color: var(--cyan);
+    }
+
+    .detail-item span {
+      color: #d6ebf1;
+    }
+
+    .stack-flow {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .stack-step {
+      position: relative;
+      min-height: 160px;
+      padding: 16px;
+      border-radius: 18px;
+      border: 1px solid rgba(103, 232, 249, 0.16);
+      background: rgba(4, 13, 17, 0.52);
+    }
+
+    .stack-step::after {
+      content: "";
+      position: absolute;
+      right: -12px;
+      top: 50%;
+      width: 12px;
+      height: 2px;
+      background: rgba(103, 232, 249, 0.45);
+    }
+
+    .stack-step:last-child::after {
+      display: none;
+    }
+
+    .stack-step b {
+      display: block;
+      color: var(--cyan);
+      margin-bottom: 10px;
+      font-size: 13px;
+    }
+
+    .stack-step span {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.65;
+    }
+
+    .phase-table {
+      display: grid;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .phase-row {
+      display: grid;
+      grid-template-columns: 86px 1fr 1fr;
+      gap: 12px;
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      background: rgba(255, 255, 255, 0.035);
+      color: #d9eef4;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .phase-row b {
+      color: var(--cyan);
+    }
+
+    .tree-block {
+      display: grid;
+      gap: 7px;
+      margin-top: 14px;
+      padding: 16px;
+      border-radius: 16px;
+      border: 1px solid rgba(103, 232, 249, 0.14);
+      background: rgba(3, 10, 13, 0.56);
+      color: #d8eef4;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      font-size: 12px;
+      line-height: 1.55;
+      overflow-x: auto;
+    }
+
+    .tree-block div {
+      white-space: pre;
+    }
+
+    .tree-block span {
+      color: var(--muted);
+    }
+
+    .route-flow {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .route-step {
+      min-height: 124px;
+      padding: 14px;
+      border-radius: 18px;
+      border: 1px solid rgba(103, 232, 249, 0.16);
+      background: rgba(4, 13, 17, 0.52);
+    }
+
+    .route-step b {
+      display: block;
+      color: var(--cyan);
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+
+    .route-step span {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .roadmap {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 14px;
+    }
+
+    .road-card {
+      min-height: 260px;
+      padding-top: 18px;
+    }
+
+    .phase {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 64px;
+      height: 30px;
+      margin-bottom: 18px;
+      border-radius: 999px;
+      border: 1px solid rgba(103, 232, 249, 0.26);
+      color: var(--cyan);
+      background: rgba(103, 232, 249, 0.08);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .road-card ul {
+      margin: 14px 0 0;
+      padding-left: 18px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
+    .footer {
+      padding: 44px 0 64px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .footer-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      border-top: 1px solid rgba(103, 232, 249, 0.16);
+      padding-top: 22px;
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(18px);
+      animation: reveal 700ms ease forwards;
+    }
+
+    .delay-1 { animation-delay: 90ms; }
+    .delay-2 { animation-delay: 180ms; }
+    .delay-3 { animation-delay: 270ms; }
+
+    @keyframes reveal {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 1180px) {
+      .hero,
+      .swimlanes {
+        grid-template-columns: 1fr;
+      }
+
+      .layer-grid,
+      .interaction-grid,
+      .roadmap {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .layer {
+        min-height: auto;
+      }
+
+      .flow-arrow {
+        display: none;
+      }
+
+      .data-grid,
+      .callout-grid,
+      .principle-grid,
+      .scenario-grid,
+      .deep-grid,
+      .asset-grid,
+      .stack-flow,
+      .route-flow {
+        grid-template-columns: 1fr;
+      }
+
+      .stack-step::after {
+        display: none;
+      }
+
+      .phase-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .shell,
+      .topbar-inner {
+        width: min(100vw - 28px, var(--max));
+      }
+
+      .topbar-inner {
+        align-items: flex-start;
+        flex-direction: column;
+        padding: 14px 0;
+      }
+
+      .nav {
+        justify-content: flex-start;
+      }
+
+      .hero {
+        padding-top: 46px;
+      }
+
+      .mission-grid,
+      .boundary-strip,
+      .layer-grid,
+      .interaction-grid,
+      .roadmap,
+      .principle-grid,
+      .scenario-grid,
+      .deep-grid,
+      .asset-grid,
+      .stack-flow,
+      .route-flow {
+        grid-template-columns: 1fr;
+      }
+
+      .section-head,
+      .footer-inner {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .architecture-board,
+      .state-panel {
+        padding: 18px;
+        border-radius: 24px;
+      }
+
+      h1 {
+        font-size: 46px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="#top" aria-label="回到顶部">
+        <span class="brand-mark">HR</span>
+        <span>
+          <span class="brand-title">Human Review Ops</span>
+          <strong>Agent（调度器） + Skill（能力模块） + Tool/MCP/CLI（工具连接与命令执行）架构演示</strong>
+        </span>
+      </a>
+      <nav class="nav" aria-label="页面导航">
+        <a href="#architecture">架构总览</a>
+        <a href="#contracts">资产契约</a>
+        <a href="#scenarios">场景能力</a>
+        <a href="#partial-dispatch">编排治理</a>
+        <a href="#build-plan">落地计划</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="shell hero">
+      <div class="reveal">
+        <span class="eyebrow"><span class="pulse-dot"></span> 理想预期 · 运营指挥中枢</span>
+        <h1>把分散的人审运营经验，变成可调度、可追溯、可迭代的闭环系统。</h1>
+        <p class="hero-lead">
+          这页演示按照“目标架构总览 → 数据资产与契约 → 场景流程包 → Skill 能力 → Agent 编排治理 → 运营闭环与落地计划”的顺序展开。当前 MVP（第一版最小可行范围）重点建设感知和分析能力，通知与解决先采用轻量测试闭环。
+        </p>
+        <div class="hero-actions">
+          <a class="button primary" href="#architecture">查看目标架构总览</a>
+          <a class="button" href="#contracts">查看数据资产与契约</a>
+        </div>
+      </div>
+
+      <aside class="mission-card reveal delay-1" aria-label="第一版目标卡片">
+        <span class="section-kicker">第一版目标（MVP，即最小可行范围）</span>
+        <h2>第一版优先验证感知与分析准确性。</h2>
+        <div class="mission-grid">
+          <div class="metric">
+            <b>2</b>
+            <span>当前重点：感知和分析，优先验证指标映射、取数、归因和规则命中。</span>
+          </div>
+          <div class="metric">
+            <b>4 + CLI</b>
+            <span>四类业务 Skill 负责逻辑，Tool/MCP/CLI 负责原子连接、批处理和执行。</span>
+          </div>
+          <div class="metric">
+            <b>轻量</b>
+            <span>通知先发指定人/群，解决先记录人工状态和结论。</span>
+          </div>
+          <div class="metric">
+            <b>P0-P3（事件等级）</b>
+            <span>事件严重等级：P0 最高、P3 最低，用于决定人工卡点和升级强度。</span>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="shell section reveal delay-2" aria-label="第一版边界">
+      <div class="section-head">
+        <div>
+          <p class="section-kicker">Scope Boundary · 范围边界</p>
+          <h2>清晰的第一版边界</h2>
+        </div>
+        <p class="section-note">页面上所有架构选择都围绕这个边界展开：先验证效率/质量场景的感知与分析准确性，再逐步完善 Owner（责任人）路由、升级和解决闭环。</p>
+      </div>
+      <div class="boundary-strip">
+        <div class="boundary">优先感知：识别效率/质量场景、任务类型、指标粒度和数据就绪。</div>
+        <div class="boundary">优先分析：生成查询计划（QueryPlan）、查治理指标、输出归因和规则命中。</div>
+        <div class="boundary">通知轻量：测试阶段统一发送指定人或指定群。</div>
+        <div class="boundary">解决轻量：测试阶段只记录人工状态、结论和是否继续观察。</div>
+      </div>
+    </section>
+
+    <section id="principles" class="shell section">
+      <div class="section-head reveal">
+        <div>
+          <p class="section-kicker">Architecture Principles · 架构原则</p>
+          <h2>架构原则不是口号，是约束 Agent行为的规则</h2>
+        </div>
+        <p class="section-note">架构目标是将业务规则、数据口径、工具权限、验证机制沉淀为可读取、可执行、可审计的结构化约束。</p>
+      </div>
+      <div class="principle-grid">
+        <article class="principle-card reveal">
+          <h3>Agent负责编排，不负责猜测</h3>
+          <p>Agent判断入口、选择场景包、调度 Skill、维护状态机和审计链路。它不能绕过场景包直接判断指标口径、Owner（责任人）或升级规则。</p>
+          <div class="tag-row">
+            <span class="tag">意图识别</span>
+            <span class="tag">状态机</span>
+            <span class="tag">调度</span>
+          </div>
+        </article>
+        <article class="principle-card reveal delay-1">
+          <h3>Skill负责方法，不内置场景差异</h3>
+          <p>感知、分析、通知、解决是通用能力。真正的业务差异由 `scenario_package_ref` 和 scenario-index 定位；前期可读 Skill 内快照，目标态读取根目录 references/scenarios。</p>
+          <div class="tag-row">
+            <span class="tag">感知</span>
+            <span class="tag">分析</span>
+            <span class="tag">触达</span>
+            <span class="tag">解决</span>
+          </div>
+        </article>
+        <article class="principle-card reveal delay-2">
+          <h3>数据查询必须先治理后执行</h3>
+          <p>感知/分析必须先命中语义层、指标契约或治理数据集，生成查询计划（QueryPlan）后才能执行只读查询，避免字段选择偏移。</p>
+          <div class="tag-row">
+            <span class="tag hot">语义层优先</span>
+            <span class="tag hot">查询计划（QueryPlan）</span>
+          </div>
+        </article>
+        <article class="principle-card reveal delay-3">
+          <h3>工具层（Tool/MCP/CLI）只做原子动作</h3>
+          <p>查询、推送、写表、回测、导出都在工具层执行；Tool/MCP/CLI必须白名单、限权限、限参数、可审计。</p>
+          <div class="tag-row">
+            <span class="tag">只读优先</span>
+            <span class="tag">白名单</span>
+            <span class="tag">审计</span>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="architecture" class="shell section">
+      <div class="section-head reveal">
+        <div>
+          <p class="section-kicker">Target Architecture · 目标架构</p>
+          <h2>目标架构与分层总览</h2>
+        </div>
+        <p class="section-note">本架构由数据资产与场景规则作为底座，Tool/MCP/CLI 提供受控执行通道，Skill 承载通用能力，Agent 负责身份约束、能力安装、路由编排、状态推进和审计闭环。</p>
+      </div>
+
+      <div class="architecture-board reveal delay-1">
+        <div class="layer-grid">
+          <article class="layer">
+            <div class="layer-label">
+              <b>数据资产与治理底座</b>
+              <span>FOUNDATION · 底座</span>
+            </div>
+            <div class="node-list">
+              <div class="node">指标契约：唯一口径、维度、窗口、过滤条件</div>
+              <div class="node">数据集说明：推荐字段、混淆字段、禁用字段</div>
+              <div class="node">评估样例：正例、反例、边界样例</div>
+              <div class="node">来源脚注：来源、版本、Owner、置信度</div>
+              <div class="node">结构化契约：事件、分析、解决、工具调用</div>
+            </div>
+            <span class="flow-arrow"></span>
+          </article>
+
+          <article class="layer">
+            <div class="layer-label">
+              <b>场景流程包与权限规则</b>
+              <span>RULES · 规则</span>
+            </div>
+            <div class="node-list">
+              <div class="node">场景清单：模块、指标、维度、任务类型</div>
+              <div class="node">状态机：阶段、退出条件、人工卡点</div>
+              <div class="node">SLA：响应时限、处理时限、升级规则</div>
+              <div class="node">Owner 路由：策略、队列、治理 BP、负责人</div>
+              <div class="node">通知模板：等级话术、卡片结构、收件策略</div>
+            </div>
+            <span class="flow-arrow"></span>
+          </article>
+
+          <article class="layer">
+            <div class="layer-label">
+              <b>Tool/MCP/CLI 执行层</b>
+              <span>EXECUTION · 执行</span>
+            </div>
+            <div class="node-list">
+              <div class="node">Tool：线上实时原子动作</div>
+              <div class="node">MCP：工具发现、参数校验、权限拦截</div>
+              <div class="node">CLI：离线回测、导出、巡检、配置校验</div>
+              <div class="node">知识检索：SOP、文档、历史案例</div>
+              <div class="node">审计记录：调用方、参数、结果、耗时、失败原因</div>
+            </div>
+            <span class="flow-arrow"></span>
+          </article>
+
+          <article class="layer">
+            <div class="layer-label">
+              <b>Skill 能力层</b>
+              <span>CAPABILITY · 能力</span>
+            </div>
+            <div class="node-list">
+              <div class="node">感知：场景识别、指标实体、数据就绪</div>
+              <div class="node">分析：查询计划、只读查询、归因、来源脚注</div>
+              <div class="node">触达：模板生成、固定触达、升级建议</div>
+              <div class="node">解决：人工状态、证据归档、结论回收</div>
+              <div class="node">统一输入输出：契约化、可校验、可回测</div>
+            </div>
+            <span class="flow-arrow"></span>
+          </article>
+
+          <article class="layer agent-core">
+            <div class="layer-label">
+              <b>Agent 编排与安装层</b>
+              <span>ORCHESTRATION · 编排</span>
+            </div>
+            <div class="agent-orb">Agent<br>调度中枢</div>
+            <div class="node-list">
+              <div class="node">身份说明：agent.md / identity.md</div>
+              <div class="node">能力安装：capability_manifest / install_plan</div>
+              <div class="node">路由策略：run_mode / task_type / scenario_key</div>
+              <div class="node">检索策略：allowed_paths / denied_paths</div>
+              <div class="node">状态推进：快路径、局部任务、完整闭环</div>
+              <div class="node">审计闭环：来源脚注、工具调用、人工确认</div>
+            </div>
+            <span class="flow-arrow"></span>
+          </article>
+
+          <article class="layer">
+            <div class="layer-label">
+              <b>运营工作流层</b>
+              <span>WORKFLOW · 运营</span>
+            </div>
+            <div class="node-list">
+              <div class="node">咨询答疑：快路径处理与依据留存</div>
+              <div class="node">日常分析：指标归因、周期推送、复盘沉淀</div>
+              <div class="node">预警事件：撞线识别、定级、升级建议</div>
+              <div class="node">专项治理：基线、动作、效果追踪</div>
+              <div class="node">闭环归档：处理结论、证据、迭代候选</div>
+            </div>
+          </article>
+        </div>
+      </div>
+      <article class="stack-card reveal delay-2" style="margin-top: 16px;">
+        <h3>Tool/MCP/CLI的边界规则</h3>
+        <div class="phase-table">
+          <div class="phase-row"><b>Tool（工具）</b><span>负责线上实时原子动作，例如查指标、查明细、发消息、写事件状态。</span><span>要求：所有写操作必须带权限策略和人工确认标记。</span></div>
+          <div class="phase-row"><b>MCP（工具协议/服务）</b><span>负责统一工具发现、参数校验、路径白名单、权限拦截和审计记录。</span><span>要求：知识检索必须校验检索策略（retrieval_policy）。</span></div>
+          <div class="phase-row"><b>CLI（命令行工具）</b><span>负责离线批处理、配置校验、回测、导出、巡检诊断。</span><span>要求：不上线实时改业务状态，避免和 Tool（工具）职责重叠。</span></div>
+          <div class="phase-row"><b>冲突规则</b><span>同一能力若同时有 Tool 和 CLI，线上执行走 Tool/MCP，离线验证走 CLI。</span><span>审计链必须统一回写工具调用记录。</span></div>
+        </div>
+      </article>
+    </section>
+
+    <section id="why-architecture" class="shell section">
+      <div class="section-head reveal">
+        <div>
+          <p class="section-kicker">Architecture Decision Record · 架构决策记录</p>
+          <h2>四个通用 Skill 与场景流程包引用策略</h2>
+        </div>
+        <p class="section-note">本节记录能力拆分、场景治理和前期调试策略。结论是：稳定动作沉淀为通用 Skill，变化事实沉淀在 Skill 兄弟目录的 references/scenarios；前期 TRAE 调试可使用 Skill 内本地快照先跑通流程。</p>
+      </div>
+
+      <div class="data-grid">
+        <article class="data-card reveal">
+          <h3>背景</h3>
+          <p>人审运营覆盖效率、质量、成本、体验、安全、合规等模块。模块下会持续新增多个指标、多个分析维度和多种任务类型，不能把某个模块固化成单一场景。</p>
+          <div class="field-list">
+            <div class="field"><span>稳定部分</span><span>感知、分析、触达、解决等动作类型</span></div>
+            <div class="field"><span>变化部分</span><span>指标口径、数据字段、Owner 路由、SLA、通知模板</span></div>
+          </div>
+        </article>
+
+        <article class="data-card reveal delay-1">
+          <h3>决策</h3>
+          <p>采用“四个通用 Skill + 根目录场景流程包 + TRAE 调试快照”的结构。Skill 承载通用能力方法，根目录场景包承载完整业务事实；如果 TRAE 前期跨目录读取不稳定，就先把必要文件同步到 Skill 自己的 references 目录。</p>
+          <div class="field-list">
+            <div class="field"><span>Skill</span><span>感知、分析、触达、解决</span></div>
+            <div class="field"><span>场景包</span><span>模块 + 指标/对象 + 任务类型 + 维度规则</span></div>
+          </div>
+        </article>
+
+        <article class="data-card reveal delay-2">
+          <h3>备选方案</h3>
+          <p>曾考虑按场景拆 Skill、按系统拆 Skill、将知识检索单独成 Skill。最终未采用这些方案，以避免重复建设、流程割裂或能力边界混淆。</p>
+          <div class="field-list">
+            <div class="field"><span>每场景一个 Skill</span><span>短期直观，长期维护成本高</span></div>
+            <div class="field"><span>按系统拆 Skill</span><span>系统边界清晰，但业务闭环被割裂</span></div>
+            <div class="field"><span>知识检索独立 Skill</span><span>易与感知、分析能力耦合</span></div>
+          </div>
+        </article>
+
+        <article class="data-card reveal delay-3">
+          <h3>影响</h3>
+          <p>新增运营内容时优先新增或更新根目录场景流程包，而不是复制 Skill。前期调试快照和未来独立发布包都应由根目录场景包生成，保证流程能跑通且口径不漂移。</p>
+          <div class="field-list">
+            <div class="field"><span>收益</span><span>复用通用能力，降低重复建设</span></div>
+            <div class="field"><span>约束</span><span>场景包必须具备契约、样例、路由、SLA 和发布校验</span></div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="contracts" class="shell section">
+      <div class="section-head reveal">
+        <div>
+          <p class="section-kicker">Data Assets & Contracts · 数据资产与核心契约</p>
+          <h2>数据资产与核心契约</h2>
+        </div>
+        <p class="section-note">数据契约用于替代非结构化运行时约定，使 Agent、Skill、Tool/MCP/CLI 之间的输入输出可校验、可审计、可沉淀。</p>
+      </div>
+
+      <div class="data-grid">
+        <article class="data-card reveal">
+          <h3>统一事件对象</h3>
+          <p>所有正式闭环问题先转成事件对象，作为后续感知、分析、通知和解决的共同输入。</p>
+          <div class="field-list">
+            <div class="field"><span>事件 ID（event_id）</span><span>事件唯一标识</span></div>
+            <div class="field"><span>入口来源（source）</span><span>来源与原文</span></div>
+            <div class="field"><span>事件画像（event_profile）</span><span>场景、指标、范围、等级</span></div>
+            <div class="field"><span>证据包（evidence）</span><span>数据、截图、链接、引用</span></div>
+            <div class="field"><span>严重等级（severity）</span><span>P0-P3（事件等级），P0 最高、P3 最低</span></div>
+            <div class="field"><span>流程状态（workflow）</span><span>当前状态</span></div>
+          </div>
+        </article>
+
+        <article class="data-card reveal delay-1">
+          <h3>分析结果对象</h3>
+          <p>分析 Skill输出的结构化结论，支撑人工验收、通知路由和后续回测。</p>
+          <div class="field-list">
+            <div class="field"><span>影响评估（impact_assessment）</span><span>影响范围、规模和等级</span></div>
+            <div class="field"><span>候选根因（root_cause）</span><span>可能原因与证据</span></div>
+            <div class="field"><span>SOP 判定（sop_decision）</span><span>命中规则与处理建议</span></div>
+            <div class="field"><span>质量检查（quality_checks）</span><span>证据与口径检查</span></div>
+            <div class="field"><span>只读探索（custom_readonly）</span><span>不写入业务系统的探索记录</span></div>
+          </div>
+        </article>
+
+        <article class="data-card reveal delay-2">
+          <h3>处理结果对象</h3>
+          <p>解决 Skill回收闭环结论，决定是否关闭事件、沉淀案例或进入迭代候选池。</p>
+          <div class="field-list">
+            <div class="field"><span>处理动作（actions）</span><span>处理 / 催办 / 升级</span></div>
+            <div class="field"><span>闭环材料（closure）</span><span>闭环三件套</span></div>
+            <div class="field"><span>最终根因（root_cause）</span><span>复核后的根因</span></div>
+            <div class="field"><span>最终结论（final_conclusion）</span><span>处理结果和业务判断</span></div>
+            <div class="field"><span>后续标记（follow_up）</span><span>迭代标记</span></div>
+          </div>
+        </article>
+
+        <article class="data-card reveal delay-3">
+          <h3>查询治理对象</h3>
+          <p>感知/分析阶段必须记录指标映射、查询计划、质量检查和来源脚注，避免模型自由找表导致偏移。</p>
+          <div class="field-list">
+            <div class="field"><span>指标契约（metric_contract）</span><span>唯一口径、公式、过滤条件</span></div>
+            <div class="field"><span>查询计划（query_plan）</span><span>指标、字段、维度、时间窗口</span></div>
+            <div class="field"><span>来源层级（source_tier）</span><span>语义层 / 治理数据集</span></div>
+            <div class="field"><span>质量检查（quality_checks）</span><span>新鲜度 / 完整性</span></div>
+            <div class="field"><span>来源脚注（source_footer）</span><span>口径 / Owner（责任人） / 置信度</span></div>
+          </div>
+        </article>
+
+        <article class="data-card reveal delay-3">
+          <h3>工具 / CLI 调用记录</h3>
+          <p>Tool/MCP/CLI的调用轨迹用于排障、审计、权限复核和后续回测，不让工具执行变成黑盒。</p>
+          <div class="field-list">
+            <div class="field"><span>调用 ID（tool_call_id）</span><span>调用唯一标识</span></div>
+            <div class="field"><span>调用方（caller）</span><span>Agent或 Skill</span></div>
+            <div class="field"><span>工具标识（tool_name）</span><span>MCP / Tool / CLI 工具标识</span></div>
+            <div class="field"><span>命令名称（command_name）</span><span>CLI（命令行工具）白名单命令</span></div>
+            <div class="field"><span>权限等级（permission_level）</span><span>只读 / 可写 / 需确认</span></div>
+            <div class="field"><span>调用状态（status）</span><span>成功 / 失败 / 降级</span></div>
+          </div>
+        </article>
+
+        <article class="data-card reveal delay-3">
+          <h3>核心资产清单</h3>
+          <p>以下资产是感知、分析和检索治理的前置条件。未完成资产建设的场景包不得进入自动调度范围。</p>
+          <div class="field-list">
+            <div class="field"><span>指标契约（metric_contract.md）</span><span>唯一口径、公式、排除项、维度、时间窗口</span></div>
+            <div class="field"><span>数据集说明（dataset_reference.md）</span><span>推荐字段、混淆字段、禁用字段、血缘和刷新</span></div>
+            <div class="field"><span>评估样例（eval_samples）</span><span>正例、反例、边界样例、跨场景冲突样例</span></div>
+            <div class="field"><span>查询计划断言</span><span>字段、过滤条件、指标 ID、来源层级自动校验</span></div>
+            <div class="field"><span>来源脚注样例</span><span>来源、口径版本、刷新时间、Owner、置信度</span></div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="scenarios" class="shell section">
+      <div class="section-head reveal">
+        <div>
+          <p class="section-kicker">Scenario Packages · 场景流程包</p>
+          <h2>一个运营模块下，可以持续沉淀多个场景流程包</h2>
+        </div>
+        <p class="section-note">这里不要把“模块”等同于“单一场景”。效率、质量、成本等是运营模块；每个模块下会有多个指标、多个分析维度、多个日常/预警/专项任务。场景流程包承载的是某个可执行任务的状态机、SLA（响应/处理时限）、指标契约、Owner（责任人）路由、通知模板和工具策略。</p>
+      </div>
+      <div class="scenario-grid">
+        <article class="scenario-card reveal">
+          <h3>效率模块：多指标运营场景</h3>
+          <p>机审策略有效性只是效率模块下的一个样例方向。同一模块还会包含打标率、自动处置准确率、处置量、时效、人效等指标，并按策略、队列、风险域、时间窗口等维度分析。</p>
+          <div class="tag-row">
+            <span class="tag hot">打标率</span>
+            <span class="tag hot">自动处置准确率</span>
+            <span class="tag">处置量 / 时效</span>
+            <span class="tag">策略</span>
+            <span class="tag">队列 / 风险域</span>
+          </div>
+        </article>
+        <article class="scenario-card reveal delay-1">
+          <h3>质量模块：准确率与事故场景</h3>
+          <p>质量模块不只包含质检准确率，也会包含质检量、误判量、漏判量、底线事故数、事故分层等指标，并按风险域、队列、标签、CQC（质检负责人）等维度拆解。</p>
+          <div class="tag-row">
+            <span class="tag hot">质检准确率</span>
+            <span class="tag hot">底线事故数</span>
+            <span class="tag">误判 / 漏判</span>
+            <span class="tag">风险域</span>
+            <span class="tag">队列 / 标签</span>
+            <span class="tag">CQC（质检负责人）</span>
+          </div>
+        </article>
+        <article class="scenario-card reveal delay-2">
+          <h3>成本模块及其他模块：持续新增</h3>
+          <p>成本模块同样会沉淀多个指标和任务，例如人力成本、队列成本、治理成本、单位处置成本、投入产出比。后续体验、安全、合规等模块也按同样方式新增。</p>
+          <div class="tag-row">
+            <span class="tag hot">人力成本</span>
+            <span class="tag hot">单位处置成本</span>
+            <span class="tag">队列成本</span>
+            <span class="tag">治理成本</span>
+            <span class="tag">投入产出比</span>
+          </div>
+        </article>
+      </div>
+      <article class="stack-card reveal delay-3" style="margin-top: 16px;">
+        <h3>模块、指标、维度、任务类型的关系</h3>
+        <div class="phase-table">
+          <div class="phase-row"><b>运营模块</b><span>效率、质量、成本、体验、安全、合规等大类。</span><span>模块只是管理边界，不等于单一场景。</span></div>
+          <div class="phase-row"><b>指标 / 对象</b><span>例如打标率、自动处置准确率、质检准确率、底线事故数、单位处置成本。</span><span>一个模块下可以持续新增多个指标。</span></div>
+          <div class="phase-row"><b>分析维度</b><span>例如策略、队列、风险域、标签、CQC（质检负责人）、时间窗口。</span><span>维度是分析拆解方式，不单独等同于场景。</span></div>
+          <div class="phase-row"><b>任务类型</b><span>日常分析、周期推送、撞线预警、专项治理、复盘追踪。</span><span>场景包通常由“模块 + 指标/对象 + 任务类型 + 维度规则”组合形成。</span></div>
+        </div>
+      </article>
+      <div class="asset-grid" style="margin-top: 16px;">
+        <article class="asset-card reveal delay-3">
+          <h3>场景包最小结构</h3>
+          <div class="field-list">
+            <div class="field"><span>指标契约（metric_contract.md）</span><span>唯一指标口径、维度、时间窗口、字段规则</span></div>
+            <div class="field"><span>数据集说明（dataset_reference.md）</span><span>Aeolus（风神查数平台）/ Hive（数仓表）字段选择、混淆字段、禁用字段</span></div>
+            <div class="field"><span>感知规则（perception.md）</span><span>如何识别场景、任务类型和数据就绪</span></div>
+            <div class="field"><span>分析规则（analysis.md）</span><span>查询计划（QueryPlan）、归因、规则命中、来源脚注</span></div>
+            <div class="field"><span>样例集（examples.md）</span><span>正例、反例、边界样例和回测断言</span></div>
+          </div>
+        </article>
+        <article class="asset-card reveal delay-3">
+          <h3>当前 MVP（第一版最小可行范围）的测试模式</h3>
+          <p>通知模块不接入动态 Owner（责任人）路由，统一发送指定人或群；解决模块不做自动处理，只记录人工状态和结论。</p>
+          <div class="tag-row">
+            <span class="tag hot">固定收件人测试模式（mvp_test_fixed_recipient）</span>
+            <span class="tag hot">人工跟进记录模式（mvp_manual_tracking）</span>
+            <span class="tag">建议 Owner（责任人）仅展示</span>
+          </div>
+        </article>
+      </div>
+
+      <article class="stack-card reveal delay-3" style="margin-top: 16px;">
+        <h3>场景包维护责任表</h3>
+        <div class="phase-table">
+          <div class="phase-row"><b>新增运营内容</b><span>修改：场景清单、状态机、指标契约、数据集说明、样例集。</span><span>责任：运营负责人、数据负责人、系统负责人共同确认并合入发布。</span></div>
+          <div class="phase-row"><b>指标口径变化</b><span>修改：指标契约、查询计划断言、评估样例、来源脚注版本。</span><span>责任：数据负责人主责，运营负责人验收业务解释是否正确。</span></div>
+          <div class="phase-row"><b>字段或表变化</b><span>修改：数据集说明、推荐字段、混淆字段、禁止字段、血缘说明。</span><span>责任：数据负责人主责，系统负责人回测是否仍能选对字段。</span></div>
+          <div class="phase-row"><b>通知 / SLA（响应/处理时限）变化</b><span>修改：通知模板、Owner（责任人）路由、SLA（响应/处理时限）规则、升级条件。</span><span>责任：运营负责人主责，协作方确认触达范围和升级边界。</span></div>
+          <div class="phase-row"><b>只改样例</b><span>修改：样例集（examples）、期望输出（expected_outputs）、查询计划断言（query_plan_assertions）。</span><span>责任：运营负责人补案例，系统负责人纳入回测集。</span></div>
+        </div>
+      </article>
+
+      <article class="stack-card reveal delay-3" style="margin-top: 16px;">
+        <h3>变更发布与回滚流程</h3>
+        <div class="phase-table">
+          <div class="phase-row"><b>1. 草稿</b><span>场景包进入草稿（draft）状态，只允许人工测试，不进入线上检索。</span><span>产物：变更原因、影响场景、修改文件清单。</span></div>
+          <div class="phase-row"><b>2. 评审</b><span>运营负责人、数据负责人、系统负责人共同确认口径、路径和权限。</span><span>产物：评审记录、风险点、是否需要灰度。</span></div>
+          <div class="phase-row"><b>3. 回测</b><span>运行正例、反例、混淆字段、禁用来源、跨场景冲突样例。</span><span>阻断条件：任一 P0/P1 样例失败，或来源脚注缺失。</span></div>
+          <div class="phase-row"><b>4. 灰度</b><span>只对固定人/群、固定场景或固定时间窗口启用。</span><span>观察：误召回、错字段、低置信度、人工纠错。</span></div>
+          <div class="phase-row"><b>5. 全量 / 回滚</b><span>全量后保留上一版本；触发错口径、错字段、错通知时回滚。</span><span>回滚目标：上一版场景包和上一版查询计划断言。</span></div>
+        </div>
+      </article>
+    </section>
+
+    <section id="skill-directory" class="shell section">
+      <div class="section-head reveal">
+        <div>
+          <p class="section-kicker">能力模块目录</p>
+          <h2>每个 Skill 长什么样、谁来维护、如何扩展</h2>
+        </div>
+        <p class="section-note">四个 Skill 只沉淀通用方法。目标态完整场景流程包放在根目录 references/scenarios；前期 TRAE 调试时，每个 Skill 可以在 references/scenarios 下保留本地快照，先保证流程跑通。</p>
+      </div>
+
+      <div class="asset-grid">
+        <article class="asset-card reveal">
+          <h3>通用 Skill 的目录骨架</h3>
+          <p>每个 Skill 都有自己的能力说明（`SKILL.md`），定义能力边界、输入输出、禁止事项和引用路径；具体场景规则放在 references（参考资料）下。</p>
+          <div class="tree-block" aria-label="能力模块目录结构">
+            <div>skills/</div>
+            <div>├── perception/                         <span>感知 Skill：识别场景、指标、任务类型、数据就绪</span></div>
+            <div>│   ├── SKILL.md                         <span>能力说明：触发条件、输入输出、禁止事项</span></div>
+            <div>│   └── references/</div>
+            <div>│       ├── common.md                     <span>通用感知规则</span></div>
+            <div>│       ├── scenario-index.md             <span>一级索引：直达本 Skill 内置场景文件</span></div>
+            <div>│       └── scenarios/                    <span>TRAE 调试快照：可由根目录场景包生成</span></div>
+            <div>├── analysis/                             <span>分析 Skill：查询计划、归因、质量检查、结论</span></div>
+            <div>│   ├── SKILL.md</div>
+            <div>│   └── references/</div>
+            <div>│       ├── common.md</div>
+            <div>│       ├── scenario-index.md</div>
+            <div>│       └── scenarios/</div>
+            <div>├── notification/                         <span>触达 Skill：模板、收件人、升级、卡片</span></div>
+            <div>│   ├── SKILL.md</div>
+            <div>│   └── references/</div>
+            <div>│       ├── common.md</div>
+            <div>│       ├── scenario-index.md</div>
+            <div>│       └── scenarios/</div>
+            <div>├── resolution/                           <span>解决 Skill：状态跟进、结论回收、闭环复查</span></div>
+            <div>│   ├── SKILL.md</div>
+            <div>│   └── references/</div>
+            <div>│       ├── common.md</div>
+            <div>│       ├── scenario-index.md</div>
+            <div>│       └── scenarios/</div>
+            <div>└── build output                           <span>如需单独发布，再把需要的场景文件打入 Skill 包</span></div>
+          </div>
+        </article>
+
+        <article class="asset-card reveal delay-1">
+          <h3>目标态场景包与调试快照</h3>
+          <p>完整场景包长期放在根目录 references/scenarios，作为唯一业务事实来源。前期用 TRAE 调试时，可把单个 Skill 必需文件同步到 Skill 内部，等跨目录读取验证稳定后再切回根目录引用。</p>
+          <div class="tree-block" aria-label="场景流程包目录结构">
+            <div>references/scenarios/{scenario_key}/          <span>目标态完整场景流程包</span></div>
+            <div>├── scenario_manifest.md                 <span>场景清单：场景名、Owner、适用范围、入口关键词</span></div>
+            <div>├── state_machine.md                     <span>独立状态机和退出条件</span></div>
+            <div>├── sla.md                               <span>SLA 与升级规则</span></div>
+            <div>├── metric_contract.md                   <span>指标契约：唯一口径、过滤条件、维度、窗口</span></div>
+            <div>├── dataset_reference.md                 <span>数据集说明：推荐字段、混淆字段、禁用字段</span></div>
+            <div>├── owner_routing.md                     <span>责任人路由：策略、队列、治理 BP 等</span></div>
+            <div>├── notification_templates.md            <span>通知模板和等级话术</span></div>
+            <div>└── examples.md                          <span>正例、反例、边界样例和回测断言</span></div>
+            <div></div>
+            <div>skills/{skill}/references/scenarios/          <span>前期 TRAE 调试快照 / 未来发布包内文件</span></div>
+            <div>└── {scenario_key}.{file_type}.md             <span>由根目录场景包生成，不手工漂移</span></div>
+          </div>
+        </article>
+      </div>
+
+      <div class="data-grid" style="margin-top: 16px;">
+        <article class="data-card reveal delay-2">
+          <h3>感知 Skill</h3>
+          <p>负责把入口问题映射成“哪个场景、哪个任务、哪个指标、哪个时间窗口、数据是否就绪”。</p>
+          <div class="field-list">
+            <div class="field"><span>维护重点</span><span>入口分类、实体抽取、场景匹配、数据就绪等级</span></div>
+            <div class="field"><span>引用资产</span><span>场景清单（scenario_manifest）、感知规则（perception）、指标契约（metric_contract）、数据集说明（dataset_reference）</span></div>
+            <div class="field"><span>不能做</span><span>不能直接定口径、不能自由找表、不能跳过场景包</span></div>
+          </div>
+        </article>
+
+        <article class="data-card reveal delay-2">
+          <h3>分析 Skill</h3>
+          <p>负责从查询计划（QueryPlan）到可复核结论，覆盖日常分析、周期推送、异常归因和规则命中。</p>
+          <div class="field-list">
+            <div class="field"><span>维护重点</span><span>分析模板、质量检查、归因方法、来源脚注</span></div>
+            <div class="field"><span>引用资产</span><span>指标契约（metric_contract）、数据集说明（dataset_reference）、分析规则（analysis）、样例集（examples）</span></div>
+            <div class="field"><span>不能做</span><span>不能绕过查询计划，不能使用禁止字段或废弃口径</span></div>
+          </div>
+        </article>
+
+        <article class="data-card reveal delay-2">
+          <h3>通知 Skill</h3>
+          <p>负责把分析结论转成可执行触达，不只是告警，也包括周报、复盘提醒、人工确认和升级。</p>
+          <div class="field-list">
+            <div class="field"><span>维护重点</span><span>通知模板、等级话术、固定收件人测试、动态路由</span></div>
+            <div class="field"><span>引用资产</span><span>通知模板（notification_templates）、责任人路由（owner_routing）、SLA（响应/处理时限）规则（sla）</span></div>
+            <div class="field"><span>不能做</span><span>不能私自扩大通知范围，不能跳过人工确认策略</span></div>
+          </div>
+        </article>
+
+        <article class="data-card reveal delay-3">
+          <h3>解决 Skill</h3>
+          <p>负责承接处理状态、人工结论、证据归档、复查和迭代候选，不等同于自动执行业务动作。</p>
+          <div class="field-list">
+            <div class="field"><span>维护重点</span><span>处理状态、闭环三件套、复查规则、迭代候选</span></div>
+            <div class="field"><span>引用资产</span><span>状态机（state_machine）、SLA（响应/处理时限）规则（sla）、样例集（examples）、解决策略（resolution_policy）</span></div>
+            <div class="field"><span>不能做</span><span>不能把未确认结论当闭环，不能自动替代高风险处置</span></div>
+          </div>
+        </article>
+
+        <article class="data-card reveal delay-3">
+          <h3>后续如何维护</h3>
+          <p>维护动作按“新增场景、更新口径、更新数据集、更新通知、更新样例”拆开，避免所有人都改同一个 Skill。</p>
+          <div class="field-list">
+            <div class="field"><span>新增运营内容</span><span>新增一个场景流程包，不复制四个 Skill</span></div>
+            <div class="field"><span>口径变化</span><span>只改指标契约，并更新评估样例和版本</span></div>
+            <div class="field"><span>字段变化</span><span>只改数据集说明，补充混淆字段和禁用字段</span></div>
+          </div>
+        </article>
+
+        <article class="data-card reveal delay-3">
+          <h3>发布前必须校验</h3>
+          <p>所有场景包变更都要经过结构检查、查询计划断言、样例回测和人工验收，才能进入 Agent 可检索范围。</p>
+          <div class="field-list">
+            <div class="field"><span>结构校验</span><span>必填文件、字段、版本、Owner（责任人）是否完整</span></div>
+            <div class="field"><span>回测校验</span><span>正例命中、反例拒绝、边界样例不误判</span></div>
+            <div class="field"><span>发布策略</span><span>灰度启用、可回滚、记录变更原因</span></div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="efficiency-skill-example" class="shell section">
+      <div class="section-head reveal">
+        <div>
+          <p class="section-kicker">Efficiency Example · 效率模块完整示例</p>
+          <h2>效率模块 / 自动处置准确率场景的完整目录格式</h2>
+        </div>
+        <p class="section-note">以下示例展示“效率模块下的自动处置准确率分析/预警”如何落到 Agent、Skill、根目录场景包、TRAE 调试快照、评估样例和工具策略中。重点是先跑通 Skill 流程，再逐步验证跨目录共享引用。</p>
+      </div>
+
+      <div class="asset-grid">
+        <article class="asset-card reveal">
+          <h3>完整目录线框</h3>
+          <p>这是一个可落地样例，不表示效率模块只有这一类场景。根目录场景包维护完整事实；Skill 内 scenarios 目录用于前期 TRAE 调试快照，后续可切到直接引用根目录。</p>
+          <div class="tree-block" aria-label="效率模块自动处置准确率完整目录示例">
+            <div>human-review-ops/</div>
+            <div>├── references/</div>
+            <div>│   └── scenarios/</div>
+            <div>│       └── efficiency-auto-disposal-accuracy/ <span>目标态完整场景流程包</span></div>
+            <div>│           ├── scenario_manifest.md</div>
+            <div>│           ├── state_machine.md</div>
+            <div>│           ├── sla.md</div>
+            <div>│           ├── metric_contract.md</div>
+            <div>│           ├── dataset_reference.md</div>
+            <div>│           ├── owner_routing.md</div>
+            <div>│           ├── notification_templates.md</div>
+            <div>│           ├── analysis.md</div>
+            <div>│           └── examples.md</div>
+            <div>├── agents/</div>
+            <div>│   └── human_review_ops_agent/</div>
+            <div>│       ├── agent.md                         <span>调度器总说明</span></div>
+            <div>│       ├── identity.md                      <span>身份说明与行为边界</span></div>
+            <div>│       ├── capability_manifest.md           <span>启用感知/分析/触达/解决 Skill</span></div>
+            <div>│       ├── install_plan.md                   <span>安装、灰度、回滚计划</span></div>
+            <div>│       ├── routing_policy.md                <span>run_mode / task_type / scenario_key 路由</span></div>
+            <div>│       ├── permission_policy.md             <span>Tool/MCP/CLI 权限策略</span></div>
+            <div>│       └── evaluation_policy.md             <span>安装后验收与回测规则</span></div>
+            <div>├── skills/</div>
+            <div>│   ├── perception/</div>
+            <div>│   │   ├── SKILL.md                         <span>识别效率模块、自动处置准确率、策略维度</span></div>
+            <div>│   │   └── references/</div>
+            <div>│   │       ├── common.md</div>
+            <div>│   │       ├── scenario-index.md             <span>只引用本 Skill 包内文件</span></div>
+            <div>│   │       └── scenarios/</div>
+            <div>│   │           ├── efficiency-auto-disposal-accuracy.manifest.md</div>
+            <div>│   │           ├── efficiency-auto-disposal-accuracy.metric_contract.md</div>
+            <div>│   │           ├── efficiency-auto-disposal-accuracy.dataset_reference.md</div>
+            <div>│   │           └── efficiency-auto-disposal-accuracy.examples.md</div>
+            <div>│   ├── analysis/</div>
+            <div>│   │   ├── SKILL.md                         <span>生成 QueryPlan、执行只读查询、归因</span></div>
+            <div>│   │   └── references/</div>
+            <div>│   │       ├── common.md</div>
+            <div>│   │       ├── scenario-index.md</div>
+            <div>│   │       └── scenarios/</div>
+            <div>│   │           ├── efficiency-auto-disposal-accuracy.metric_contract.md</div>
+            <div>│   │           ├── efficiency-auto-disposal-accuracy.dataset_reference.md</div>
+            <div>│   │           ├── efficiency-auto-disposal-accuracy.analysis.md</div>
+            <div>│   │           └── efficiency-auto-disposal-accuracy.examples.md</div>
+            <div>│   ├── notification/</div>
+            <div>│   │   ├── SKILL.md                         <span>生成测试通知卡片和升级建议</span></div>
+            <div>│   │   └── references/</div>
+            <div>│   │       ├── scenario-index.md</div>
+            <div>│   │       └── scenarios/</div>
+            <div>│   │           ├── efficiency-auto-disposal-accuracy.owner_routing.md</div>
+            <div>│   │           ├── efficiency-auto-disposal-accuracy.notification_templates.md</div>
+            <div>│   │           └── efficiency-auto-disposal-accuracy.sla.md</div>
+            <div>│   └── resolution/</div>
+            <div>│       ├── SKILL.md                         <span>记录人工状态、结论、证据和复查</span></div>
+            <div>│       └── references/</div>
+            <div>│           ├── scenario-index.md</div>
+            <div>│           └── scenarios/</div>
+            <div>│               ├── efficiency-auto-disposal-accuracy.state_machine.md</div>
+            <div>│               ├── efficiency-auto-disposal-accuracy.sla.md</div>
+            <div>│               ├── efficiency-auto-disposal-accuracy.owner_routing.md</div>
+            <div>│               └── efficiency-auto-disposal-accuracy.examples.md</div>
+            <div>├── evals/</div>
+            <div>│   └── efficiency-auto-disposal-accuracy/</div>
+            <div>│       ├── eval_samples.jsonl               <span>评估样例：查询、预警、责任人定位</span></div>
+            <div>│       ├── expected_outputs.md              <span>期望 QueryPlan / source_footer</span></div>
+            <div>│       └── query_plan_assertions.md         <span>字段、过滤条件、维度断言</span></div>
+            <div>└── tools/</div>
+            <div>    └── policies/</div>
+            <div>        └── efficiency-auto-disposal.tool-policy.md <span>只读查询、通知、写状态权限</span></div>
+          </div>
+        </article>
+
+        <article class="asset-card reveal delay-1">
+          <h3>场景文件职责</h3>
+          <p>效率场景的完整目录不是为了堆文件，而是把“口径、字段、路由、通知、验收”拆到各自负责的文件里。</p>
+          <div class="field-list">
+            <div class="field"><span>scenario_manifest</span><span>声明模块、指标、任务类型、入口关键词、排除条件</span></div>
+            <div class="field"><span>metric_contract</span><span>定义自动处置准确率的分子、分母、排除项和时间窗口</span></div>
+            <div class="field"><span>dataset_reference</span><span>指定推荐字段、混淆字段、禁止字段和数据粒度</span></div>
+            <div class="field"><span>analysis</span><span>定义整体、策略、队列、风险域等维度的归因顺序</span></div>
+            <div class="field"><span>owner_routing</span><span>定义策略 Owner、队列 Owner、数据 Owner 的优先级</span></div>
+            <div class="field"><span>eval_samples</span><span>验证 Agent 是否命中正确场景、指标、字段和输出格式</span></div>
+          </div>
+        </article>
+      </div>
+
+      <article class="stack-card reveal delay-2" style="margin-top: 16px;">
+        <h3>一次任务如何读取这些文件</h3>
+        <div class="phase-table">
+          <div class="phase-row"><b>1. 场景识别</b><span>读取 scenario_manifest，确认属于效率模块下的自动处置准确率场景。</span><span>如果同时命中质量模块，进入候选冲突校验。</span></div>
+          <div class="phase-row"><b>2. 口径确认</b><span>读取 metric_contract，确认自动处置准确率的唯一指标口径。</span><span>未命中指标 ID 时不执行查询。</span></div>
+          <div class="phase-row"><b>3. 字段选择</b><span>读取 dataset_reference，选择策略、队列、风险域等推荐字段。</span><span>命中混淆字段或禁止字段时阻断。</span></div>
+          <div class="phase-row"><b>4. 分析执行</b><span>读取 analysis，生成 QueryPlan 并执行只读查询。</span><span>输出归因、质量检查和来源脚注。</span></div>
+          <div class="phase-row"><b>5. 责任人定位</b><span>读取 owner_routing，按策略、队列、数据资产优先级定位 Owner。</span><span>低置信度时要求人工确认。</span></div>
+          <div class="phase-row"><b>6. 评估回路</b><span>使用 eval_samples 和 query_plan_assertions 回测。</span><span>失败则回到场景包修订，不进入发布。</span></div>
+        </div>
+      </article>
+    </section>
+
+    <section id="retrieval" class="shell section">
+      <div class="section-head reveal">
+        <div>
+          <p class="section-kicker">Retrieval & Permission Governance · 检索与工具权限治理</p>
+          <h2>检索策略与工具权限控制</h2>
+        </div>
+        <p class="section-note">该治理规则贯穿场景包读取和 Tool/MCP 调用：Agent 先完成场景路由，再生成检索策略（retrieval_policy），由 Tool/MCP 层执行路径白名单与权限拦截。</p>
+      </div>
+
+      <article class="stack-card reveal">
+        <h3>从问题到文档的六步检索链路</h3>
+        <div class="route-flow">
+          <div class="route-step"><b>1. 识别入口</b><span>判断是咨询、日常分析、周期推送、预警事件、处理跟进还是复盘。</span></div>
+          <div class="route-step"><b>2. 抽取实体</b><span>抽取指标、风险域、队列、策略、时间窗口、事件等级和业务对象。</span></div>
+          <div class="route-step"><b>3. 命中场景</b><span>根据场景清单（scenario_manifest）选择主场景，并记录关联候选场景。</span></div>
+          <div class="route-step"><b>4. 生成策略</b><span>生成检索策略（retrieval_policy），列出允许路径、拒绝路径和指标 ID。</span></div>
+          <div class="route-step"><b>5. 强制拦截</b><span>Tool/MCP 层按白名单校验路径；低置信度或多场景冲突转人工确认。</span></div>
+          <div class="route-step"><b>6. 输出脚注</b><span>在结论里写明来源文件、版本、置信度和未采用的候选原因。</span></div>
+        </div>
+      </article>
+
+      <article class="stack-card reveal delay-1" style="margin-top: 16px;">
+        <h3>检索策略（retrieval_policy）数据契约</h3>
+        <div class="phase-table">
+          <div class="phase-row"><b>主场景（scenario_key）</b><span>主场景标识，例如 efficiency_auto_disposal_accuracy。</span><span>用于限定当前任务的主要场景包。</span></div>
+          <div class="phase-row"><b>关联场景（related_scenarios）</b><span>关联候选场景，只允许读取场景清单和冲突排除字段。</span><span>用于处理跨效率、质量、策略、队列的复杂问题。</span></div>
+          <div class="phase-row"><b>允许路径（allowed_paths）</b><span>允许读取的文件路径，例如当前场景的指标契约和数据集说明。</span><span>Tool/MCP 层必须按该列表拦截越界读取。</span></div>
+          <div class="phase-row"><b>拒绝路径（denied_paths）</b><span>明确拒绝读取的文件路径、废弃场景、废弃数据集。</span><span>命中后必须终止检索并输出拒绝原因。</span></div>
+          <div class="phase-row"><b>指标 ID（metric_ids）</b><span>本次任务允许使用的指标 ID。</span><span>防止同名指标、相近字段和历史口径串用。</span></div>
+          <div class="phase-row"><b>置信度阈值（confidence_threshold）</b><span>场景命中置信度阈值。</span><span>低于阈值或候选冲突时，进入人工确认，不自动执行查询。</span></div>
+        </div>
+      </article>
+
+      <div class="asset-grid" style="margin-top: 16px;">
+        <article class="asset-card reveal delay-1">
+          <h3>防止被其他文件干扰的机制</h3>
+          <div class="field-list">
+            <div class="field"><span>场景清单（scenario_manifest）</span><span>先声明适用范围、入口关键词、排除条件</span></div>
+            <div class="field"><span>文档白名单</span><span>Tool/MCP 层按检索策略（retrieval_policy）强制校验允许路径</span></div>
+            <div class="field"><span>指标唯一 ID</span><span>每个指标绑定 metric_id，避免同名指标串口径</span></div>
+            <div class="field"><span>禁止来源</span><span>数据集说明（dataset_reference）维护禁止来源（forbidden_sources）和混淆字段（confusing_fields）</span></div>
+            <div class="field"><span>查询计划断言（query_plan_assertions）</span><span>自动检查指标、字段、过滤条件是否匹配</span></div>
+            <div class="field"><span>来源脚注（source_footer）</span><span>暴露来源、版本、Owner（责任人）和置信度</span></div>
+          </div>
+        </article>
+
+        <article class="asset-card reveal delay-2">
+          <h3>A 指标 / A 事件的检索示例</h3>
+          <p>以“自动处置准确率下降，需要看策略维度归因”为例，Agent不会把它混到质量模块，也不会直接等同于“机审策略有效性”；它应先命中效率模块下的“自动处置准确率分析/预警”场景，策略只是可选分析维度之一。</p>
+          <div class="tree-block" aria-label="检索示例">
+            <div>输入：自动处置准确率下降，按策略看原因</div>
+            <div>命中：场景标识（scenario_key）= efficiency_auto_disposal_accuracy</div>
+            <div>读取：指标契约（metric_contract.md）<span>确认自动处置准确率唯一口径</span></div>
+            <div>读取：数据集说明（dataset_reference.md）<span>确认策略字段、禁用相近字段</span></div>
+            <div>读取：分析规则（analysis.md）<span>选择策略维度归因模板</span></div>
+            <div>拒绝：quality_inspection/* <span>质量模块场景，不是主场景</span></div>
+            <div>输出：查询计划（QueryPlan） + 来源脚注（source_footer）</div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="agent-identity" class="shell section">
+      <div class="section-head reveal">
+        <div>
+          <p class="section-kicker">Agent Runtime Governance · Agent 安装与运行约束</p>
+          <h2>Agent 安装、身份与运行约束</h2>
+        </div>
+        <p class="section-note">Skill说明“怎么做某类能力”，场景包说明“某个业务任务的事实和规则”，而 Agent自身文件说明“我是谁、能安装哪些能力、如何启用、如何拒绝越界任务”。这部分要独立设计，不能散落在 Skill 或场景包里。</p>
+      </div>
+
+      <div class="asset-grid">
+        <article class="asset-card reveal">
+          <h3>Agent自身目录建议</h3>
+          <p>建议把 Agent的身份、能力安装、权限和路由文件独立放在 Agent自身层。身份识别文件（identify.md）可作为别名，但长期建议统一为身份说明（identity.md），避免命名不一致。</p>
+          <div class="tree-block" aria-label="Agent自身说明文件目录">
+            <div>agents/human_review_ops_agent/</div>
+            <div>  调度器总说明（agent.md）<span>目标、职责、边界、默认运行模式</span></div>
+            <div>  身份说明（identity.md）<span>服务对象、可做/不可做、语气和交互原则</span></div>
+            <div>  身份识别兼容文件（identify.md）<span>如已有该文件，可映射到身份说明（identity.md）</span></div>
+            <div>  能力清单（capability_manifest.md）<span>可安装哪些 Skill和版本</span></div>
+            <div>  安装计划（install_plan.md）<span>启用顺序、依赖、灰度、回滚</span></div>
+            <div>  路由策略（routing_policy.md）<span>运行模式（run_mode）、任务类型（task_type）、场景包选择规则</span></div>
+            <div>  权限策略（permission_policy.md）<span>只读、可写、需人工确认、禁止动作</span></div>
+            <div>  记忆策略（memory_policy.md）<span>哪些经验可沉淀，哪些不能写入长期记忆</span></div>
+            <div>  评估策略（evaluation_policy.md）<span>安装后如何回测、验收、持续评估</span></div>
+          </div>
+        </article>
+
+        <article class="asset-card reveal delay-1">
+          <h3>Agent安装能力的流程</h3>
+          <p>安装不是把文件放进去就结束，而是让 Agent明确“启用哪些能力、绑定哪些场景、连接哪些工具、通过哪些校验”。</p>
+          <div class="phase-table">
+            <div class="phase-row"><b>1. 读取身份</b><span>读取调度器总说明（agent.md）和身份说明（identity.md），确认 Agent服务范围、职责和禁止事项。</span><span>结果：形成默认行为边界。</span></div>
+            <div class="phase-row"><b>2. 安装能力</b><span>读取能力清单（capability_manifest.md），启用感知、分析、触达、解决等 Skill。</span><span>结果：形成可调度能力集合。</span></div>
+            <div class="phase-row"><b>3. 绑定场景</b><span>读取场景清单和场景包，绑定模块、指标、维度、任务类型。</span><span>结果：形成可检索业务事实来源。</span></div>
+            <div class="phase-row"><b>4. 连接工具</b><span>读取权限策略（permission_policy.md），绑定 Tool/MCP/CLI的白名单和权限等级。</span><span>结果：形成可审计执行通道。</span></div>
+            <div class="phase-row"><b>5. 验收启用</b><span>读取评估策略（evaluation_policy.md），跑样例回测、反例拒绝、来源脚注检查。</span><span>结果：通过后才进入可用状态。</span></div>
+          </div>
+        </article>
+      </div>
+
+      <div class="data-grid" style="margin-top: 16px;">
+        <article class="data-card reveal delay-2">
+          <h3>Agent文件不承载业务口径</h3>
+          <p>Agent自身文件只定义调度器身份、能力安装和治理边界，不直接写某个指标的公式、字段或负责人。</p>
+          <div class="field-list">
+            <div class="field"><span>Agent文件</span><span>写职责、路由、权限、安装、评估</span></div>
+            <div class="field"><span>Skill文件</span><span>写通用能力方法和输入输出契约</span></div>
+            <div class="field"><span>场景包</span><span>写业务口径、数据集说明、Owner 路由、SLA 和样例</span></div>
+          </div>
+        </article>
+
+        <article class="data-card reveal delay-2">
+          <h3>安装后的运行约束</h3>
+          <p>Agent即使安装了某个 Skill，也不能直接自由调用。每次调用都要先看任务类型、检索策略、权限策略和场景包约束。</p>
+          <div class="field-list">
+            <div class="field"><span>能力可见</span><span>由能力清单（capability_manifest）控制</span></div>
+            <div class="field"><span>场景可用</span><span>由路由策略（routing_policy）和场景清单（scenario_manifest）控制</span></div>
+            <div class="field"><span>工具可执行</span><span>由权限策略（permission_policy）和 Tool/MCP 白名单控制</span></div>
+          </div>
+        </article>
+
+        <article class="data-card reveal delay-3">
+          <h3>为什么要单独设计这些文件</h3>
+          <p>这样后续新增 Agent、替换 Agent、灰度 Agent或审计 Agent行为时，不需要翻 Skill和场景包里的散落说明。</p>
+          <div class="field-list">
+            <div class="field"><span>可迁移</span><span>换 Agent时可以复用 Skill和场景包</span></div>
+            <div class="field"><span>可审计</span><span>能追溯 Agent为什么能调用某个能力</span></div>
+            <div class="field"><span>可回滚</span><span>能力安装失败时可回滚到上一版安装计划</span></div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="partial-dispatch" class="shell section">
+      <div class="section-head reveal">
+        <div>
+          <p class="section-kicker">Agent Orchestration · Agent 编排策略</p>
+          <h2>Agent 编排与局部调度策略</h2>
+        </div>
+        <p class="section-note">完整闭环是目标形态，但日常运营也需要支持局部能力调用。Agent 根据任务类型（task_type）和运行模式（run_mode）选择最小必要节点，同时加载场景包约束，避免局部任务绕过治理规则。</p>
+      </div>
+
+      <article class="stack-card reveal">
+        <h3>按任务类型动态选择 Skill的流程</h3>
+        <div class="route-flow">
+          <div class="route-step"><b>1. 接收任务</b><span>识别用户是要完整闭环，还是只执行查询分析、责任人定位、通知触达或处理记录。</span></div>
+          <div class="route-step"><b>2. 判断模式</b><span>生成运行模式（run_mode）和任务类型（task_type），决定是否进入全流程。</span></div>
+          <div class="route-step"><b>3. 命中场景</b><span>先用场景清单（scenario_manifest）定位主场景和候选场景。</span></div>
+          <div class="route-step"><b>4. 加载约束</b><span>按任务类型加载指标契约、数据集说明、责任人路由（owner_routing）、SLA（响应/处理时限）或解决策略。</span></div>
+          <div class="route-step"><b>5. 选择节点</b><span>只调度必需的 Skill，例如责任人定位只走感知 + 责任人路由。</span></div>
+          <div class="route-step"><b>6. 输出结果</b><span>返回结果、来源脚注、调用轨迹和未执行节点说明。</span></div>
+        </div>
+      </article>
+
+      <div class="asset-grid" style="margin-top: 16px;">
+        <article class="asset-card reveal delay-1">
+          <h3>调度伪代码</h3>
+          <p>核心原则是“先定场景，再定约束，最后定节点”。即使只运行局部任务，也必须先生成检索策略和约束包。</p>
+          <div class="tree-block" aria-label="局部任务调度伪代码">
+            <div>function dispatch(request):</div>
+            <div>  任务类型（task_type） = classify_task(request) <span>查询 / 责任人定位 / 通知 / 解决 / 完整闭环</span></div>
+            <div>  运行模式（run_mode） = decide_run_mode(task_type, request.intent)</div>
+            <div>  场景 = resolve_scenario(request, 场景清单（scenario_manifest）)</div>
+            <div>  检索策略（retrieval_policy） = build_retrieval_policy(场景, 任务类型（task_type）)</div>
+            <div>  约束包（guardrails） = load_required_references(场景, 任务类型（task_type）)</div>
+            <div>  assert validate_guardrails(约束包（guardrails）, 检索策略（retrieval_policy）)</div>
+            <div>  能力节点（skills） = select_skill_nodes(运行模式（run_mode）, 任务类型（task_type）)</div>
+            <div>  result = execute(能力节点（skills）, request, 约束包（guardrails）, 检索策略（retrieval_policy）)</div>
+            <div>  return with_source_footer(result, 约束包（guardrails）, 检索策略（retrieval_policy）)</div>
+          </div>
+        </article>
+
+        <article class="asset-card reveal delay-2">
+          <h3>运行模式（run_mode）和任务类型（task_type）</h3>
+          <div class="field-list">
+            <div class="field"><span>完整闭环（full_workflow）</span><span>感知 → 分析 → 触达 → 解决 → 闭环复查</span></div>
+            <div class="field"><span>只查询（query_only）</span><span>感知 + 分析，输出查询计划、结果和来源脚注</span></div>
+            <div class="field"><span>责任人定位（owner_lookup_only）</span><span>感知 + 责任人路由，输出责任人、依据和置信度</span></div>
+            <div class="field"><span>只通知（notification_only）</span><span>基于已有结论生成卡片并触达固定人/群或建议 Owner（责任人）</span></div>
+            <div class="field"><span>只记录解决（resolution_only）</span><span>基于已有事件或人工输入记录状态、结论和证据</span></div>
+            <div class="field"><span>局部流程（partial_workflow）</span><span>按用户目标组合多个节点，例如“查询分析 + 责任人定位”</span></div>
+          </div>
+        </article>
+      </div>
+
+      <div class="data-grid" style="margin-top: 16px;">
+        <article class="data-card reveal delay-2">
+          <h3>单独查询任务</h3>
+          <p>适合“帮我看某指标上周为什么波动”这类问题，不进入通知和解决闭环。</p>
+          <div class="field-list">
+            <div class="field"><span>调度节点</span><span>感知 Skill + 分析 Skill</span></div>
+            <div class="field"><span>必须加载</span><span>指标契约（metric_contract）、数据集说明（dataset_reference）、分析规则（analysis）</span></div>
+            <div class="field"><span>输出</span><span>查询计划（QueryPlan）、结果、归因、来源脚注（source_footer）</span></div>
+          </div>
+        </article>
+
+        <article class="data-card reveal delay-2">
+          <h3>责任人定位任务</h3>
+          <p>责任人定位不是自由搜索通讯录，而是先判断“哪个场景、哪个指标、哪个队列/策略/数据资产”，再执行 Owner（责任人）路由。</p>
+          <div class="field-list">
+            <div class="field"><span>调度节点</span><span>感知 Skill + Owner（责任人）路由规则</span></div>
+            <div class="field"><span>必须加载</span><span>指标契约（metric_contract）、数据集说明（dataset_reference）、Owner（责任人）路由（owner_routing）</span></div>
+            <div class="field"><span>为什么要加载口径</span><span>指标契约确认指标 ID（metric_id）、维度和场景，避免把同名指标路由到错误 Owner（责任人）</span></div>
+            <div class="field"><span>为什么要加载数据集说明</span><span>数据集说明确认队列、策略、数据资产字段，避免用错字段找错人</span></div>
+            <div class="field"><span>输出</span><span>责任人候选、命中依据、置信度、需要人工确认的冲突点</span></div>
+          </div>
+        </article>
+
+        <article class="data-card reveal delay-3">
+          <h3>单独解决任务</h3>
+          <p>适合已有人工结论或外部事件状态时，只做处理记录、证据归档和是否复查。</p>
+          <div class="field-list">
+            <div class="field"><span>调度节点</span><span>解决 Skill</span></div>
+            <div class="field"><span>必须加载</span><span>状态机（state_machine）、SLA（响应/处理时限）规则（sla）、解决策略（resolution_policy）</span></div>
+            <div class="field"><span>若涉及指标</span><span>仍需加载指标契约和数据集说明，确认影响口径和复查数据源</span></div>
+            <div class="field"><span>输出</span><span>人工状态、最终结论、证据引用、是否继续观察</span></div>
+          </div>
+        </article>
+      </div>
+
+      <article class="stack-card reveal delay-3" style="margin-top: 16px;">
+        <h3>局部任务也必须遵守的约束</h3>
+        <div class="phase-table">
+          <div class="phase-row"><b>不能跳过场景识别</b><span>任何局部任务都要先命中主场景和候选场景。</span><span>如果置信度不足，进入人工确认，不继续自动执行。</span></div>
+          <div class="phase-row"><b>不能跳过检索策略</b><span>所有知识读取都必须携带检索策略（retrieval_policy）。</span><span>Tool/MCP 层按允许路径和拒绝路径做强制拦截。</span></div>
+          <div class="phase-row"><b>不能跳过指标约束</b><span>查询分析和责任人定位任务只要涉及指标/事件，就必须加载指标契约。</span><span>它定义 metric_id、唯一口径、维度、时间窗口和过滤条件。</span></div>
+          <div class="phase-row"><b>不能跳过字段约束</b><span>查询分析和责任人定位任务只要涉及数据资产，就必须加载数据集说明。</span><span>它定义推荐字段、混淆字段、禁止字段和血缘。</span></div>
+          <div class="phase-row"><b>输出必须可追溯</b><span>局部任务也要输出来源脚注和调用轨迹。</span><span>没有来源脚注的结果不得进入通知或解决动作。</span></div>
+        </div>
+      </article>
+    </section>
+
+    <section id="interaction" class="shell section">
+      <div class="section-head reveal">
+        <div>
+          <p class="section-kicker">Runtime Nodes · 运行节点</p>
+          <h2>运行节点、输入输出与审计点</h2>
+        </div>
+        <p class="section-note">运行节点统一遵循“编排决策 → 能力产出 → 工具执行 → 状态推进 → 审计记录”的交互协议。每个节点都必须声明输入、输出、约束和审计点。</p>
+      </div>
+
+      <div class="interaction-grid">
+        <article class="interaction-card reveal">
+          <div class="step-num">01</div>
+          <h3>感知节点</h3>
+          <p>Agent接收多源输入，判断是否需要进入事件闭环；如果需要，则调用感知 Skill，先映射语义层和指标契约，再通过 Tool/MCP/CLI拉取指标、SOP、Owner（责任人）和案例。</p>
+          <div class="io">
+            <div class="io-row"><b>输入</b> 原始问题、来源上下文、SOP、指标口径、Owner（责任人）映射</div>
+            <div class="io-row"><b>输出</b> 事件画像、证据包、治理实体、数据就绪等级、Owner（责任人）候选</div>
+            <div class="io-row"><b>约束</b> 必须加载场景清单、指标契约、数据集说明和检索策略</div>
+            <div class="io-row"><b>审计</b> 记录场景命中、候选场景、拒绝原因和置信度</div>
+          </div>
+        </article>
+
+        <article class="interaction-card reveal delay-1">
+          <div class="step-num">02</div>
+          <h3>分析节点</h3>
+          <p>Agent根据就绪等级选择快分析、标准分析或深度分析；分析 Skill先生成查询计划（QueryPlan），解释 Tool（工具）返回的证据，并输出质量检查和来源脚注。</p>
+          <div class="io">
+            <div class="io-row"><b>输入</b> 统一事件对象、治理实体、证据包、分析模板、SOP 规则</div>
+            <div class="io-row"><b>输出</b> 查询计划（QueryPlan）、影响评估、候选根因、来源脚注、下一步动作</div>
+            <div class="io-row"><b>约束</b> 未通过查询计划断言不得执行只读查询</div>
+            <div class="io-row"><b>审计</b> 记录查询计划、字段选择、质量检查和来源脚注</div>
+          </div>
+        </article>
+
+        <article class="interaction-card reveal delay-2">
+          <div class="step-num">03</div>
+          <h3>通知节点</h3>
+          <p>当前 MVP（第一版最小可行范围）中，Agent 检查分析结论后生成 AI Summary（AI 摘要）测试卡片，通知 Skill 只负责发送给指定人或群，并展示建议 Owner（责任人）。</p>
+          <div class="io">
+            <div class="io-row"><b>输入</b> 分析结论、测试收件人、通知模板、建议 Owner（责任人）</div>
+            <div class="io-row"><b>输出</b> AI Summary（AI 摘要）卡片、发送状态、建议下一步</div>
+            <div class="io-row"><b>约束</b> MVP 阶段仅固定人/群触达，动态 Owner 路由只展示建议</div>
+            <div class="io-row"><b>审计</b> 记录触达对象、模板版本、发送状态和人工确认要求</div>
+          </div>
+        </article>
+
+        <article class="interaction-card reveal delay-3">
+          <div class="step-num">04</div>
+          <h3>解决节点</h3>
+          <p>当前 MVP（第一版最小可行范围）中，解决 Skill不做自动处理和复杂 SLA（响应/处理时限），只记录人工处理状态、结论、证据和是否继续观察。</p>
+          <div class="io">
+            <div class="io-row"><b>输入</b> 通知状态、人工状态、人工结论、证据引用</div>
+            <div class="io-row"><b>输出</b> 人工跟进记录、归档状态、是否继续观察</div>
+            <div class="io-row"><b>约束</b> 未完成动作、证据、结论三件套不得自动关闭</div>
+            <div class="io-row"><b>审计</b> 记录状态变更、结论来源、证据引用和复查标记</div>
+          </div>
+        </article>
+
+        <article class="interaction-card reveal delay-3">
+          <div class="step-num">05</div>
+          <h3>工具审计节点</h3>
+          <p>每次 Tool/MCP/CLI调用都记录调用方、工具名或命令名、权限级别、输入输出摘要、耗时、退出码、失败原因和降级动作。</p>
+          <div class="io">
+            <div class="io-row"><b>输入</b> Agent/Skill调用意图、工具参数、CLI（命令行工具）参数、权限策略</div>
+            <div class="io-row"><b>输出</b> 调用 ID（tool_call_id）、调用结果、退出码、审计日志、降级建议</div>
+            <div class="io-row"><b>约束</b> 写操作必须经过权限策略和人工确认</div>
+            <div class="io-row"><b>审计</b> 统一记录调用方、工具名、参数摘要、耗时和失败原因</div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="workflow" class="shell section">
+      <div class="section-head reveal">
+        <div>
+          <p class="section-kicker">Workflow State Machine · 流程状态机</p>
+          <h2>从入口到闭环的生命周期</h2>
+        </div>
+        <p class="section-note">状态机让每个事件都有明确阶段、责任方和退出条件。简单咨询走快路径；需要跟进的事件进入完整闭环。</p>
+      </div>
+
+      <div class="state-panel reveal delay-1">
+        <div class="swimlanes">
+          <div class="lane">
+            <h3>快路径：不建单但留依据</h3>
+            <div class="state-flow">
+              <span class="state">已接入（INTAKE_RECEIVED）</span>
+              <span class="state">快路径处理中（FAST_PATH_HANDLING）</span>
+              <span class="state done">快路径已完成（FAST_PATH_CLOSED）</span>
+            </div>
+            <div class="callout-grid">
+              <div class="callout">
+                <strong>适用</strong>
+                <span>SOP、口径、历史结论查询，或低风险轻量只读查询。</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="lane">
+            <h3>事件闭环：有 Owner（责任人）、有 SLA（响应/处理时限）、有结论</h3>
+            <div class="state-flow">
+              <span class="state">已创建事件（EVENT_CREATED）</span>
+              <span class="state">感知收集中（PERCEPTION_COLLECTING）</span>
+              <span class="state escalate">需要补充信息（NEED_MORE_INFO）</span>
+              <span class="state">分析中（ANALYZING）</span>
+              <span class="state manual">等待人工确认（HUMAN_REVIEW_REQUIRED）</span>
+              <span class="state">已确定责任人（OWNER_ROUTED）</span>
+              <span class="state">已通知（NOTIFIED）</span>
+              <span class="state">等待响应（WAITING_RESPONSE）</span>
+              <span class="state">处理中（IN_PROGRESS）</span>
+              <span class="state escalate">已升级（ESCALATED）</span>
+              <span class="state">已提交处理结果（RESOLUTION_SUBMITTED）</span>
+              <span class="state manual">闭环审核中（CLOSURE_REVIEW）</span>
+              <span class="state done">已闭环（CLOSED）</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout-grid">
+          <div class="callout">
+            <strong>人工卡点</strong>
+            <span>分析后、通知前、执行前、闭环前都可按等级和场景配置人工确认。</span>
+          </div>
+          <div class="callout">
+            <strong>升级触发</strong>
+            <span>SLA（响应/处理时限）超时、事件等级、重复失败、人工标记都能触发升级。</span>
+          </div>
+          <div class="callout">
+            <strong>闭环判定</strong>
+            <span>只有动作完成、证据确认、结论沉淀三件套齐全，事件才能关闭。</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="claude-framework" class="shell section">
+      <div class="section-head reveal">
+        <div>
+          <p class="section-kicker">Claude Analytics Framework · Claude 数据分析框架</p>
+          <h2>感知/分析如何套用 Claude 官方自助数据分析框架</h2>
+        </div>
+        <p class="section-note">官方框架的核心结论是：准确性不是 SQL 生成问题，而是上下文、实体映射和验证问题。我们把它落成五层约束。</p>
+      </div>
+      <article class="stack-card reveal">
+        <h3>从业务问题到可验证结论的五层链路</h3>
+        <div class="stack-flow">
+          <div class="stack-step"><b>1. 数据基础（Data Foundations）</b><span>Aeolus（风神查数平台）/ Hive（数仓表）治理数据集、唯一指标口径、字段描述、粒度、血缘和 Owner（责任人）。</span></div>
+          <div class="stack-step"><b>2. 事实来源（Sources of Truth）</b><span>语义层、指标契约、数据集说明、血缘、场景流程包和业务上下文。</span></div>
+          <div class="stack-step"><b>3. 知识路由能力（Claude Knowledge Skill（知识路由能力）概念）</b><span>先识别场景和指标实体，限定允许数据源和禁止数据源；它不是本系统第五个 Skill。</span></div>
+          <div class="stack-step"><b>4. 分析流程能力（Claude Runbook Skill（分析流程能力）概念）</b><span>生成查询计划，执行只读查询、质量检查、归因、规则命中和来源脚注；它落在分析 Skill内。</span></div>
+          <div class="stack-step"><b>5. 验证机制（Validation）</b><span>离线样例、查询计划断言、对抗性复核、线上纠错回收和回测。</span></div>
+        </div>
+      </article>
+      <div class="asset-grid" style="margin-top: 16px;">
+        <article class="asset-card reveal delay-1">
+          <h3>防偏移的关键约束</h3>
+          <div class="field-list">
+            <div class="field"><span>唯一口径</span><span>公式、排除项、标准过滤固定</span></div>
+            <div class="field"><span>泛化规则</span><span>维度层和时间窗口抽象成规则</span></div>
+            <div class="field"><span>字段治理</span><span>推荐字段、混淆字段、禁止字段</span></div>
+            <div class="field"><span>查询计划（QueryPlan）</span><span>未先写清指标、字段、维度和过滤条件，就不执行查询</span></div>
+            <div class="field"><span>来源脚注（source_footer）</span><span>未说明来源、版本、Owner（责任人）和置信度，就不进入自动触达</span></div>
+          </div>
+        </article>
+        <article class="asset-card reveal delay-2">
+          <h3>必须建设的数据资产（Assets）</h3>
+          <p>这些数据资产（Assets）不是“可选文档”，而是 Agent查询正确性的前置条件。</p>
+          <div class="tag-row">
+            <span class="tag hot">指标契约（metric_contract.md）</span>
+            <span class="tag hot">数据集说明（dataset_reference.md）</span>
+            <span class="tag">评估样例（eval_samples）</span>
+            <span class="tag">查询计划断言（query_plan_assertions）</span>
+            <span class="tag">来源脚注样例（source_footer_examples）</span>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="build-plan" class="shell section">
+      <div class="section-head reveal">
+        <div>
+          <p class="section-kicker">Delivery Plan · 建设阶段与验收标准</p>
+          <h2>建设阶段、验收标准与推进节奏</h2>
+        </div>
+        <p class="section-note">当前优先目标是验证感知与分析能力的准确性、可复核性和治理稳定性，确保样例可验、来源可查、规则可复用。</p>
+      </div>
+      <div class="asset-grid">
+        <article class="asset-card reveal">
+          <h3>第一批要建设的资产</h3>
+          <div class="field-list">
+            <div class="field"><span>场景包样例</span><span>效率模块下的处置准确率预警、质量模块下的底线事故复盘、成本模块下的单位处置成本分析</span></div>
+            <div class="field"><span>指标契约样例</span><span>打标率、自动处置准确率、处置量、质检准确率、底线事故数、单位处置成本</span></div>
+            <div class="field"><span>数据集说明</span><span>Aeolus（风神查数平台）/ Hive（数仓表）推荐字段、混淆字段、禁用字段、血缘和刷新</span></div>
+            <div class="field"><span>评估样例</span><span>日常分析、周度推送、撞线预警、错字段反例、边界样例</span></div>
+            <div class="field"><span>输出样例</span><span>波动归因报告、AI Summary（AI 摘要）卡片、来源脚注（source_footer）</span></div>
+          </div>
+        </article>
+        <article class="asset-card reveal delay-1">
+          <h3>阶段 1 的验收方式</h3>
+          <p>先不验收“是否自动找对负责人”，而是验收感知/分析是否真的稳定。</p>
+          <div class="tag-row">
+            <span class="tag hot">场景识别正确</span>
+            <span class="tag hot">指标映射正确</span>
+            <span class="tag hot">查询计划通过（QueryPlan）</span>
+            <span class="tag">字段未误用</span>
+            <span class="tag">来源脚注完整</span>
+            <span class="tag">规则命中正确</span>
+          </div>
+        </article>
+      </div>
+      <article class="stack-card reveal delay-2" style="margin-top: 16px;">
+        <h3>阶段 1 可判定验收标准</h3>
+        <div class="phase-table">
+          <div class="phase-row"><b>场景识别</b><span>20 条以上评估样例中，主场景识别正确率 ≥ 95%。</span><span>跨场景冲突样例必须输出关联候选和人工确认建议。</span></div>
+          <div class="phase-row"><b>指标映射</b><span>核心指标映射正确率 100%，不得把相近指标当成主指标。</span><span>失败即阻断场景包发布。</span></div>
+          <div class="phase-row"><b>字段选择</b><span>混淆字段拒绝率 100%，禁止来源拒绝率 100%。</span><span>必须命中数据集说明（dataset_reference）里的推荐/禁止字段规则。</span></div>
+          <div class="phase-row"><b>查询计划</b><span>查询计划断言通过率 100%，包含指标、维度、窗口、过滤条件、来源层级。</span><span>未通过不得执行只读查询。</span></div>
+          <div class="phase-row"><b>来源脚注</b><span>输出完整率 100%，必须包含来源、口径版本、刷新时间、Owner（责任人）、置信度。</span><span>缺失不得进入自动触达。</span></div>
+          <div class="phase-row"><b>通知 / 解决</b><span>MVP（第一版）只验收固定人/群触达和人工状态记录。</span><span>动态 Owner（责任人）路由和 SLA（响应/处理时限）闭环进入下一阶段验收。</span></div>
+        </div>
+      </article>
+      <article class="stack-card reveal delay-2" style="margin-top: 16px;">
+        <h3>从 MVP（第一版最小可行范围）到目标形态的推进节奏</h3>
+        <div class="phase-table">
+          <div class="phase-row"><b>当前</b><span>感知/分析 MVP（第一版最小可行范围）：场景识别、指标契约、查询计划（QueryPlan）、只读查询、归因和测试通知。</span><span>目标：验证查询准确性、结论可复核性和来源可追溯性。</span></div>
+          <div class="phase-row"><b>下一步</b><span>补齐动态 Owner（责任人）路由、P1/P2 通知模板、升级规则、人工结论回收。</span><span>目标：让分析结果能稳定触达到正确协作对象。</span></div>
+          <div class="phase-row"><b>再下一步</b><span>接入 SLA（响应/处理时限）跟进、自动催办、处理复查、纠错回收和回测 CLI（命令行工具）。</span><span>目标：形成可持续迭代的运营闭环。</span></div>
+          <div class="phase-row"><b>目标形态</b><span>场景流程包、数据资产、Tool/MCP/CLI、离线评估和线上监控一起版本化。</span><span>目标：运营经验沉淀成可运行、可审计、可演进的系统。</span></div>
+        </div>
+      </article>
+    </section>
+
+    <section id="roadmap" class="shell section">
+      <div class="section-head reveal">
+        <div>
+          <p class="section-kicker">Milestone Appendix · 阶段里程碑附录</p>
+          <h2>交付阶段与里程碑</h2>
+        </div>
+        <p class="section-note">按阶段收敛，从方案和基线开始，再到事件闭环、通知 SLA（响应/处理时限）、验收迭代，最后进入工程化增强。</p>
+      </div>
+
+      <div class="roadmap">
+        <article class="road-card reveal">
+          <span class="phase">阶段 0</span>
+          <h3>方案确认与基线</h3>
+          <p>确认范围、不做事项、验收方式和人工步骤基线。</p>
+          <ul>
+            <li>架构确认</li>
+            <li>状态机定义</li>
+            <li>Base（飞书多维表格）草案</li>
+          </ul>
+        </article>
+
+        <article class="road-card reveal delay-1">
+          <span class="phase">阶段 1</span>
+          <h3>感知与分析 MVP（第一版最小可行范围）</h3>
+          <p>优先验证效率/质量场景的指标映射、取数、归因和规则命中。</p>
+          <ul>
+            <li>场景指标契约</li>
+            <li>查询计划（QueryPlan）</li>
+            <li>测试通知</li>
+          </ul>
+        </article>
+
+        <article class="road-card reveal delay-2">
+          <span class="phase">阶段 2</span>
+          <h3>通知与闭环深化</h3>
+          <p>后续再接入动态 Owner（责任人）路由、组合升级、SLA（响应/处理时限）和结论回收。</p>
+          <ul>
+            <li>通知模板</li>
+            <li>SLA（响应/处理时限）策略</li>
+            <li>闭环审核</li>
+          </ul>
+        </article>
+
+        <article class="road-card reveal delay-3">
+          <span class="phase">阶段 3</span>
+          <h3>验收与迭代</h3>
+          <p>用运营专家验收样例验证结论、路由、证据和步骤减少。</p>
+          <ul>
+            <li>验收评估</li>
+            <li>迭代候选池</li>
+            <li>回测样例</li>
+          </ul>
+        </article>
+
+        <article class="road-card reveal delay-3">
+          <span class="phase">阶段 4</span>
+          <h3>工程化增强</h3>
+          <p>从 Base（飞书多维表格主存）走向混合存储，逐步增强 Tool/MCP/CLI治理、自动化和回测。</p>
+          <ul>
+            <li>运行状态数据库</li>
+            <li>配置发布</li>
+            <li>Tool/MCP/CLI审计</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+    <section id="glossary" class="shell section">
+      <div class="section-head reveal">
+        <div>
+          <p class="section-kicker">Glossary · 术语索引</p>
+          <h2>关键英文术语解释</h2>
+        </div>
+        <p class="section-note">正文里已经把核心术语改成“中文含义（英文标识）”。这里保留为索引，方便团队集中回看。</p>
+      </div>
+      <div class="data-grid">
+        <article class="data-card reveal">
+          <h3>场景包与数据资产</h3>
+          <div class="field-list">
+            <div class="field"><span>指标契约（metric_contract.md）</span><span>定义唯一指标口径、公式、排除项、维度和时间窗口规则</span></div>
+            <div class="field"><span>数据集说明（dataset_reference.md）</span><span>解释 Aeolus（风神查数平台）/ Hive（数仓表）字段、粒度、血缘、推荐字段和禁用字段</span></div>
+            <div class="field"><span>样例集（examples.md）</span><span>给 Agent参考和回测的正例、反例、边界例</span></div>
+            <div class="field"><span>来源脚注（source_footer）</span><span>说明数据来源、口径版本、刷新时间、Owner（责任人）和置信度</span></div>
+          </div>
+        </article>
+        <article class="data-card reveal delay-1">
+          <h3>Claude 数据分析框架</h3>
+          <div class="field-list">
+            <div class="field"><span>数据基础（Data Foundations）</span><span>治理数据集、指标口径、字段描述、粒度、血缘</span></div>
+            <div class="field"><span>事实来源（Sources of Truth）</span><span>语义层、指标契约、数据集说明、业务上下文</span></div>
+            <div class="field"><span>知识路由能力（Knowledge Skill）</span><span>Claude 框架中的知识路由能力，先找正确指标、表、字段和可用数据源</span></div>
+            <div class="field"><span>分析流程能力（Runbook Skill）</span><span>Claude 框架中的分析流程能力，按步骤查询、校验、归因、输出结论</span></div>
+            <div class="field"><span>验证机制（Validation）</span><span>离线评估、回测、复核、线上纠错回收</span></div>
+          </div>
+        </article>
+        <article class="data-card reveal delay-2">
+          <h3>查询与评估对象</h3>
+          <div class="field-list">
+            <div class="field"><span>查询计划（QueryPlan）</span><span>查询前先写清指标、字段、维度、时间窗口、过滤条件</span></div>
+            <div class="field"><span>允许数据源（allowed_sources）</span><span>本场景可以使用的数据集、表、指标或看板</span></div>
+            <div class="field"><span>禁止数据源（forbidden_sources）</span><span>容易误用、废弃、非治理口径的数据源或字段</span></div>
+            <div class="field"><span>查询计划断言（query_plan_assertions）</span><span>用于自动检查查询计划是否选对指标、字段和过滤条件</span></div>
+            <div class="field"><span>评估样例（eval_samples）</span><span>用于测试 Agent 是否查对数、命中规则、输出正确结论</span></div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="review-summary" class="shell section">
+      <div class="section-head reveal">
+        <div>
+          <p class="section-kicker">Review Appendix · 评审记录附录</p>
+          <h2>评审结论与优化记录</h2>
+        </div>
+        <p class="section-note">本附录记录三类评审视角及其对应优化方向，作为页面迭代依据，不作为架构主线内容。</p>
+      </div>
+      <div class="data-grid">
+        <article class="data-card reveal">
+          <h3>首次阅读视角</h3>
+          <p>原页面内容扎实，但“为什么这样设计”出现偏晚，导航入口偏多，读者容易先看到实现细节。</p>
+          <div class="field-list">
+            <div class="field"><span>调整结果</span><span>导航压缩为 5 个入口，首屏按钮指向目标架构总览</span></div>
+            <div class="field"><span>调整结果</span><span>页面顺序调整为边界、原则、目标架构、资产契约、场景能力、编排治理</span></div>
+          </div>
+        </article>
+
+        <article class="data-card reveal delay-1">
+          <h3>架构论证视角</h3>
+          <p>四个 Skill + 场景包的方向成立，但需要区分目标架构和 MVP（第一版最小可行范围），也要区分“运营模块”和“模块下的样例指标/任务”。</p>
+          <div class="field-list">
+            <div class="field"><span>调整结果</span><span>补充 ADR 风格决策记录和全域流程覆盖地图</span></div>
+            <div class="field"><span>调整结果</span><span>补充局部调度模式，支持查询分析、责任人定位、处理记录等局部任务</span></div>
+          </div>
+        </article>
+
+        <article class="data-card reveal delay-2">
+          <h3>运营可维护视角</h3>
+          <p>仅有目录不够，运营同学还需要知道谁维护、改哪里、怎么验收、如何灰度和回滚。</p>
+          <div class="field-list">
+            <div class="field"><span>调整结果</span><span>补充维护责任表、发布回滚流程、阶段 1 可判定验收标准</span></div>
+            <div class="field"><span>调整结果</span><span>补充检索策略（retrieval_policy）和 Tool/MCP 白名单拦截</span></div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="shell footer">
+    <div class="footer-inner">
+      <span>基于 `docs/architecture.md`、`configs/state_machine.md`、`docs/implementation_plan.md` 生成。</span>
+      <span id="stamp">本地静态演示</span>
+    </div>
+  </footer>
+
+  <script>
+    const navLinks = Array.from(document.querySelectorAll(".nav a"));
+    const sections = navLinks
+      .map((link) => document.querySelector(link.getAttribute("href")))
+      .filter(Boolean);
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        navLinks.forEach((link) => {
+          link.classList.toggle("active", link.getAttribute("href") === `#${entry.target.id}`);
+        });
+      });
+    }, { rootMargin: "-35% 0px -55% 0px", threshold: 0.01 });
+
+    sections.forEach((section) => observer.observe(section));
+
+    const stamp = document.getElementById("stamp");
+    const now = new Date();
+    stamp.textContent = `本地静态演示 · ${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  </script>
+</body>
+</html>

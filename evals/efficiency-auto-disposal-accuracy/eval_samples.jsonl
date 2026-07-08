@@ -1,0 +1,6 @@
+{"id":"EADA-P-001","type":"positive","input":"分析一下自动处置准确率为什么下降","expected_scenario_key":"efficiency-auto-disposal-accuracy","expected_task_type":"query_only","must_output":["scenario_key","QueryPlan","source_footer"]}
+{"id":"EADA-P-002","type":"positive","input":"按策略维度看自动处置准确率","expected_scenario_key":"efficiency-auto-disposal-accuracy","expected_task_type":"query_only","must_output":["dimensions","QueryPlan","source_footer"]}
+{"id":"EADA-P-003","type":"positive","input":"自动处置准确率预警应该找谁","expected_scenario_key":"efficiency-auto-disposal-accuracy","expected_task_type":"owner_lookup_only","must_output":["routing_evidence","confidence"]}
+{"id":"EADA-N-001","type":"negative","input":"质检准确率下降了","expected_reject_scenario_key":"efficiency-auto-disposal-accuracy","expected_behavior":"reject_or_ask_clarification"}
+{"id":"EADA-N-002","type":"negative","input":"底线事故数上升了","expected_reject_scenario_key":"efficiency-auto-disposal-accuracy","expected_behavior":"reject_or_ask_clarification"}
+{"id":"EADA-L-001","type":"low_context","input":"这个策略怎么了","expected_behavior":"ask_more_info","must_not_query":true}

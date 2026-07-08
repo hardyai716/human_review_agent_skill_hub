@@ -1,0 +1,38 @@
+---
+name: routing-ops-notifications
+description: Drafts human-review operations notifications, owner routing suggestions, and escalation messages without sending real notifications in debug mode.
+allowed-tools: []
+disallowed-tools:
+  - write
+---
+
+# 通知 Skill
+
+## 触发条件
+
+当用户需要生成预警通知草稿、测试卡片、Owner 建议或升级话术时使用。
+
+## 输入
+
+- 分析结果。
+- `scenario_key`
+- 风险等级。
+- Owner 候选。
+
+## 输出
+
+- 通知草稿。
+- 建议 Owner。
+- 升级建议。
+- 证据引用。
+
+## 调试约束
+
+- 默认不发送真实通知。
+- 默认只生成草稿。
+- 真实发送必须人工确认。
+
+## 参考资料
+
+- `references/common.md`
+- `references/scenario-index.md`

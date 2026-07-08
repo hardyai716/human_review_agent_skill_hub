@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ToolCallRecord",
+  "type": "object",
+  "required": ["tool_call_id", "caller", "tool_name", "permission_level", "status"],
+  "properties": {
+    "tool_call_id": {
+      "type": "string"
+    },
+    "caller": {
+      "type": "string"
+    },
+    "tool_name": {
+      "type": "string"
+    },
+    "command_name": {
+      "type": "string"
+    },
+    "permission_level": {
+      "type": "string",
+      "enum": ["readonly", "writable", "confirmation_required", "high_risk"]
+    },
+    "input_summary": {
+      "type": "string"
+    },
+    "output_summary": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["success", "failed", "timeout", "degraded", "blocked"]
+    },
+    "latency_ms": {
+      "type": "number",
+      "minimum": 0
+    },
+    "error_reason": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}

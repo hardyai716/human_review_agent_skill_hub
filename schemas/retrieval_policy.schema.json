@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "RetrievalPolicy",
+  "type": "object",
+  "required": ["scenario_key", "run_mode", "task_type", "allowed_paths", "denied_paths"],
+  "properties": {
+    "scenario_key": {
+      "type": "string"
+    },
+    "related_scenarios": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "run_mode": {
+      "type": "string",
+      "enum": ["debug_only", "full_workflow", "query_only", "owner_lookup_only", "notification_only", "resolution_only", "partial_workflow"]
+    },
+    "task_type": {
+      "type": "string"
+    },
+    "allowed_paths": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "denied_paths": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "confidence_threshold": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    }
+  },
+  "additionalProperties": false
+}

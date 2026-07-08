@@ -1,0 +1,751 @@
+# 人审运营 Agent + Skill 开发落地实施方案
+
+## 1. 目标与定位
+
+本文是后续开发落地的唯一实施方案。它承接 `demo/architecture-preview.html` 中的目标架构，用于指导后续真实代码、配置、Skill、Agent 文件、场景包、评估样例和工具治理的建设。
+
+本方案不再把“架构展示页优化计划”或“早期路线图”作为开发依据。后续执行时，以本文作为开发主计划，其他文档只作为背景资料或专项规范引用。
+
+## 2. 开发成功标准
+
+第一阶段成功不以“页面展示完整”为标准，而以一个可运行样板场景通过评估为标准。
+
+必须证明：
+
+- Agent 能根据任务识别场景、任务类型和运行模式。
+- Agent 能安装并调用感知、分析、触达、解决四类 Skill。
+- TRAE 自定义调试智能体「人审运营智能体」能作为前期开发入口，完成 Agent 路由、Skill 调用、场景包读取和工具边界验证。
+- Skill 能通过一级索引加载正确场景包，而不是深层链式查找。
+- 自动处置准确率样板场景能完成查询计划、字段选择、只读查询、来源脚注和结果输出。
+- 混淆字段、禁止字段、跨场景冲突、低置信度场景能被阻断或转人工确认。
+- 场景包变更必须通过结构校验、评估样例、查询计划断言和人工验收后才能启用。
+
+## 3. 开发范围
+
+### 3.1 第一阶段纳入范围
+
+- Agent 自身文件。
+- TRAE 自定义调试智能体配置与调试检查清单。
+- 四个通用 Skill 的最小可用模板。
+- 一个效率模块样板场景：自动处置准确率分析/预警。
+- 场景包一级索引和场景文件。
+- `retrieval_policy`、`run_mode`、`task_type` 等核心调度契约。
+- QueryPlan、source_footer、tool_call_record 等输出契约。
+- 评估样例、查询计划断言、结构校验脚本。
+- MVP 测试通知和人工跟进记录。
+
+### 3.2 第一阶段不纳入范围
+
+- 全量运营模块覆盖。
+- 动态 Owner 路由线上自动触达。
+- 自动催办、自动升级和完整 SLA 闭环。
+- 自动修改业务配置或替代审批。
+- 全量 Lark Base 或数据库工程化建设。
+- 复杂前端产品化界面。
+
+## 4. 目标目录结构
+
+后续开发应收敛到以下结构：
+
+```text
+references/
+  scenarios/
+    efficiency-auto-disposal-accuracy/
+      scenario_manifest.md
+      state_machine.md
+      sla.md
+      metric_contract.md
+      dataset_reference.md
+      owner_routing.md
+      notification_templates.md
+      analysis.md
+      examples.md
+
+agents/
+  human_review_ops_agent/
+    agent.md
+    identity.md
+    capability_manifest.md
+    install_plan.md
+    routing_policy.md
+    permission_policy.md
+    memory_policy.md
+    evaluation_policy.md
+    trae_debug_profile.md
+    trae_debug_checklist.md
+
+skills/
+  perception/
+    SKILL.md
+    references/
+      common.md
+      scenario-index.md
+      scenarios/
+        efficiency-auto-disposal-accuracy.manifest.md
+        efficiency-auto-disposal-accuracy.metric_contract.md
+        efficiency-auto-disposal-accuracy.dataset_reference.md
+        efficiency-auto-disposal-accuracy.examples.md
+  analysis/
+    SKILL.md
+    references/
+      common.md
+      scenario-index.md
+      scenarios/
+        efficiency-auto-disposal-accuracy.metric_contract.md
+        efficiency-auto-disposal-accuracy.dataset_reference.md
+        efficiency-auto-disposal-accuracy.analysis.md
+        efficiency-auto-disposal-accuracy.examples.md
+  notification/
+    SKILL.md
+    references/
+      common.md
+      scenario-index.md
+      scenarios/
+        efficiency-auto-disposal-accuracy.owner_routing.md
+        efficiency-auto-disposal-accuracy.notification_templates.md
+        efficiency-auto-disposal-accuracy.sla.md
+  resolution/
+    SKILL.md
+    references/
+      common.md
+      scenario-index.md
+      scenarios/
+        efficiency-auto-disposal-accuracy.state_machine.md
+        efficiency-auto-disposal-accuracy.sla.md
+        efficiency-auto-disposal-accuracy.owner_routing.md
+        efficiency-auto-disposal-accuracy.examples.md
+
+evals/
+  efficiency-auto-disposal-accuracy/
+    eval_samples.jsonl
+    expected_outputs.md
+    query_plan_assertions.md
+
+schemas/
+  event.schema.json
+  analysis_result.schema.json
+  resolution_result.schema.json
+  retrieval_policy.schema.json
+  tool_call_record.schema.json
+
+tools/
+  packagers/
+    build_skill_package.py
+  policies/
+    efficiency-auto-disposal.tool-policy.md
+  validators/
+    validate_scenario_package.py
+    validate_skill_package.py
+    validate_query_plan.py
+    validate_source_footer.py
+```
+
+说明：
+
+- 目标态采用 Skill 兄弟目录下的 `references/scenarios/` 维护完整场景流程包，这是长期唯一业务事实来源。
+- 前期使用 TRAE 调试时，如果跨目录读取不稳定，可以把必要场景文件同步到 `skills/*/references/scenarios/`，作为本地调试快照，先把 Skill 流程跑通。
+- 本地调试快照不是长期主数据；后续若 TRAE/MCP 能稳定读取兄弟目录，Skill 应优先通过 `scenario-index.md` 指向根目录 `references/scenarios/`。
+- 如果未来要单 Skill 独立发布，再由打包脚本把 `references/scenarios/` 中该 Skill 需要的文件复制进发布包，保证发布包自包含。
+- 发布门禁必须校验根目录场景包与 Skill 内调试/发布快照的版本、摘要或 hash，避免多份文件发生口径漂移。
+
+## 5. Claude Skill 规范落地要求
+
+### 5.1 SKILL.md 基本要求
+
+每个 `SKILL.md` 必须包含：
+
+- YAML frontmatter。
+- `name`：小写、数字、连字符，不使用泛化名称。
+- `description`：第三人称描述能力和触发条件。
+- `allowed-tools` / `disallowed-tools`：声明工具权限。
+- 能力边界。
+- 输入输出。
+- 禁止事项。
+- 一级参考索引。
+- 验证要求。
+
+建议命名：
+
+| 目录 | Skill 名称 | 说明 |
+| --- | --- | --- |
+| `skills/perception/` | `perceiving-ops-events` | 识别运营模块、指标、任务类型和数据就绪。 |
+| `skills/analysis/` | `analyzing-ops-metrics` | 生成查询计划、执行只读分析、输出归因和来源脚注。 |
+| `skills/notification/` | `routing-ops-notifications` | 生成通知卡片、建议责任人和升级对象。 |
+| `skills/resolution/` | `tracking-ops-resolution` | 记录人工处理状态、结论、证据和复查标记。 |
+
+### 5.2 支持文件不要深层嵌套
+
+允许物理目录分层，但不允许阅读路径分层。
+
+要求：
+
+- `SKILL.md` 只做轻入口。
+- 每个 Skill 的 `references/scenario-index.md` 必须一级列出可读取场景文件的直接链接。
+- 不允许 `common.md -> scenario.md -> dataset_reference.md` 这种链式阅读。
+- 所有场景关键文件必须能从 `SKILL.md` 或 `scenario-index.md` 直接定位。
+- 目标态场景流程包放在根目录 `references/scenarios/{scenario_key}/`。
+- 前期 TRAE 调试态允许在 `skills/{skill_name}/references/scenarios/` 放置快照文件，但必须标明来源并可由脚本重新生成。
+- 单 Skill 独立发布时，支持文件必须位于该 Skill 自己的 `references/` 目录内，由打包脚本从根目录场景包生成。
+- 超过 100 行的参考文件顶部必须有目录。
+
+### 5.3 场景流程包的两阶段引用策略
+
+场景包属于 Skill 体系内的业务资产。它不直接执行任务，执行任务的仍然是感知、分析、通知、解决四个 Skill。
+
+为兼顾前期 TRAE 调试和后期治理，场景文件采用两阶段引用策略：
+
+| 阶段 | 场景文件位置 | 用途 | 约束 |
+| --- | --- | --- | --- |
+| 前期 TRAE 调试态 | `skills/{skill_name}/references/scenarios/` | 保证单个 Skill 在 TRAE 中可直接跑通，减少跨目录读取风险。 | 只能作为根目录场景包的快照，不能手工漂移。 |
+| 目标治理态 | `references/scenarios/{scenario_key}/` | 长期维护完整场景流程包，供 Agent 和 Skill 按 `scenario_key` 检索。 | 作为唯一业务事实来源，变更必须走评审和回测。 |
+| 单 Skill 发布态 | 发布包内 `references/scenarios/` | 独立发布时随 Skill 打包，保证包自包含。 | 由打包脚本从目标治理态生成。 |
+
+| Skill | 一级索引文件 | 挂载的场景文件 | 用途 |
+| --- | --- | --- | --- |
+| 感知 Skill | `skills/perception/references/scenario-index.md` | `references/scenarios/*.manifest.md`、`*.metric_contract.md`、`*.dataset_reference.md`、`*.examples.md` | 识别场景、指标、任务类型、数据就绪。 |
+| 分析 Skill | `skills/analysis/references/scenario-index.md` | `references/scenarios/*.metric_contract.md`、`*.dataset_reference.md`、`*.analysis.md`、`*.examples.md` | 生成 QueryPlan、选择字段、归因分析。 |
+| 通知 Skill | `skills/notification/references/scenario-index.md` | `references/scenarios/*.owner_routing.md`、`*.notification_templates.md`、`*.sla.md` | 生成通知、建议 Owner、判断升级。 |
+| 解决 Skill | `skills/resolution/references/scenario-index.md` | `references/scenarios/*.state_machine.md`、`*.sla.md`、`*.owner_routing.md`、`*.examples.md` | 推进状态、回收结论、关闭或复查。 |
+
+示例索引：
+
+```markdown
+# skills/analysis/references/scenario-index.md
+
+## efficiency-auto-disposal-accuracy
+
+- 调试态指标契约：scenarios/efficiency-auto-disposal-accuracy.metric_contract.md
+- 调试态数据集说明：scenarios/efficiency-auto-disposal-accuracy.dataset_reference.md
+- 调试态分析规则：scenarios/efficiency-auto-disposal-accuracy.analysis.md
+- 调试态样例与边界：scenarios/efficiency-auto-disposal-accuracy.examples.md
+- 目标态场景包：../../../references/scenarios/efficiency-auto-disposal-accuracy/
+```
+
+## 6. Agent 自身文件开发任务
+
+### 6.1 `agent.md`
+
+定义：
+
+- Agent 目标。
+- 服务对象。
+- 默认运行模式。
+- 可调用能力。
+- 不做事项。
+- 审计要求。
+
+验收：
+
+- 能明确说明该 Agent 是人审运营调度器，而不是数据查询脚本或自动审批系统。
+
+### 6.2 `identity.md`
+
+定义：
+
+- Agent 身份。
+- 对运营用户的交互原则。
+- 什么时候建议转人工。
+- 什么时候必须拒绝。
+
+验收：
+
+- 能覆盖低置信度、权限不足、高风险动作、数据缺失等情况。
+
+### 6.3 `capability_manifest.md`
+
+定义：
+
+- 已安装 Skill。
+- Skill 版本。
+- 可用状态。
+- 依赖的场景包。
+
+验收：
+
+- Agent 能知道当前可调度哪些 Skill，哪些 Skill 只是草稿或灰度状态。
+
+### 6.4 `routing_policy.md`
+
+定义：
+
+- `run_mode`。
+- `task_type`。
+- `scenario_key`。
+- 场景候选。
+- 人工确认阈值。
+
+必须支持：
+
+```text
+debug_only
+full_workflow
+query_only
+owner_lookup_only
+notification_only
+resolution_only
+partial_workflow
+```
+
+### 6.5 `permission_policy.md`
+
+定义：
+
+- 只读工具。
+- 可写工具。
+- 需人工确认工具。
+- 禁止动作。
+- Tool/MCP/CLI 白名单。
+
+验收：
+
+- 写状态、发通知、更新配置等动作不能绕过权限策略。
+
+### 6.6 `trae_debug_profile.md`
+
+定义 TRAE 自定义调试智能体「人审运营智能体」的使用方式。该文件不是线上 Agent 身份文件，而是前期开发调试入口说明。
+
+必须定义：
+
+- 调试智能体名称：`人审运营智能体`。
+- 调试目标：验证 Agent 路由、Skill 调用、场景包读取、Tool/MCP/CLI 权限边界。
+- 启用能力：感知、分析、通知、解决四个 Skill。
+- 默认运行模式：`debug_only`，优先只读，不执行真实写入。
+- 场景读取策略：优先验证 `references/scenarios/` 跨目录读取；如 TRAE 不稳定，则使用 `skills/*/references/scenarios/` 调试快照。
+- 工具策略：先使用 mock 或只读 Tool；真实通知、写状态、更新配置必须人工确认。
+- 调试样例：自动处置准确率查询、责任人定位、预警通知草稿、人工处理记录。
+
+验收：
+
+- 能从自然语言问题识别 `scenario_key`、`task_type` 和 `run_mode`。
+- 能按 `scenario-index.md` 加载正确场景文件，不误读无关场景。
+- 能分别调通感知、分析、通知、解决 Skill。
+- 能输出 QueryPlan、source_footer、routing evidence、manual tracking 等关键结构。
+- 能证明跨目录 `references/scenarios/` 可读；若不可读，能切换到 Skill 内调试快照。
+- 不能发送真实通知、写入线上状态或更新业务配置，除非经过人工确认。
+
+### 6.7 `trae_debug_checklist.md`
+
+定义每次使用「人审运营智能体」调试时必须记录的检查项。
+
+必须记录：
+
+- 输入问题。
+- 识别出的 `scenario_key`、`task_type`、`run_mode`。
+- 调用的 Skill。
+- 读取的场景文件路径。
+- 是否使用根目录 `references/scenarios/`。
+- 是否使用 Skill 内调试快照。
+- Tool/MCP/CLI 调用记录。
+- 是否触发人工确认。
+- 输出是否包含 QueryPlan、source_footer、Owner 依据或 manual tracking。
+- 失败原因和下一步修复动作。
+
+验收：
+
+- 每个样板调试用例都有可复盘记录。
+- 每次失败都能归因到路由、检索、Skill 输出、工具权限或场景包内容之一。
+- 调试检查清单可以作为后续评估样例和回归测试的输入。
+
+## 7. 四个 Skill 开发任务
+
+### 7.1 感知 Skill
+
+文件：
+
+- `skills/perception/SKILL.md`
+- `skills/perception/references/common.md`
+- `skills/perception/references/scenario-index.md`
+
+职责：
+
+- 识别运营模块。
+- 识别指标/对象。
+- 识别任务类型。
+- 判断数据就绪等级。
+- 生成场景候选和置信度。
+
+必须输出：
+
+- `scenario_key`
+- `related_scenarios`
+- `metric_ids`
+- `readiness`
+- `retrieval_policy` 前置材料
+
+### 7.2 分析 Skill
+
+文件：
+
+- `skills/analysis/SKILL.md`
+- `skills/analysis/references/common.md`
+- `skills/analysis/references/scenario-index.md`
+
+职责：
+
+- 生成 QueryPlan。
+- 执行只读分析。
+- 校验字段和过滤条件。
+- 输出归因、影响评估、规则命中和来源脚注。
+
+禁止：
+
+- 未通过 QueryPlan 断言时执行查询。
+- 使用 `dataset_reference.md` 标记的禁止字段。
+- 绕过 `metric_contract.md` 自行解释口径。
+
+### 7.3 通知 Skill
+
+文件：
+
+- `skills/notification/SKILL.md`
+- `skills/notification/references/common.md`
+- `skills/notification/references/scenario-index.md`
+
+职责：
+
+- 基于分析结果生成 AI Summary 卡片。
+- MVP 阶段只发送固定人/群。
+- 输出建议 Owner 和建议升级对象。
+
+禁止：
+
+- 未经确认扩大通知范围。
+- 未带来源脚注进入自动触达。
+
+### 7.4 解决 Skill
+
+文件：
+
+- `skills/resolution/SKILL.md`
+- `skills/resolution/references/common.md`
+- `skills/resolution/references/scenario-index.md`
+
+职责：
+
+- 记录人工状态。
+- 记录人工结论。
+- 归档证据。
+- 标记是否继续观察。
+- 标记是否进入迭代候选。
+
+禁止：
+
+- 未完成动作、证据、结论三件套时自动关闭。
+
+## 8. 样板场景：效率模块 / 自动处置准确率
+
+### 8.1 场景目标
+
+验证 Agent 能在效率模块下识别自动处置准确率相关任务，并完成：
+
+- 场景识别。
+- 指标口径加载。
+- 数据集字段选择。
+- QueryPlan 生成。
+- 只读查询。
+- 归因分析。
+- 责任人建议。
+- 来源脚注输出。
+
+### 8.2 场景包文件
+
+目标态根目录路径：
+
+```text
+references/scenarios/efficiency-auto-disposal-accuracy/
+```
+
+TRAE 调试快照 / 未来发布包内路径示例：
+
+```text
+skills/analysis/references/scenarios/efficiency-auto-disposal-accuracy.metric_contract.md
+skills/analysis/references/scenarios/efficiency-auto-disposal-accuracy.dataset_reference.md
+skills/analysis/references/scenarios/efficiency-auto-disposal-accuracy.analysis.md
+skills/analysis/references/scenarios/efficiency-auto-disposal-accuracy.examples.md
+```
+
+`references/scenarios/` 是长期维护的完整场景流程包。前期 TRAE 调试时，可以把其中必要文件同步到 Skill 内部 `references/scenarios/` 快照目录；实际运行时，Agent 先选择 Skill，再由该 Skill 的 `references/scenario-index.md` 决定读取本地快照还是根目录场景包。
+
+文件：
+
+- `scenario_manifest.md`
+- `state_machine.md`
+- `sla.md`
+- `metric_contract.md`
+- `dataset_reference.md`
+- `owner_routing.md`
+- `notification_templates.md`
+- `analysis.md`
+- `examples.md`
+
+### 8.3 `metric_contract.md`
+
+必须定义：
+
+- 指标 ID。
+- 中文指标名。
+- 分子。
+- 分母。
+- 排除项。
+- 标准过滤条件。
+- 支持维度。
+- 支持时间窗口。
+- 口径 Owner。
+- 版本。
+
+### 8.4 `dataset_reference.md`
+
+必须定义：
+
+- 推荐数据集。
+- 推荐字段。
+- 混淆字段。
+- 禁止字段。
+- 字段粒度。
+- 数据刷新。
+- 血缘说明。
+- 字段选择示例。
+
+### 8.5 `analysis.md`
+
+必须定义：
+
+- 整体趋势分析。
+- 策略维度归因。
+- 队列维度归因。
+- 风险域维度归因。
+- 撞线预警规则。
+- 低置信度降级规则。
+
+## 9. 检索与调度契约
+
+### 9.1 `retrieval_policy.schema.json`
+
+新增文件：
+
+- `schemas/retrieval_policy.schema.json`
+
+字段：
+
+- `scenario_key`
+- `related_scenarios`
+- `allowed_paths`
+- `denied_paths`
+- `metric_ids`
+- `confidence_threshold`
+- `tie_break_rules`
+- `fallback_to_human`
+
+### 9.2 `tool_call_record.schema.json`
+
+新增文件：
+
+- `schemas/tool_call_record.schema.json`
+
+字段：
+
+- `tool_call_id`
+- `caller`
+- `tool_name`
+- `command_name`
+- `permission_level`
+- `input_summary`
+- `output_summary`
+- `status`
+- `latency_ms`
+- `error_reason`
+
+## 10. 评估与发布门禁
+
+### 10.1 评估样例
+
+路径：
+
+```text
+evals/efficiency-auto-disposal-accuracy/eval_samples.jsonl
+```
+
+至少包含：
+
+- 正例：自动处置准确率下降，按策略归因。
+- 正例：自动处置准确率下降，按队列归因。
+- 正例：自动处置准确率撞线预警。
+- 反例：质检准确率下降，不应命中效率模块。
+- 反例：底线事故数上升，不应命中自动处置准确率场景。
+- 混淆字段：字段名相似但口径不同。
+- 低置信度：缺少指标或时间窗口。
+
+### 10.2 发布门禁
+
+场景包进入可用状态前必须通过：
+
+- 文件结构校验。
+- 指标契约完整性校验。
+- 数据集说明完整性校验。
+- QueryPlan 断言。
+- 反例拒绝。
+- 来源脚注完整性检查。
+- 人工验收。
+
+失败处理：
+
+- P0/P1 样例失败：阻断发布。
+- 混淆字段未拒绝：阻断发布。
+- 来源脚注缺失：阻断发布。
+- 低置信度未转人工：阻断发布。
+
+## 11. 开发阶段
+
+### 阶段 0：目录和模板初始化
+
+交付：
+
+- `agents/human_review_ops_agent/`
+- `skills/perception/`
+- `skills/analysis/`
+- `skills/notification/`
+- `skills/resolution/`
+- `references/scenarios/efficiency-auto-disposal-accuracy/`
+- `skills/*/references/scenarios/` 中的样板场景发布文件
+- `evals/efficiency-auto-disposal-accuracy/`
+- `tools/policies/`
+
+验收：
+
+- 目录结构符合本文。
+- 每个 `SKILL.md` 有合法 frontmatter。
+- 每个 Skill 有一级 `scenario-index.md`。
+
+### 阶段 0.5：TRAE 调试智能体跑通
+
+交付：
+
+- TRAE 自定义智能体：`人审运营智能体`。
+- `agents/human_review_ops_agent/trae_debug_profile.md`。
+- `agents/human_review_ops_agent/trae_debug_checklist.md`。
+- 自动处置准确率样板调试用例。
+- Skill 内调试快照与根目录场景包读取验证记录。
+
+调试顺序：
+
+1. 创建 TRAE 自定义智能体「人审运营智能体」。
+2. 绑定或安装感知、分析、通知、解决四个 Skill。
+3. 使用 Skill 内 `references/scenarios/` 调试快照跑通最小流程。
+4. 验证是否能稳定读取根目录 `references/scenarios/`。
+5. 逐步接入只读 Tool/MCP/CLI。
+6. 仅生成通知草稿和人工处理记录，不发送真实通知、不写线上状态。
+
+验收：
+
+- 查询类任务能进入 `query_only` 或 `partial_workflow`。
+- 找人类任务能进入 `owner_lookup_only`，并输出 Owner 依据和置信度。
+- 通知类任务只能生成草稿或测试卡片，不能绕过人工确认。
+- 解决类任务只能记录人工状态、结论、证据和是否继续观察。
+- 若根目录 `references/scenarios/` 跨目录读取失败，必须明确记录失败原因，并继续使用 Skill 内调试快照。
+- 若根目录跨目录读取稳定，则后续优先让 `scenario-index.md` 指向根目录场景包。
+
+### 阶段 1：样板场景跑通
+
+交付：
+
+- 自动处置准确率场景包。
+- QueryPlan 断言。
+- 来源脚注模板。
+- 只读查询 Tool 策略。
+- 固定人/群测试通知。
+
+验收：
+
+- 正例命中率达到标准。
+- 反例拒绝率达到标准。
+- 混淆字段拒绝率达到标准。
+- 输出包含 QueryPlan 和 source_footer。
+
+### 阶段 2：局部调度能力
+
+交付：
+
+- `query_only`
+- `owner_lookup_only`
+- `notification_only`
+- `resolution_only`
+- `partial_workflow`
+
+验收：
+
+- 局部任务不绕过 `metric_contract`、`dataset_reference` 和 `retrieval_policy`。
+- 单独责任人定位能输出依据和置信度。
+
+### 阶段 3：发布治理
+
+交付：
+
+- 场景包状态：draft、reviewing、enabled、disabled、rollback。
+- 发布校验脚本。
+- 回滚记录。
+
+验收：
+
+- 任一阻断条件失败时不能启用场景包。
+- 可回滚到上一版场景包。
+
+### 阶段 4：扩展到更多模块
+
+交付：
+
+- 效率模块更多指标。
+- 质量模块样板场景。
+- 成本模块样板场景。
+
+验收：
+
+- 新模块复用同一套 Skill，不复制 Skill。
+- 新场景只新增场景包和评估样例。
+
+## 12. 仓库与开发流程规范
+
+GitHub 仓库：
+
+```text
+https://github.com/hardyai716/human_review_agent_skill_hub.git
+```
+
+本项目后续更新、调整、调试记录和模板变更都必须进入 Git 仓库管理。
+
+要求：
+
+- `main` 分支只保留可回溯的稳定版本。
+- 日常开发使用功能分支，例如 `feat/trae-debug-agent`、`feat/efficiency-scenario-template`。
+- 每次提交前必须运行结构检查或至少完成手工检查：目录结构、关键文件、调试记录、场景包引用路径。
+- 涉及场景包、Skill、Agent 路由、权限策略的变更，必须同步更新对应评估样例或调试检查清单。
+- 不提交敏感信息、真实 Token、个人账号密钥、线上数据明细。
+- TRAE 调试失败记录可以提交，但必须脱敏，只保留问题类型、命中文件、失败原因和修复动作。
+
+首次接入仓库步骤：
+
+```text
+git init
+git remote add origin https://github.com/hardyai716/human_review_agent_skill_hub.git
+git add .
+git commit -m "chore: initialize human review agent skill hub"
+git branch -M main
+git push -u origin main
+```
+
+若本地推送因 GitHub 权限或网络失败，先保留本地提交；待认证完成后再执行 push。
+
+## 13. 旧文档处理原则
+
+以下文件属于过程性方案或旧路线图，不再作为开发依据：
+
+- `.trae/documents/html_architecture_final_optimization_plan.md`
+- `.trae/documents/human_review_ops_workflow_rearchitecture_plan.md`
+- `.trae/documents/architecture_demo_prd.md`
+- `.trae/documents/architecture_demo_technical.md`
+- `docs/roadmap.md`
+
+处理方式：
+
+- 删除上述过程性方案。
+- 本文成为后续开发唯一实施方案。
+- `docs/architecture.md`、`docs/data_query_governance.md`、`docs/skill_interface_and_tool_mcp_spec.md` 继续作为架构依据和接口规范保留。

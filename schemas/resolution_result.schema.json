@@ -1,0 +1,261 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.bytedance.local/human-review-ops/resolution-result.schema.json",
+  "title": "HumanReviewOpsResolutionResult",
+  "description": "人审运营解决能力输出结构，用于记录处理动作、证据确认、闭环结论和迭代标记。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "resolution_id",
+    "event_id",
+    "actions",
+    "manual_tracking",
+    "closure",
+    "follow_up"
+  ],
+  "properties": {
+    "resolution_id": {
+      "type": "string",
+      "description": "处理结果唯一标识。"
+    },
+    "event_id": {
+      "type": "string",
+      "description": "关联事件 ID。"
+    },
+    "actions": {
+      "type": "array",
+      "description": "处理、通知、催办、升级、记录等动作列表。",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "action_id",
+          "action_type",
+          "executor",
+          "requires_confirmation",
+          "status",
+          "created_at"
+        ],
+        "properties": {
+          "action_id": {
+            "type": "string",
+            "description": "动作 ID。"
+          },
+          "action_type": {
+            "type": "string",
+            "enum": [
+              "notify",
+              "remind",
+              "escalate",
+              "execute",
+              "rollback",
+              "record",
+              "ask_more",
+              "close"
+            ],
+            "description": "动作类型。"
+          },
+          "executor": {
+            "type": "string",
+            "enum": [
+              "agent",
+              "human"
+            ],
+            "description": "动作执行方。"
+          },
+          "requires_confirmation": {
+            "type": "boolean",
+            "description": "是否需要人工确认。"
+          },
+          "confirmed_by": {
+            "type": "string",
+            "description": "确认人，可为空。"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "done",
+              "failed",
+              "canceled"
+            ],
+            "description": "动作状态。"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "动作创建时间。"
+          },
+          "completed_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "动作完成时间，可为空。"
+          },
+          "result_summary": {
+            "type": "string",
+            "description": "动作结果摘要。"
+          },
+          "failure_reason": {
+            "type": "string",
+            "description": "失败原因，可为空。"
+          }
+        }
+      }
+    },
+    "manual_tracking": {
+      "type": "object",
+      "description": "MVP 阶段的人工跟进记录，用于在未建设完整解决闭环前承接处理状态和人工结论。",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "status",
+        "manual_conclusion",
+        "needs_follow_up"
+      ],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "mvp_manual_tracking",
+            "full_resolution_workflow"
+          ],
+          "description": "解决模块运行模式。"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "待人工确认",
+            "已人工处理",
+            "需继续观察",
+            "误报",
+            "已归档"
+          ],
+          "description": "人工跟进状态。"
+        },
+        "manual_conclusion": {
+          "type": "string",
+          "description": "人工处理结论或阶段性说明。"
+        },
+        "needs_follow_up": {
+          "type": "boolean",
+          "description": "是否需要继续跟进观察。"
+        }
+      }
+    },
+    "closure": {
+      "type": "object",
+      "description": "闭环三件套及关闭信息。",
+      "additionalProperties": false,
+      "required": [
+        "action_completed",
+        "evidence_confirmed",
+        "conclusion_recorded",
+        "root_cause",
+        "impact_scope",
+        "final_conclusion",
+        "closed_by",
+        "closed_at"
+      ],
+      "properties": {
+        "action_completed": {
+          "type": "boolean",
+          "description": "处理动作是否完成。"
+        },
+        "evidence_confirmed": {
+          "type": "boolean",
+          "description": "是否已有证据证明问题已处理或影响受控。"
+        },
+        "conclusion_recorded": {
+          "type": "boolean",
+          "description": "根因、处理动作、影响范围、后续建议是否已沉淀。"
+        },
+        "root_cause": {
+          "type": "string",
+          "description": "最终根因。"
+        },
+        "impact_scope": {
+          "type": "string",
+          "description": "最终确认的影响范围。"
+        },
+        "final_conclusion": {
+          "type": "string",
+          "description": "最终处理结论。"
+        },
+        "evidence_refs": {
+          "type": "array",
+          "description": "闭环证据引用。",
+          "items": {
+            "type": "string"
+          }
+        },
+        "closed_by": {
+          "type": "string",
+          "description": "关闭人，第一版通常为运营专家或运营值班。"
+        },
+        "closed_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "关闭时间。"
+        }
+      }
+    },
+    "follow_up": {
+      "type": "object",
+      "description": "后续复盘和迭代标记。",
+      "additionalProperties": false,
+      "required": [
+        "needs_iteration",
+        "iteration_reasons",
+        "abnormal_flags"
+      ],
+      "properties": {
+        "needs_iteration": {
+          "type": "boolean",
+          "description": "是否需要进入迭代候选池。"
+        },
+        "iteration_reasons": {
+          "type": "array",
+          "description": "触发迭代的原因。",
+          "items": {
+            "type": "string",
+            "enum": [
+              "human_correction",
+              "repeated_issue",
+              "sla_failure",
+              "effect_degradation",
+              "owner_mismatch",
+              "analysis_error",
+              "missing_evidence"
+            ]
+          }
+        },
+        "abnormal_flags": {
+          "type": "array",
+          "description": "异常结果标记。",
+          "items": {
+            "type": "string",
+            "enum": [
+              "insufficient_information",
+              "owner_error",
+              "analysis_error",
+              "sla_timeout",
+              "repeated_issue",
+              "ineffective_resolution",
+              "needs_review"
+            ]
+          }
+        },
+        "next_review_owner": {
+          "type": "string",
+          "description": "后续复盘或迭代负责人，可为空。"
+        },
+        "next_review_deadline": {
+          "type": "string",
+          "format": "date-time",
+          "description": "后续复盘截止时间，可为空。"
+        }
+      }
+    }
+  }
+}

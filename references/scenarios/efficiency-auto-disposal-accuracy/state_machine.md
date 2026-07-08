@@ -1,0 +1,33 @@
+# 状态机：自动处置准确率
+
+## 调试态状态
+
+```text
+INTAKE
+SCENARIO_RESOLVED
+PERCEPTION_READY
+ANALYSIS_READY
+NOTIFICATION_DRAFTED
+MANUAL_TRACKING_RECORDED
+DEBUG_CLOSED
+NEED_MORE_INFO
+HUMAN_REVIEW_REQUIRED
+```
+
+## 最小流转
+
+```text
+INTAKE
+  -> SCENARIO_RESOLVED
+  -> PERCEPTION_READY
+  -> ANALYSIS_READY
+  -> DEBUG_CLOSED
+```
+
+## 阻断条件
+
+- 场景置信度不足。
+- 指标口径缺失。
+- 数据集字段冲突。
+- 权限策略不允许。
+- 输出缺少 QueryPlan 或 source_footer。

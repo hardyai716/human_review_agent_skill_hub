@@ -1,0 +1,413 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.bytedance.local/human-review-ops/analysis-result.schema.json",
+  "title": "HumanReviewOpsAnalysisResult",
+  "description": "人审运营分析能力输出结构，覆盖影响评估、归因定位、SOP 判定和质量检查。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "analysis_id",
+    "event_id",
+    "templates_used",
+    "query_plan",
+    "impact_assessment",
+    "root_cause_hypotheses",
+    "sop_decision",
+    "quality_checks",
+    "source_footer"
+  ],
+  "properties": {
+    "analysis_id": {
+      "type": "string",
+      "description": "分析结果唯一标识。"
+    },
+    "event_id": {
+      "type": "string",
+      "description": "关联事件 ID。"
+    },
+    "templates_used": {
+      "type": "array",
+      "description": "本次分析使用的模板。",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "enum": [
+          "impact_assessment",
+          "root_cause",
+          "sop_decision",
+          "case_comparison",
+          "custom_readonly"
+        ]
+      }
+    },
+    "query_plan": {
+      "type": "object",
+      "description": "查询执行前的治理查询计划，用于防止模型自由找表或口径偏移。",
+      "additionalProperties": false,
+      "required": [
+        "query_plan_id",
+        "metric_entities",
+        "dimensions",
+        "time_range",
+        "filters",
+        "allowed_sources",
+        "forbidden_sources",
+        "quality_checks"
+      ],
+      "properties": {
+        "query_plan_id": {
+          "type": "string",
+          "description": "查询计划 ID。"
+        },
+        "metric_entities": {
+          "type": "array",
+          "description": "已映射的治理指标实体。",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "metric_id",
+              "definition_version",
+              "source_tier"
+            ],
+            "properties": {
+              "metric_id": {
+                "type": "string",
+                "description": "语义层或指标注册表中的指标 ID。"
+              },
+              "definition_version": {
+                "type": "string",
+                "description": "指标口径版本。"
+              },
+              "source_tier": {
+                "type": "string",
+                "enum": [
+                  "semantic_layer",
+                  "governed_dataset",
+                  "scenario_reference",
+                  "readonly_exploration"
+                ],
+                "description": "指标来源层级。"
+              }
+            }
+          }
+        },
+        "dimensions": {
+          "type": "array",
+          "description": "查询粒度，例如风险域、三级标签、策略、队列。",
+          "items": {
+            "type": "string"
+          }
+        },
+        "time_range": {
+          "type": "object",
+          "description": "查询时间范围。",
+          "additionalProperties": true
+        },
+        "filters": {
+          "type": "array",
+          "description": "本次查询使用的过滤条件。",
+          "items": {
+            "type": "string"
+          }
+        },
+        "allowed_sources": {
+          "type": "array",
+          "description": "允许使用的数据源。",
+          "items": {
+            "type": "string"
+          }
+        },
+        "forbidden_sources": {
+          "type": "array",
+          "description": "禁止使用的数据源。",
+          "items": {
+            "type": "string"
+          }
+        },
+        "quality_checks": {
+          "type": "array",
+          "description": "查询后必须执行的数据质量检查。",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "impact_assessment": {
+      "type": "object",
+      "description": "影响评估结论。",
+      "additionalProperties": false,
+      "required": [
+        "summary",
+        "impact_scope",
+        "risk_level",
+        "business_risk",
+        "duration",
+        "evidence_refs"
+      ],
+      "properties": {
+        "summary": {
+          "type": "string",
+          "description": "影响评估摘要。"
+        },
+        "impact_scope": {
+          "type": "string",
+          "description": "影响范围描述。"
+        },
+        "risk_level": {
+          "type": "string",
+          "enum": [
+            "P0",
+            "P1",
+            "P2",
+            "P3",
+            "unknown"
+          ],
+          "description": "风险等级建议。"
+        },
+        "business_risk": {
+          "type": "string",
+          "description": "业务风险说明。"
+        },
+        "duration": {
+          "type": "string",
+          "description": "影响持续时间或时间范围说明。"
+        },
+        "evidence_refs": {
+          "type": "array",
+          "description": "支撑影响评估的证据引用。",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "root_cause_hypotheses": {
+      "type": "array",
+      "description": "候选根因列表，按置信度从高到低排序。",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "hypothesis",
+          "confidence",
+          "supporting_evidence",
+          "contradicting_evidence",
+          "next_check"
+        ],
+        "properties": {
+          "hypothesis": {
+            "type": "string",
+            "description": "候选根因。"
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "候选根因置信度。"
+          },
+          "supporting_evidence": {
+            "type": "array",
+            "description": "支持该根因的证据引用。",
+            "items": {
+              "type": "string"
+            }
+          },
+          "contradicting_evidence": {
+            "type": "array",
+            "description": "与该根因相矛盾或仍需排除的证据引用。",
+            "items": {
+              "type": "string"
+            }
+          },
+          "next_check": {
+            "type": "string",
+            "description": "建议下一步核查动作。"
+          }
+        }
+      }
+    },
+    "sop_decision": {
+      "type": "object",
+      "description": "基于 SOP 和场景规则形成的判定。",
+      "additionalProperties": false,
+      "required": [
+        "severity_level",
+        "next_action",
+        "required_confirmation",
+        "matched_rules",
+        "reason"
+      ],
+      "properties": {
+        "severity_level": {
+          "type": "string",
+          "enum": [
+            "P0",
+            "P1",
+            "P2",
+            "P3"
+          ],
+          "description": "SOP 判定后的事件等级。"
+        },
+        "next_action": {
+          "type": "string",
+          "enum": [
+            "answer",
+            "notify",
+            "ask_more",
+            "monitor",
+            "execute_with_confirmation",
+            "escalate"
+          ],
+          "description": "建议下一步动作。"
+        },
+        "required_confirmation": {
+          "type": "boolean",
+          "description": "是否需要人工确认。"
+        },
+        "matched_rules": {
+          "type": "array",
+          "description": "命中的 SOP 或流程规则 ID。",
+          "items": {
+            "type": "string"
+          }
+        },
+        "reason": {
+          "type": "string",
+          "description": "判定原因说明。"
+        }
+      }
+    },
+    "custom_readonly_queries": {
+      "type": "array",
+      "description": "标准模板外的只读探索记录。",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "query_id",
+          "data_source",
+          "scope",
+          "summary"
+        ],
+        "properties": {
+          "query_id": {
+            "type": "string",
+            "description": "查询记录 ID。"
+          },
+          "data_source": {
+            "type": "string",
+            "description": "查询的数据源。"
+          },
+          "scope": {
+            "type": "string",
+            "description": "查询范围、时间范围或过滤条件摘要。"
+          },
+          "summary": {
+            "type": "string",
+            "description": "查询结果摘要。"
+          }
+        }
+      }
+    },
+    "quality_checks": {
+      "type": "object",
+      "description": "分析质量检查结果。",
+      "additionalProperties": false,
+      "required": [
+        "evidence_complete",
+        "data_fresh",
+        "metric_definition_consistent",
+        "owner_resolved",
+        "confidence"
+      ],
+      "properties": {
+        "evidence_complete": {
+          "type": "boolean",
+          "description": "关键结论是否都有证据支撑。"
+        },
+        "data_fresh": {
+          "type": "boolean",
+          "description": "使用的数据是否满足时效要求。"
+        },
+        "metric_definition_consistent": {
+          "type": "boolean",
+          "description": "指标口径是否与配置一致。"
+        },
+        "owner_resolved": {
+          "type": "boolean",
+          "description": "是否已解析出可通知 Owner。"
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "整体分析置信度。"
+        },
+        "warnings": {
+          "type": "array",
+          "description": "质量风险或缺失项提示。",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "source_footer": {
+      "type": "object",
+      "description": "分析结论的来源脚注，用于向用户暴露口径、来源、刷新时间、Owner 和置信度。",
+      "additionalProperties": false,
+      "required": [
+        "source_tier",
+        "metric_definition_version",
+        "data_freshness",
+        "owner",
+        "confidence_tier",
+        "review_status"
+      ],
+      "properties": {
+        "source_tier": {
+          "type": "string",
+          "enum": [
+            "semantic_layer",
+            "governed_dataset",
+            "scenario_reference",
+            "readonly_exploration"
+          ],
+          "description": "结论来源层级。"
+        },
+        "metric_definition_version": {
+          "type": "string",
+          "description": "指标口径版本。"
+        },
+        "data_freshness": {
+          "type": "string",
+          "description": "数据刷新时间或分区信息。"
+        },
+        "owner": {
+          "type": "string",
+          "description": "指标或数据 Owner。"
+        },
+        "confidence_tier": {
+          "type": "string",
+          "enum": [
+            "high",
+            "medium",
+            "low"
+          ],
+          "description": "结论置信度分层。"
+        },
+        "review_status": {
+          "type": "string",
+          "enum": [
+            "not_reviewed",
+            "auto_reviewed",
+            "human_reviewed"
+          ],
+          "description": "复核状态。"
+        }
+      }
+    }
+  }
+}

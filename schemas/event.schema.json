@@ -1,0 +1,384 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.bytedance.local/human-review-ops/event.schema.json",
+  "title": "HumanReviewOpsEvent",
+  "description": "人审运营闭环流程的统一事件对象。所有进入正式闭环的问题都应先标准化为该结构。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_id",
+    "source",
+    "event_profile",
+    "evidence",
+    "readiness",
+    "severity",
+    "routing",
+    "workflow"
+  ],
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "description": "事件唯一标识，建议格式为 EVT-YYYYMMDD-序号。"
+    },
+    "source": {
+      "type": "object",
+      "description": "事件来源信息。",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "source_id",
+        "raw_content",
+        "created_at"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "chat",
+            "alert",
+            "ticket",
+            "manual"
+          ],
+          "description": "来源类型：群聊/自然语言、告警、工单、手工录入。"
+        },
+        "source_id": {
+          "type": "string",
+          "description": "来源系统中的原始 ID，例如消息 ID、告警 ID、工单 ID。"
+        },
+        "raw_content": {
+          "type": "string",
+          "description": "原始输入内容或摘要。"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "原始输入创建时间。"
+        },
+        "created_by": {
+          "type": "string",
+          "description": "原始输入创建人，可为空。"
+        }
+      }
+    },
+    "event_profile": {
+      "type": "object",
+      "description": "事件画像，描述问题属于什么场景、影响什么对象、当前处于什么状态。",
+      "additionalProperties": false,
+      "required": [
+        "business_domain",
+        "scenario",
+        "problem_type",
+        "impact_object",
+        "time_range",
+        "current_status"
+      ],
+      "properties": {
+        "business_domain": {
+          "type": "string",
+          "description": "业务域，例如审核、质检、申诉、策略等。"
+        },
+        "scenario": {
+          "type": "string",
+          "description": "业务场景名称，对应业务场景表。"
+        },
+        "problem_type": {
+          "type": "string",
+          "description": "问题类型，对应场景内的问题分类。"
+        },
+        "impact_object": {
+          "type": "string",
+          "description": "被影响对象，例如用户、商家、队列、策略、指标或审核任务。"
+        },
+        "time_range": {
+          "type": "object",
+          "description": "问题发生或分析所需的时间范围。",
+          "additionalProperties": false,
+          "required": [
+            "start",
+            "end"
+          ],
+          "properties": {
+            "start": {
+              "type": "string",
+              "format": "date-time",
+              "description": "开始时间。"
+            },
+            "end": {
+              "type": "string",
+              "format": "date-time",
+              "description": "结束时间。"
+            }
+          }
+        },
+        "current_status": {
+          "type": "string",
+          "description": "事件接入时的业务状态。"
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "description": "事件证据包，用于支撑后续分析和闭环。",
+      "additionalProperties": false,
+      "required": [
+        "metrics",
+        "samples",
+        "sop_refs",
+        "case_refs",
+        "owner_refs"
+      ],
+      "properties": {
+        "metrics": {
+          "type": "array",
+          "description": "指标证据列表。",
+          "items": {
+            "$ref": "#/$defs/evidence_ref"
+          }
+        },
+        "samples": {
+          "type": "array",
+          "description": "样本、明细或案例证据列表。",
+          "items": {
+            "$ref": "#/$defs/evidence_ref"
+          }
+        },
+        "sop_refs": {
+          "type": "array",
+          "description": "命中的 SOP 或规则引用。",
+          "items": {
+            "$ref": "#/$defs/evidence_ref"
+          }
+        },
+        "case_refs": {
+          "type": "array",
+          "description": "历史相似案例引用。",
+          "items": {
+            "$ref": "#/$defs/evidence_ref"
+          }
+        },
+        "owner_refs": {
+          "type": "array",
+          "description": "Owner 映射或责任配置引用。",
+          "items": {
+            "$ref": "#/$defs/evidence_ref"
+          }
+        }
+      }
+    },
+    "readiness": {
+      "type": "object",
+      "description": "数据就绪判断。",
+      "additionalProperties": false,
+      "required": [
+        "level",
+        "missing_fields",
+        "confidence"
+      ],
+      "properties": {
+        "level": {
+          "type": "string",
+          "enum": [
+            "quick",
+            "standard",
+            "deep",
+            "insufficient"
+          ],
+          "description": "数据就绪等级。"
+        },
+        "missing_fields": {
+          "type": "array",
+          "description": "仍缺失的关键字段。",
+          "items": {
+            "type": "string"
+          }
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "当前感知结果置信度。"
+        }
+      }
+    },
+    "severity": {
+      "type": "object",
+      "description": "组合评分后的事件等级。",
+      "additionalProperties": false,
+      "required": [
+        "level",
+        "score",
+        "dimensions"
+      ],
+      "properties": {
+        "level": {
+          "type": "string",
+          "enum": [
+            "P0",
+            "P1",
+            "P2",
+            "P3"
+          ],
+          "description": "事件等级。"
+        },
+        "score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "组合评分总分。"
+        },
+        "dimensions": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "impact_scope",
+            "business_risk",
+            "urgency",
+            "confidence"
+          ],
+          "properties": {
+            "impact_scope": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100,
+              "description": "影响范围评分。"
+            },
+            "business_risk": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100,
+              "description": "业务风险评分。"
+            },
+            "urgency": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100,
+              "description": "处理紧急度评分。"
+            },
+            "confidence": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100,
+              "description": "证据和结论置信度评分。"
+            }
+          }
+        }
+      }
+    },
+    "routing": {
+      "type": "object",
+      "description": "路由信息，第一版主路由是数据 Owner。",
+      "additionalProperties": false,
+      "required": [
+        "primary_owner_type",
+        "primary_owner",
+        "backup_owner",
+        "escalation_chain"
+      ],
+      "properties": {
+        "primary_owner_type": {
+          "type": "string",
+          "enum": [
+            "data_owner",
+            "scenario_owner",
+            "sop_owner",
+            "oncall"
+          ],
+          "description": "主负责人来源。"
+        },
+        "primary_owner": {
+          "type": "string",
+          "description": "主负责人标识。"
+        },
+        "backup_owner": {
+          "type": "string",
+          "description": "备份负责人标识。"
+        },
+        "escalation_chain": {
+          "type": "array",
+          "description": "升级链路，从低到高排序。",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "workflow": {
+      "type": "object",
+      "description": "流程状态和配置版本。",
+      "additionalProperties": false,
+      "required": [
+        "state",
+        "scenario_config_version",
+        "sla_policy_id",
+        "permission_policy_id"
+      ],
+      "properties": {
+        "state": {
+          "type": "string",
+          "enum": [
+            "INTAKE_RECEIVED",
+            "FAST_PATH_HANDLING",
+            "FAST_PATH_CLOSED",
+            "EVENT_CREATED",
+            "PERCEPTION_COLLECTING",
+            "NEED_MORE_INFO",
+            "ANALYZING",
+            "HUMAN_REVIEW_REQUIRED",
+            "OWNER_ROUTED",
+            "NOTIFIED",
+            "WAITING_RESPONSE",
+            "IN_PROGRESS",
+            "ESCALATED",
+            "RESOLUTION_SUBMITTED",
+            "CLOSURE_REVIEW",
+            "CLOSED",
+            "CANCELED"
+          ],
+          "description": "事件当前状态。"
+        },
+        "scenario_config_version": {
+          "type": "string",
+          "description": "命中的场景配置版本。"
+        },
+        "sla_policy_id": {
+          "type": "string",
+          "description": "命中的 SLA 策略 ID。"
+        },
+        "permission_policy_id": {
+          "type": "string",
+          "description": "命中的执行权限策略 ID。"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "evidence_ref": {
+      "type": "object",
+      "description": "证据引用。",
+      "additionalProperties": false,
+      "required": [
+        "ref_id",
+        "ref_type",
+        "summary"
+      ],
+      "properties": {
+        "ref_id": {
+          "type": "string",
+          "description": "证据 ID 或外部引用。"
+        },
+        "ref_type": {
+          "type": "string",
+          "description": "证据类型，例如 metric、sample、sop、case、owner。"
+        },
+        "summary": {
+          "type": "string",
+          "description": "证据摘要。"
+        },
+        "url": {
+          "type": "string",
+          "description": "证据链接，可为空。"
+        }
+      }
+    }
+  }
+}
