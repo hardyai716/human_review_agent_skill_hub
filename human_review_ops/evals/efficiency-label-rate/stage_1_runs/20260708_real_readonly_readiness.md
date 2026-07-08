@@ -11,17 +11,21 @@
 
 ## 运行结论
 
-当前状态：`blocked`。
+当前状态：`ready`。
 
-结论：当前不应开发真实只读查询适配器。原因不是链路缺代码，而是缺真实治理资产和可执行工具绑定；继续写通用适配层会违反 YAGNI 原则。
+结论：真实只读查询入口已确认，可基于现有风神数据集执行 `label_rate` 查询。继续开发时应直接复用该入口，不再额外设计通用查询框架。
 
-## 阻断项
+## 已确认入口
 
-| check_id | 阻断原因 | 证据 |
+| 项目 | 值 |
 | --- | --- | --- |
-| `real_semantic_metric_id` | 缺真实 Semantic Layer 指标 ID | 未找到 `semantic_metric_id` / `canonical_metric_id` |
-| `governed_dataset_id` | 缺真实 Aeolus 治理数据集或报告 ID | 未找到 `aeolus_dataset_id` / `dataset_id` / 数据集 URL |
-| `readonly_tool_binding` | 缺预注册只读 Tool / MCP / CLI 绑定 | 工具策略中未声明真实只读执行命令 |
+| Region | `cn` |
+| App ID | `1128` |
+| Dataset ID | `3888816` |
+| Dataset | `[重点模型]-社区_人工审核明细数据` |
+| 查询命令 | `bytedcli -j aeolus query -r cn 3888816 "<SQL>" --limit 1000` |
+| 打标率指标 | `打标率__reviewid` |
+| Aeolus metric ID | `10000036292379` |
 
 ## 已满足项
 
@@ -30,18 +34,19 @@
 - freshness gate 已定义：`MAX(p_date)` 和目标分区行数。
 - 字段映射已覆盖 reason、日期、场景、机审一级标签、完审量、打标量等核心字段。
 - 敏感明细和人员字段已排除。
+- 只读工具绑定已确认：`bytedcli -j aeolus query`。
 
 ## 风险提示
 
 - Owner 仍是角色级 Owner，当前作为 warning，不阻断 mock 链路。
 - 进入真实只读 Tool 前，应补具体 Owner 或明确批准的值班/群机制。
 
-## 下一步需要输入
+## 下一步
 
-- 真实 Semantic Layer metric ID 或 Aeolus dataset/report ID。
-- 预注册只读 Tool / MCP / CLI 命令。
-- 具体数据 / 指标 Owner，或明确的 Owner 兜底机制。
+- 将 mock 只读执行 runner 替换为基于 `bytedcli -j aeolus query` 的真实只读执行。
+- 保留 QueryPlan、tool_call_record、analysis_result、source_footer 和 provenance 契约。
+- 补具体数据 / 指标 Owner，或明确的 Owner 兜底机制。
 
 ## YAGNI 决策
 
-在以上阻断项补齐前，不开发真实只读适配器、不设计通用查询框架、不增加未来可能用到的抽象。
+直接复用已确认的风神数据集和 `bytedcli aeolus query` 能力，不设计额外通用查询框架。

@@ -16,6 +16,18 @@
 | `governed_dataset` | Aeolus 治理数据集 | 语义层未覆盖但数据集已治理时使用 | 可回退 |
 | `curated_raw_sql` | `olap_content_security_community.dws_sft_tcs_review_task_detail_di` | 低打标率分级、维度拆解 | 受控回退 |
 
+## 真实风神入口
+
+- Region：`cn`
+- App ID：`1128`
+- Dataset ID：`3888816`
+- Dataset 名称：`[重点模型]-社区_人工审核明细数据`
+- 查询命令：`bytedcli -j aeolus query -r cn 3888816 "<SQL>" --limit 1000`
+- `label_rate` 对应风神指标：`打标率__reviewid`
+- Aeolus metric ID：`10000036292379`
+- 分子指标：`打标量__reviewid`
+- 分母指标：`完审量_reviewid`
+
 ## 物理表参考
 
 - 表：`olap_content_security_community.dws_sft_tcs_review_task_detail_di`

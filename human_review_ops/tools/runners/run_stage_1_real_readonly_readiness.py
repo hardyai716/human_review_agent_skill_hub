@@ -46,7 +46,7 @@ def run_readiness() -> dict[str, Any]:
 
     checks = [
         check_local_metric_contract(metric_contract),
-        check_real_semantic_metric_id(metric_contract, dataset_reference),
+        check_real_metric_binding(metric_contract, dataset_reference),
         check_governed_dataset_id(dataset_reference),
         check_curated_raw_source(dataset_reference),
         check_readonly_tool_binding(tool_policy),
@@ -77,7 +77,7 @@ def run_readiness() -> dict[str, Any]:
         "blockers": blockers,
         "warnings": warnings,
         "next_required_inputs": [
-            "real Semantic Layer metric ID or Aeolus dataset/report ID",
+            "real Semantic Layer metric ID or Aeolus metric/dataset ID",
             "pre-registered readonly tool binding or CLI command",
             "specific data/metric owner or approved ownership mechanism",
         ],
@@ -98,13 +98,15 @@ def check_local_metric_contract(metric_contract: str) -> dict[str, Any]:
     )
 
 
-def check_real_semantic_metric_id(
+def check_real_metric_binding(
     metric_contract: str,
     dataset_reference: str,
 ) -> dict[str, Any]:
     patterns = [
         r"semantic_metric_id\s*[:：]\s*`?[\w.\-]+`?",
         r"canonical_metric_id\s*[:：]\s*`?[\w.\-]+`?",
+        r"Aeolus metric ID\s*[:：]\s*`?[\w.\-]+`?",
+        r"aeolus_metric_id\s*[:：]\s*`?[\w.\-]+`?",
         r"machine_review\.label_rate",
     ]
     evidence = []
@@ -113,16 +115,17 @@ def check_real_semantic_metric_id(
         if match:
             evidence.append(match.group(0))
     return build_check(
-        check_id="real_semantic_metric_id",
+        check_id="real_metric_binding",
         status="pass" if evidence else "block",
-        summary="Real Semantic Layer metric ID is required before replacing mock fixtures.",
-        evidence=evidence or ["no concrete semantic_metric_id / canonical_metric_id found"],
+        summary="Real Semantic Layer or Aeolus metric binding is required before replacing mock fixtures.",
+        evidence=evidence or ["no concrete semantic_metric_id / canonical_metric_id / aeolus_metric_id found"],
     )
 
 
 def check_governed_dataset_id(dataset_reference: str) -> dict[str, Any]:
     patterns = [
         r"aeolus_dataset_id\s*[:：]\s*`?[\w.\-]+`?",
+        r"Dataset ID\s*[:：]\s*`?[\w.\-]+`?",
         r"dataset_id\s*[:：]\s*`?[\w.\-]+`?",
         r"https?://[^\s`)]*(aeolus|data\.bytedance)[^\s`)]*",
     ]
@@ -156,6 +159,8 @@ def check_curated_raw_source(dataset_reference: str) -> dict[str, Any]:
 
 def check_readonly_tool_binding(tool_policy: str) -> dict[str, Any]:
     binding_patterns = [
+        r"bytedcli\s+-j\s+aeolus\s+query",
+        r"bytedcli\s+aeolus\s+query",
         r"readonly_tool\s*[:：]",
         r"tool_name\s*[:：]",
         r"allowed_cli_commands",

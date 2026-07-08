@@ -812,7 +812,7 @@ human_review_ops/evals/efficiency-label-rate/eval_samples.jsonl
 | P0 | 阶段 1 | 以打标率为主线，跑通感知 + 分析最小链路。 | 输出 `scenario_key`、`task_type`、QueryPlan、source_footer。 | 已完成（不接真实查询） |
 | P1 | 阶段 1 | 接入 mock / 只读 Tool。 | 只读工具调用有 tool_call_record，且不会写状态。 | 已完成（mock 预检，不做真实查询） |
 | P1 | 阶段 1 | 基于 QueryPlan 执行只读查询并输出分析结果与依据。 | 输出数据来源、指标口径、证据字段、source_footer 和 provenance；不写状态、不发送通知。 | 已完成（mock 只读执行，未接真实数据） |
-| P1 | 阶段 1 | 接入真实只读 Tool。 | 替换 mock fixture，保留 QueryPlan、tool_call_record、analysis_result 和 provenance 契约。 | 阻断（缺真实指标 ID、治理数据集 ID 和只读工具绑定） |
+| P1 | 阶段 1 | 接入真实只读 Tool。 | 替换 mock fixture，保留 QueryPlan、tool_call_record、analysis_result 和 provenance 契约。 | 待开始（准备度已通过） |
 | P2 | 阶段 2 | 按需生成通知草稿和 Owner 建议。 | 仅在用户明确要求或分析结果触发治理/升级条件时生成；不发送真实通知，输出 Owner 依据和置信度。 | 待开始 |
 | P2 | 阶段 2 | 记录人工处理状态。 | 仅在进入处置/跟进任务时输出 manual_tracking，不写线上状态。 | 待开始 |
 | P2 | 阶段 2 | 支持局部调度。 | `query_only`、`owner_lookup_only`、`notification_only`、`resolution_only` 均可独立执行。 | 待开始 |

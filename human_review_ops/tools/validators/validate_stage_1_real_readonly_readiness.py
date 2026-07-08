@@ -20,7 +20,7 @@ DEFAULT_RESULTS = (
 )
 REQUIRED_CHECKS = {
     "local_metric_contract",
-    "real_semantic_metric_id",
+    "real_metric_binding",
     "governed_dataset_id",
     "curated_raw_source",
     "readonly_tool_binding",
@@ -29,12 +29,6 @@ REQUIRED_CHECKS = {
     "sensitive_scope_guard",
     "specific_owner",
 }
-EXPECTED_CURRENT_BLOCKERS = {
-    "real_semantic_metric_id",
-    "governed_dataset_id",
-    "readonly_tool_binding",
-}
-
 
 def validate(results_path: Path) -> None:
     payload = json.loads(results_path.read_text(encoding="utf-8"))
@@ -73,11 +67,10 @@ def validate(results_path: Path) -> None:
     if payload.get("status") == "blocked" and not blockers:
         raise AssertionError("Blocked status must include blockers.")
 
-    missing_expected = EXPECTED_CURRENT_BLOCKERS - blockers
-    if missing_expected:
-        raise AssertionError(
-            f"Current readiness must block on missing assets: {sorted(missing_expected)}"
-        )
+    if blockers:
+        raise AssertionError(f"Current readiness should not have blockers: {sorted(blockers)}")
+    if payload.get("status") != "ready":
+        raise AssertionError("Current readiness should be ready after Aeolus dataset binding.")
 
     if checks_by_id["curated_raw_source"]["status"] != "pass":
         raise AssertionError("Curated raw source should remain documented.")

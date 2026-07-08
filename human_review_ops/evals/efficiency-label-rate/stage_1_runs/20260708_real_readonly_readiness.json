@@ -1,9 +1,9 @@
 {
   "record_type": "real_readonly_readiness",
   "scenario_key": "efficiency-label-rate",
-  "status": "blocked",
+  "status": "ready",
   "principle": "YAGNI",
-  "decision": "Do not build a real readonly adapter until blockers are resolved.",
+  "decision": "Real readonly adapter can be implemented with current assets.",
   "checks": [
     {
       "check_id": "local_metric_contract",
@@ -16,21 +16,21 @@
       ]
     },
     {
-      "check_id": "real_semantic_metric_id",
-      "status": "block",
+      "check_id": "real_metric_binding",
+      "status": "pass",
       "required_for_real_tool": true,
-      "summary": "Real Semantic Layer metric ID is required before replacing mock fixtures.",
+      "summary": "Real Semantic Layer or Aeolus metric binding is required before replacing mock fixtures.",
       "evidence": [
-        "no concrete semantic_metric_id / canonical_metric_id found"
+        "Aeolus metric ID：`10000036292379`"
       ]
     },
     {
       "check_id": "governed_dataset_id",
-      "status": "block",
+      "status": "pass",
       "required_for_real_tool": true,
       "summary": "Governed dataset/report ID is required for a real governed source fallback.",
       "evidence": [
-        "no concrete Aeolus governed dataset/report ID found"
+        "Dataset ID：`3888816`"
       ]
     },
     {
@@ -45,11 +45,13 @@
     },
     {
       "check_id": "readonly_tool_binding",
-      "status": "block",
+      "status": "pass",
       "required_for_real_tool": true,
       "summary": "Real readonly execution requires an explicit Tool/MCP/CLI binding.",
       "evidence": [
-        "no pre-registered readonly tool or CLI binding found"
+        "bytedcli -j aeolus query",
+        "bytedcli",
+        "aeolus"
       ]
     },
     {
@@ -98,35 +100,7 @@
       ]
     }
   ],
-  "blockers": [
-    {
-      "check_id": "real_semantic_metric_id",
-      "status": "block",
-      "required_for_real_tool": true,
-      "summary": "Real Semantic Layer metric ID is required before replacing mock fixtures.",
-      "evidence": [
-        "no concrete semantic_metric_id / canonical_metric_id found"
-      ]
-    },
-    {
-      "check_id": "governed_dataset_id",
-      "status": "block",
-      "required_for_real_tool": true,
-      "summary": "Governed dataset/report ID is required for a real governed source fallback.",
-      "evidence": [
-        "no concrete Aeolus governed dataset/report ID found"
-      ]
-    },
-    {
-      "check_id": "readonly_tool_binding",
-      "status": "block",
-      "required_for_real_tool": true,
-      "summary": "Real readonly execution requires an explicit Tool/MCP/CLI binding.",
-      "evidence": [
-        "no pre-registered readonly tool or CLI binding found"
-      ]
-    }
-  ],
+  "blockers": [],
   "warnings": [
     {
       "check_id": "specific_owner",
@@ -139,7 +113,7 @@
     }
   ],
   "next_required_inputs": [
-    "real Semantic Layer metric ID or Aeolus dataset/report ID",
+    "real Semantic Layer metric ID or Aeolus metric/dataset ID",
     "pre-registered readonly tool binding or CLI command",
     "specific data/metric owner or approved ownership mechanism"
   ]
