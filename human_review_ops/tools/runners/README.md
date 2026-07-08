@@ -9,6 +9,7 @@
 - `run_stage_1_readonly_execution_chain.py`：在 mock Tool 记录基础上生成 mock 只读执行结果、`analysis_result` 和 `provenance`。
 - `run_stage_1_real_readonly_readiness.py`：检查真实只读 Tool 接入准备度，按 YAGNI 原则阻断缺少真实资产的提前实现。
 - `run_stage_1_real_readonly_label_rate.py`：使用 `bytedcli -j aeolus query -r cn 3888816` 执行真实只读打标率查询，支持 `--days`、`--dimensions` 和 `--query-mode` 参数。
+- `run_stage_1_real_readonly_label_rate_grading.py`：使用真实只读 Aeolus 查询执行低打标率 notice/P2/P1/P0 分级，输出等级结果、综合去重结果和 provenance。
 
 ## 使用约束
 
@@ -33,4 +34,6 @@ python3 human_review_ops/tools/runners/run_stage_1_real_readonly_label_rate.py -
 python3 human_review_ops/tools/validators/validate_stage_1_real_readonly_label_rate.py --days 14 --dimensions reason --query-mode group_count
 python3 human_review_ops/tools/runners/run_stage_1_real_readonly_label_rate.py --days 14 --dimensions reason,scene
 python3 human_review_ops/tools/validators/validate_stage_1_real_readonly_label_rate.py --days 14 --dimensions reason,scene --query-mode ranking
+python3 human_review_ops/tools/runners/run_stage_1_real_readonly_label_rate_grading.py
+python3 human_review_ops/tools/validators/validate_stage_1_real_readonly_label_rate_grading.py
 ```

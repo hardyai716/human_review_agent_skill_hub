@@ -119,3 +119,18 @@
 - `query_mode=ranking` 时，`readonly_execution.rows[*].label_rate < 0.1`。
 - `query_mode=group_count` 时，`readonly_execution.rows[0].low_label_rate_group_cnt >= 0`。
 - 不生成 `notification_draft`、`owner_recommendation` 或 `manual_tracking`。
+
+## 真实只读分级断言
+
+真实只读低打标率分级必须：
+
+- `QueryPlan.analysis_mode=low_label_rate_grading`。
+- `QueryPlan.fallback_reason=complex_grading_rule_not_covered_by_semantic_layer`。
+- `QueryPlan.levels=["notice","P2","P1","P0"]`。
+- `QueryPlan.level_priority` 必须表达 `P0 > P1 > P2 > notice`。
+- `QueryPlan.sql_by_level` 必须包含四级 SQL，且每级 SQL 都包含 A/B/C/D 基础过滤。
+- `readonly_execution.level_results` 必须包含四级结果。
+- `readonly_execution.comprehensive_results` 必须按最高等级对 reason 去重。
+- 每条分级 evidence 必须包含 `avg_review_in_cnt`、`avg_review_done_cnt`、`avg_label_cnt`、`label_rate`、`hit_rule_ids`、`hit_conditions`。
+- 所有分级结果必须 `truncated=false`。
+- 不生成 `notification_draft`、`owner_recommendation` 或 `manual_tracking`。

@@ -131,3 +131,16 @@
 - 明细查询所有返回行必须满足 `review_done_cnt > 0` 且 `label_rate < 0.1`。
 - 返回结果必须 `truncated=false`。
 - 查询失败时输出失败原因，不得解释为“无低打标率 reason”。
+
+## 真实只读低打标率分级
+
+阶段 1 P1 真实只读分级必须：
+
+- 使用 `bytedcli -j aeolus query -r cn 3888816 "<SQL>" --limit 1000`。
+- 默认全跑 `notice`、`P2`、`P1`、`P0` 四级，不得省略等级。
+- SQL 包含 A/B/C/D 基础过滤，并使用动态分区天数计算日均，不得硬编码 `/7`。
+- 每级结果保留本级命中 reason、日均进审、日均完审、日均打标、打标率、命中规则和命中条件。
+- 综合结果按 `P0 > P1 > P2 > notice` 对同一 reason 取最高等级。
+- 所有分级结果必须 `truncated=false`。
+- 输出必须包含 `QueryPlan`、`tool_call_records`、`readonly_execution`、`analysis_result`、`source_footer` 和 `provenance`。
+- 不生成 `notification_draft`、`owner_recommendation` 或 `manual_tracking`。

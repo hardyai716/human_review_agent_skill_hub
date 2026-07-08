@@ -14,6 +14,7 @@
 - `validate_stage_1_readonly_execution_chain.py`：校验阶段 1 P1 的 mock 只读执行结果，确保输出 `readonly_execution`、`analysis_result` 和 `provenance`，且不发送通知、不写状态。
 - `validate_stage_1_real_readonly_readiness.py`：校验真实只读 Tool 接入准备度报告，确保缺少真实指标 ID、治理数据集 ID 或只读工具绑定时不会误判为 ready。
 - `validate_stage_1_real_readonly_label_rate.py`：校验真实只读打标率查询结果，支持 `--days`、`--dimensions` 和 `--query-mode` 校验对应 SQL，确保 SQL 包含 A/B/C/D 过滤、结果未截断，明细行满足 `label_rate < 0.1`，计数模式返回合法分组数。
+- `validate_stage_1_real_readonly_label_rate_grading.py`：校验真实只读低打标率分级结果，确保 notice/P2/P1/P0 全等级执行、证据字段完整、综合结果按最高等级去重且不触发通知或写状态。
 
 ## 使用约束
 
