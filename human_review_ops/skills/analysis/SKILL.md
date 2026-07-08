@@ -23,9 +23,11 @@ disallowed-tools:
 ## 输出
 
 - QueryPlan
+- readonly_execution
 - 分析摘要
 - 候选根因
 - source_footer
+- provenance
 - tool_call_record（仅 mock / 只读预检阶段）
 - 质量检查结果
 

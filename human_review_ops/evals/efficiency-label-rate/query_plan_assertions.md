@@ -86,3 +86,17 @@
 - 反例和低信息量样例不得生成工具调用记录。
 
 后续接入真实只读执行时，应新增执行结果断言，校验数据来源、指标口径、过滤条件、质量检查、source_footer 和 provenance，不再把 mock 预检断言作为真实查询结论断言。
+
+## 只读执行结果断言
+
+阶段 1 P1 只读执行链路必须：
+
+- QueryPlan 通过后才生成 `readonly_execution`。
+- `readonly_execution` 必须记录 `execution_id`、`execution_mode`、`status`、`source_tier`、`data_freshness`、`row_count`、`rows`、`evidence_fields`、`metric_formula` 和 `quality_checks`。
+- `analysis_result.query_plan.tool_calls` 必须与顶层 QueryPlan 的 `tool_calls` 一致。
+- `analysis_result.source_footer` 必须与顶层 `source_footer` 一致。
+- `analysis_result.provenance` 必须与顶层 `provenance` 一致。
+- `provenance.tool_call_ids` 必须与 QueryPlan 的 `tool_calls` 一致。
+- `provenance.references` 必须包含 `metric_contract`、`dataset_reference` 和 `analysis_rule`。
+- 当前 mock 阶段必须标明 `mock_fixture_not_real_data`，不得声称真实分区新鲜度。
+- 反例和低信息量样例不得生成 `readonly_execution`、`analysis_result` 或 `provenance`。

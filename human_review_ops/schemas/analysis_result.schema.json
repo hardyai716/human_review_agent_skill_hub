@@ -13,8 +13,10 @@
     "impact_assessment",
     "root_cause_hypotheses",
     "sop_decision",
+    "readonly_execution",
     "quality_checks",
-    "source_footer"
+    "source_footer",
+    "provenance"
   ],
   "properties": {
     "analysis_id": {
@@ -113,7 +115,7 @@
         },
         "tool_calls": {
           "type": "array",
-          "description": "关联的 tool_call_record ID 列表。阶段 1 P1 仅用于 mock / 只读预检记录。",
+          "description": "关联的 tool_call_record ID 列表，覆盖预检和只读执行记录。",
           "items": {
             "type": "string"
           }
@@ -318,6 +320,75 @@
         }
       }
     },
+    "readonly_execution": {
+      "type": "object",
+      "description": "QueryPlan 通过后产生的只读执行结果。阶段 1 可为 mock fixture。",
+      "additionalProperties": true,
+      "required": [
+        "execution_id",
+        "execution_mode",
+        "status",
+        "source_tier",
+        "data_freshness",
+        "row_count",
+        "columns",
+        "rows",
+        "evidence_fields",
+        "metric_formula",
+        "quality_checks"
+      ],
+      "properties": {
+        "execution_id": {
+          "type": "string"
+        },
+        "execution_mode": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "success",
+            "blocked",
+            "degraded",
+            "failed"
+          ]
+        },
+        "source_tier": {
+          "type": "string"
+        },
+        "data_freshness": {
+          "type": "string"
+        },
+        "row_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "columns": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "rows": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "evidence_fields": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "metric_formula": {
+          "type": "string"
+        },
+        "quality_checks": {
+          "type": "object"
+        }
+      }
+    },
     "quality_checks": {
       "type": "object",
       "description": "分析质量检查结果。",
@@ -379,8 +450,11 @@
           "enum": [
             "semantic_layer",
             "governed_dataset",
+            "curated_raw_sql",
             "scenario_reference",
-            "readonly_exploration"
+            "scenario_reference_preflight",
+            "readonly_exploration",
+            "mock_fixture"
           ],
           "description": "结论来源层级。"
         },
@@ -410,9 +484,90 @@
           "enum": [
             "not_reviewed",
             "auto_reviewed",
-            "human_reviewed"
+            "human_reviewed",
+            "debug_only_no_real_query",
+            "debug_only_mock_readonly_execution",
+            "debug_only_execution_blocked"
           ],
           "description": "复核状态。"
+        },
+        "scenario_key": {
+          "type": "string",
+          "description": "场景标识。"
+        },
+        "metric_id": {
+          "type": "string",
+          "description": "指标标识。"
+        },
+        "quality_checks": {
+          "type": "array",
+          "description": "本次输出关联的质量检查项。",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "description": "分析结果的出处链路，记录 QueryPlan、Tool 调用、场景参考和限制说明。",
+      "additionalProperties": true,
+      "required": [
+        "provenance_id",
+        "scenario_key",
+        "query_plan_id",
+        "execution_id",
+        "execution_mode",
+        "source_tier",
+        "source_name",
+        "metric_id",
+        "metric_formula",
+        "tool_call_ids",
+        "references",
+        "limitations"
+      ],
+      "properties": {
+        "provenance_id": {
+          "type": "string"
+        },
+        "scenario_key": {
+          "type": "string"
+        },
+        "query_plan_id": {
+          "type": "string"
+        },
+        "execution_id": {
+          "type": "string"
+        },
+        "execution_mode": {
+          "type": "string"
+        },
+        "source_tier": {
+          "type": "string"
+        },
+        "source_name": {
+          "type": "string"
+        },
+        "metric_id": {
+          "type": "string"
+        },
+        "metric_formula": {
+          "type": "string"
+        },
+        "tool_call_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "references": {
+          "type": "object"
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     }

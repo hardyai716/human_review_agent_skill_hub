@@ -9,6 +9,7 @@
 - 输出 QueryPlan。
 - 输出 source_footer。
 - 阶段 1 P1 开始，输出 mock / 只读 `tool_call_record`。
+- 阶段 1 P1 只读执行开始，输出 `readonly_execution`、`analysis_result` 和 `provenance`。
 - 明确打标率口径：打标量 / 完审量。
 - 明确 source priority：Semantic Layer first，必要时受控 fallback。
 
@@ -97,3 +98,22 @@
 - `fallback_reason` 与 QueryPlan 一致。
 
 反例和低信息量样例不得生成工具调用记录。
+
+## readonly_execution / analysis_result / provenance
+
+阶段 1 P1 只读执行链路的正例必须：
+
+- 输出 `readonly_execution`。
+- 输出 `analysis_result`。
+- 输出 `provenance`。
+- `readonly_execution` 必须包含 `status`、`source_tier`、`row_count`、`rows`、`evidence_fields`、`metric_formula`、`quality_checks`。
+- `analysis_result` 必须包含 `impact_assessment`、`sop_decision`、`quality_checks`、`source_footer` 和 `provenance`。
+- `provenance` 必须记录 `query_plan_id`、`execution_id`、`tool_call_ids`、指标口径、过滤条件、质量检查和场景参考文件。
+- mock 阶段必须明确 `data_freshness=mock_fixture_not_real_data` 或等价说明，不得冒充真实线上数据。
+
+未列举维度样例必须：
+
+- 阻断只读执行。
+- `row_count=0`。
+- 输出字段发现后续要求。
+- 不输出业务结论。
