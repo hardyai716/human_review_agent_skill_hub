@@ -233,7 +233,7 @@ human_review_ops/
 | --- | --- | --- | --- |
 | 感知 Skill | `human_review_ops/skills/perception/references/scenario-index.md` | `references/scenarios/*.manifest.md`、`*.metric_contract.md`、`*.dataset_reference.md`、`*.examples.md` | 识别场景、指标、任务类型、数据就绪。 |
 | 分析 Skill | `human_review_ops/skills/analysis/references/scenario-index.md` | `references/scenarios/*.metric_contract.md`、`*.dataset_reference.md`、`*.analysis.md`、`*.examples.md` | 生成 QueryPlan、选择字段、归因分析。 |
-| 通知 Skill | `human_review_ops/skills/notification/references/scenario-index.md` | `references/scenarios/*.owner_routing.md`、`*.notification_templates.md`、`*.sla.md` | 生成通知、建议 Owner、判断升级。 |
+| 通知 Skill | `human_review_ops/skills/notification/references/scenario-index.md` | `references/scenarios/*.owner_routing.md`、`*.notification_templates.md`、`*.sla.md` | 生成通知、POC / 触达对象路由、判断升级。 |
 | 解决 Skill | `human_review_ops/skills/resolution/references/scenario-index.md` | `references/scenarios/*.state_machine.md`、`*.sla.md`、`*.owner_routing.md`、`*.examples.md` | 推进状态、回收结论、关闭或复查。 |
 
 示例索引：
@@ -434,7 +434,7 @@ partial_workflow
 
 - 基于分析结果生成 AI Summary 卡片。
 - MVP 阶段只发送固定人/群。
-- 输出建议 Owner 和建议升级对象。
+- 输出 POC / 触达对象路由计划和升级对象。
 
 禁止：
 
@@ -673,12 +673,12 @@ human_review_ops/evals/efficiency-label-rate/eval_samples.jsonl
 3. 使用 Skill 内 `human_review_ops/skills/{skill}/references/scenarios/` 调试快照跑通最小流程。
 4. 验证是否能稳定读取根目录 `human_review_ops/references/scenarios/`。
 5. 逐步接入只读 Tool/MCP/CLI。
-6. 查询类任务优先跑通 QueryPlan 后的只读执行与依据记录；通知草稿、Owner 建议和人工处理记录只在用户明确要求，或分析结果触发治理/升级条件时生成，不发送真实通知、不写线上状态。
+6. 查询类任务优先跑通 QueryPlan 后的只读执行与依据记录；通知草稿、POC / 触达对象路由和人工处理记录只在用户明确要求，或分析结果触发治理/升级条件时生成，不发送真实通知、不写线上状态。
 
 验收：
 
 - 查询类任务能进入 `query_only` 或 `partial_workflow`。
-- 找人类任务能进入 `owner_lookup_only`，并输出 Owner 依据和置信度。
+- 找人类任务能进入 `owner_lookup_only`，并输出 POC / 触达对象路由依据和置信度。
 - 通知类任务只能生成草稿或测试卡片，不能绕过人工确认。
 - 解决类任务只能记录人工状态、结论、证据和是否继续观察。
 - 若根目录 `human_review_ops/references/scenarios/` 跨目录读取失败，必须明确记录失败原因，并继续使用 Skill 内调试快照。
@@ -701,7 +701,7 @@ human_review_ops/evals/efficiency-label-rate/eval_samples.jsonl
 - 混淆字段拒绝率达到标准。
 - QueryPlan 校验通过后，Agent 应按用户问题执行可用的 mock / 只读查询链路。
 - 输出包含 QueryPlan、tool_call_record、source_footer、数据来源、指标口径和分析依据。
-- 不把通知草稿、Owner 建议或人工处理状态作为查询类任务的默认产出。
+- 不把通知草稿、POC / 触达对象路由或人工处理状态作为查询类任务的默认产出。
 - 只有覆盖样本池、未治理字段、权限不足、真实通知、线上写入或高风险动作才要求人工确认。
 
 执行原则：
@@ -710,7 +710,7 @@ human_review_ops/evals/efficiency-label-rate/eval_samples.jsonl
 - 当用户问题明确、场景命中、QueryPlan 通过断言、数据源属于允许来源、工具权限为只读时，Agent 应直接执行可用的只读查询或 mock 查询链路。
 - 执行后必须记录依据，包括数据来源、指标口径、时间窗口、过滤条件、质量检查、tool_call_record、source_footer 和 provenance。
 - 只有信息不足、字段无法确认、用户要求覆盖标准样本池、命中禁止来源、权限不足、真实通知、线上写入或高风险动作时，才进入澄清或人工确认。
-- Owner 建议不是查询类任务的前置步骤；只有结果需要治理跟进、通知、升级或用户明确询问“找谁”时才生成。
+- POC / 触达对象路由不是查询类任务的前置步骤；只有结果需要治理跟进、通知、升级或用户明确询问“找谁”时才生成。
 
 ### 阶段 2：局部调度能力
 
@@ -811,18 +811,35 @@ human_review_ops/evals/efficiency-label-rate/eval_samples.jsonl
 | 阶段 2 | P2 | 新增通知卡片草稿 runner 和校验脚本。 | `run_stage_2_label_rate_notification_draft.py`、`validate_stage_2_label_rate_notification_draft.py`。 | 已完成 |
 | 阶段 2 | P2 | 完成单人飞书卡片预览推送。 | 以用户明确要求为前提，导入飞书表格并单独推送给用户本人；发送前剥离 `_meta`。 | 已完成 |
 
-### 12.3 下一阶段实施计划
+### 12.3 阶段 2 实施计划
 
-| 优先级 | 阶段 | 任务 | 验收标准 | 状态 |
-| --- | --- | --- | --- | --- |
-| P2 | 阶段 2 | 生成 Owner 建议和升级对象。 | 基于 `owner_routing.md` 输出 Owner 依据、置信度和升级建议；真实群推送前仍需人工确认。 | 待开始 |
-| P2 | 阶段 2 | 记录人工处理状态。 | 仅在进入处置/跟进任务时输出 manual_tracking，不写线上状态。 | 待开始 |
-| P2 | 阶段 2 | 支持局部调度。 | `query_only`、`owner_lookup_only`、`notification_only`、`resolution_only` 均可独立执行。 | 待开始 |
-| P2 | 阶段 3 | 增加发布治理和回滚。 | 场景包有 draft、reviewing、enabled、disabled、rollback 状态。 | 待开始 |
+#### 12.3.1 当前边界决策
+
+| 事项 | 当前决策 |
+| --- | --- |
+| POC 映射 | 真实 `reason/strategy -> POC` 映射后续补充；当前不编造真实 POC。 |
+| 分析粒度 | 当前按 `reason` 粒度实现；暂不强制绑定 `strategy_name`。 |
+| 触达身份 | 具体角色身份后续补充；开发验证阶段默认触达用户本人。 |
+| 群推送 | 群推送边界后续设计；当前不自动群发。 |
+| 回收闭环 | 暂不做联系人回复收集、卡片按钮回调或结果回收闭环。 |
+| 状态存储 | 开发阶段先本地存储，不写 Lark Base 或线上状态表。 |
+| 发送身份 | 默认使用 bot；失败或权限不足时再评估 user identity。 |
+| 数据敏感性 | 当前触达范围可接受；现阶段只发送给用户本人。 |
+
+#### 12.3.2 阶段 2 任务表
+
+| 优先级 | 任务 | 要做什么 | 产物路径 | 验收标准 | 状态 |
+| --- | --- | --- | --- | --- | --- |
+| P2 | POC / 触达对象路由占位 | 固化 notice/P2/P1/P0 的触达角色范围；当前真实 POC 映射为空，所有等级默认路由到用户本人。 | `stage_2_runs/.../poc_routing_plan.json` | 输出 `routing_mode=placeholder`、`fallback_to_default_user=true`、各等级 `target_roles`、`default_recipient=self`；不编造具体 POC。 | 待开始 |
+| P2 | 等级触达规则固化 | 按 SOP 语义定义等级触达范围：notice 群同步策略明细；P2 周知治理 BP、审核 VOC POC、人审运营；P1 增加治理 BP +1、VOC 负责人、人审运营负责人；P0 额外周知治理负责人。 | `owner_routing.md`、`poc_routing_plan.json` | 每个等级均有角色范围、动作要求、是否需要人工确认；规则可被 validator 校验。 | 待开始 |
+| P2 | 通知草稿增强 | 将当前 Card 草稿与 POC 路由占位合并，说明当前为默认本人验证，后续接真实 POC 映射。 | `stage_2_runs/.../notification_draft.json`、`publish/*.card.json` | 草稿包含等级统计、数据链接、POC 占位策略、口径说明；发送前 `_meta` 已剥离；未确认时不群发。 | 待开始 |
+| P2 | 群推送门禁计划 | 生成真实群推送前的 `send_plan.json`，记录目标类型、目标来源、发送身份、发送内容和人工确认要求。 | `stage_2_runs/.../send_plan.json` | 默认 `requires_confirmation=true`、`group_send_blocked=true`；未确认时 validator 要求 `sent=false`。 | 待开始 |
+| P2 | 人工处理状态本地记录 | 针对进入处置 / 跟进的任务，生成本地 `manual_tracking` 记录，包含状态、证据、人工备注、下一步和是否继续观察。 | `stage_2_runs/.../manual_tracking.json` | 状态符合 `state_machine.md`；包含 `evidence_refs`、`operator_note`、`next_action`；不写线上状态。 | 待开始 |
+| P2 | 局部调度回归 | 验证 `owner_lookup_only`、`notification_only`、`resolution_only` 可基于已有阶段 1 / 阶段 2 产物独立运行，不重复查数。 | `stage_2_runs/.../*_results.jsonl`、新增 validator | 每种 task_type 都有样例和校验；`notification_only` 可生成卡片；`resolution_only` 可生成 tracking；不触发真实群推送。 | 待开始 |
 
 ### 12.4 进度更新规则
 
-- 每完成一项开发任务，必须把 `12.2 已完成任务看板` 或 `12.3 下一阶段实施计划` 中对应状态同步更新。
+- 每完成一项开发任务，必须把 `12.2 已完成任务看板` 或 `12.3 阶段 2 实施计划` 中对应状态同步更新。
 - 每次 TRAE 调试失败，必须补充调试检查记录，并把失败归因到路由、检索、Skill 输出、工具权限或场景包内容之一。
 - 每次修改场景包，必须重新运行场景包结构校验和相关评估样例。
 
