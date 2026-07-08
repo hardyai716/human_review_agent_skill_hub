@@ -1,4 +1,4 @@
-# 数据集说明：打标率低效 reason 分析
+# 数据集说明：打标率
 
 ## 查询路径优先级
 
@@ -14,7 +14,7 @@
 | --- | --- | --- | --- |
 | `semantic_layer` | 公司内部语义层 / 风神语义数据集 | 普通打标率、完审量、趋势查询 | 优先 |
 | `governed_dataset` | Aeolus 治理数据集 | 语义层未覆盖但数据集已治理时使用 | 可回退 |
-| `curated_raw_sql` | `olap_content_security_community.dws_sft_tcs_review_task_detail_di` | 低效 reason 分级、维度拆解 | 受控回退 |
+| `curated_raw_sql` | `olap_content_security_community.dws_sft_tcs_review_task_detail_di` | 低打标率分级、维度拆解 | 受控回退 |
 
 ## 物理表参考
 
@@ -29,7 +29,7 @@
 
 | 概念 | 逻辑字段 | 默认 Name | 说明 |
 | --- | --- | --- | --- |
-| 送审 reason / 策略 | `reason` | `reason` | 低效分析主实体。 |
+| 送审 reason / 策略 | `reason` | `reason` | 打标率分析主实体。 |
 | 日期分区 | `date` | `p_date` | 用于时间窗口和分区就绪检查。 |
 | 项目标题 | `project_title` | `project_title` | 用于排除测试、质检、离线等项目。 |
 | 审核场景 | `scene` | `scene` | 默认保留社区审核三类场景。 |
@@ -38,6 +38,16 @@
 | 完审量 | `review_done_cnt` | `完审量_reviewid` | 打标率分母。 |
 | 打标量 | `label_cnt` | `打标量__reviewid` | 双下划线，打标率分子。 |
 | 打标率 | `label_rate` | `打标率__reviewid` | 不直接跨粒度聚合，应重算。 |
+
+## 扩展维度发现
+
+当用户指定的维度不在 `metric_contract.md` 支持维度中时：
+
+1. 先查 Semantic Layer 是否存在对应 dimension 或 segment。
+2. 若语义层未覆盖，再查 Aeolus / 数据集字段说明。
+3. 必须确认字段 Name、业务含义、粒度影响、空值处理和 Owner。
+4. 通过确认后才能加入 QueryPlan 的 `dimensions`。
+5. 无法确认时输出澄清问题或人工确认请求，不得猜字段。
 
 ## SQL 写法约束
 

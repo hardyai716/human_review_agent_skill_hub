@@ -1,4 +1,4 @@
-# 状态机：打标率低效 reason 分析
+# 状态机：打标率
 
 ## 调试状态
 
@@ -29,7 +29,7 @@ STOPPED_NO_CONCLUSION
 | 状态 | 含义 | 输出 |
 | --- | --- | --- |
 | `INTAKE` | 接收用户问题 | 原始输入 |
-| `SCENARIO_RESOLVED` | 命中打标率低效场景 | `scenario_key` |
+| `SCENARIO_RESOLVED` | 命中打标率场景 | `scenario_key` |
 | `PERCEPTION_READY` | 识别任务类型、指标、时间窗口和维度 | `task_type`、`metric_id`、`dimensions` |
 | `QUERY_PLAN_READY` | 生成 QueryPlan | QueryPlan |
 | `ANALYSIS_READY` | 完成趋势、分级或维度拆解分析 | 分析摘要、evidence |
@@ -41,7 +41,8 @@ STOPPED_NO_CONCLUSION
 ## 流转规则
 
 - 用户只问趋势：`QUERY_PLAN_READY -> ANALYSIS_READY -> DEBUG_CLOSED`。
-- 用户问低效 reason 分级：`QUERY_PLAN_READY -> ANALYSIS_READY -> OWNER_SUGGESTED`。
+- 用户问低打标率 reason 分级：`QUERY_PLAN_READY -> ANALYSIS_READY -> OWNER_SUGGESTED`。
+- 用户问高打标率或普通趋势：`QUERY_PLAN_READY -> ANALYSIS_READY -> DEBUG_CLOSED`。
 - 用户要求通知：必须先 `OWNER_SUGGESTED`，再 `NOTIFICATION_DRAFTED`。
 - 口径、时间窗口或指标不明确：进入 `NEED_MORE_INFO`。
 - 数据未就绪：进入 `DATA_NOT_READY`，不得输出低效结论。

@@ -1,19 +1,33 @@
-# 期望输出：打标率低效 reason 分析
+# 期望输出：打标率
 
 ## 正例
 
 正例必须：
 
-- 命中 `scenario_key=efficiency-label-rate-low-efficiency`。
+- 命中 `scenario_key=efficiency-label-rate`。
 - 输出 `task_type=query_only` 或 `partial_workflow`。
 - 输出 QueryPlan。
 - 输出 source_footer。
 - 明确打标率口径：打标量 / 完审量。
 - 明确 source priority：Semantic Layer first，必要时受控 fallback。
 
-## 低效分级
+## 打标率排序
 
-当 `analysis_mode=low_efficiency_grading` 时必须：
+当 `analysis_mode=label_rate_ranking` 时必须：
+
+- 按用户指定方向排序，高打标率为降序，低打标率为升序。
+- 用户未明确高低方向时先澄清。
+- 每条结果需要 evidence 字段：
+  - 进审量。
+  - 完审量。
+  - 打标量。
+  - 打标率。
+  - 时间窗口。
+- 不得默认套用 P0/P1/P2/notice。
+
+## 低打标率分级
+
+当 `analysis_mode=low_label_rate_grading` 时必须：
 
 - 包含 `notice`、`P2`、`P1`、`P0` 四级。
 - 说明综合结果按 `P0 > P1 > P2 > notice` 取最高等级。
@@ -32,6 +46,15 @@
 - 输出 `dimensions × reason` 明细结构。
 - 输出 `dimensions` 汇总结构。
 - 对 NULL 维度值给出保留说明。
+
+## 未列举维度
+
+当用户指定的维度不在支持维度中时必须：
+
+- 先做 Semantic Layer / 数据集字段发现。
+- 输出待确认维度的字段名、字段含义、粒度影响和 Owner 检查项。
+- 字段无法确认时澄清或转人工。
+- 不得凭模型猜字段并直接查询。
 
 ## 反例
 

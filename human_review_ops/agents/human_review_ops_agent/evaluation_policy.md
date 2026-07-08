@@ -14,9 +14,9 @@
 - `human_review_ops/evals/efficiency-auto-disposal-accuracy/eval_samples.jsonl`
 - `human_review_ops/evals/efficiency-auto-disposal-accuracy/expected_outputs.md`
 - `human_review_ops/evals/efficiency-auto-disposal-accuracy/query_plan_assertions.md`
-- `human_review_ops/evals/efficiency-label-rate-low-efficiency/eval_samples.jsonl`
-- `human_review_ops/evals/efficiency-label-rate-low-efficiency/expected_outputs.md`
-- `human_review_ops/evals/efficiency-label-rate-low-efficiency/query_plan_assertions.md`
+- `human_review_ops/evals/efficiency-label-rate/eval_samples.jsonl`
+- `human_review_ops/evals/efficiency-label-rate/expected_outputs.md`
+- `human_review_ops/evals/efficiency-label-rate/query_plan_assertions.md`
 
 ## 阻断条件
 

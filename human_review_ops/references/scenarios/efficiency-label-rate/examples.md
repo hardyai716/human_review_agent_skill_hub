@@ -1,8 +1,8 @@
-# 样例：打标率低效 reason 分析
+# 样例：打标率
 
 ## 正例
 
-### 查询低效 reason
+### 查询低打标率 reason
 
 输入：
 
@@ -12,22 +12,37 @@
 
 期望：
 
-- 命中 `efficiency-label-rate-low-efficiency`。
+- 命中 `efficiency-label-rate`。
 - `task_type` 为 `query_only` 或 `partial_workflow`。
 - 输出 QueryPlan 和 source_footer。
 - 若需要低效分级，默认包含 notice/P2/P1/P0。
+
+### 查询高打标率 reason
+
+输入：
+
+```text
+近 7 天打标率最高的策略有哪些？
+```
+
+期望：
+
+- 命中 `efficiency-label-rate`。
+- 命中 `label_rate_ranking` 模式。
+- 按打标率降序输出，并带进审量、完审量、打标量和打标率。
+- 不套用低效分级。
 
 ### 分级分析
 
 输入：
 
 ```text
-帮我看下近 7 天低效策略分 P0/P1/P2/notice 的情况。
+帮我看下近 7 天低打标率策略分 P0/P1/P2/notice 的情况。
 ```
 
 期望：
 
-- 命中 `low_efficiency_grading` 模式。
+- 命中 `low_label_rate_grading` 模式。
 - 输出四级分级规则摘要。
 - 说明打标率口径为打标量 / 完审量。
 
@@ -36,7 +51,7 @@
 输入：
 
 ```text
-按机审一级标签拆一下低打标 reason。
+按机审一级标签拆一下打标率。
 ```
 
 期望：
@@ -44,6 +59,20 @@
 - 命中 `dimension_breakdown` 模式。
 - 读取 `mach_root_label_name` 维度。
 - 输出 `dimensions × reason` 和 `dimensions` 汇总结构。
+
+### 用户指定未列举维度
+
+输入：
+
+```text
+按业务线看打标率。
+```
+
+期望：
+
+- 不直接猜字段。
+- 先查 Semantic Layer / 数据集字段说明中是否存在业务线维度。
+- 字段确认后再加入 QueryPlan。
 
 ## 反例
 

@@ -13,15 +13,15 @@
 
 - `../../../references/scenarios/efficiency-auto-disposal-accuracy/`
 
-## efficiency-label-rate-low-efficiency
+## efficiency-label-rate
 
 调试态快照：
 
-- `scenarios/efficiency-label-rate-low-efficiency.metric_contract.md`
-- `scenarios/efficiency-label-rate-low-efficiency.dataset_reference.md`
-- `scenarios/efficiency-label-rate-low-efficiency.analysis.md`
-- `scenarios/efficiency-label-rate-low-efficiency.examples.md`
+- `scenarios/efficiency-label-rate.metric_contract.md`
+- `scenarios/efficiency-label-rate.dataset_reference.md`
+- `scenarios/efficiency-label-rate.analysis.md`
+- `scenarios/efficiency-label-rate.examples.md`
 
 目标态场景包：
 
-- `../../../references/scenarios/efficiency-label-rate-low-efficiency/`
+- `../../../references/scenarios/efficiency-label-rate/`

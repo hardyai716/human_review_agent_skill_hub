@@ -1,11 +1,11 @@
-# 场景清单：效率模块 / 打标率低效 reason 分析
+# 场景清单：效率模块 / 打标率
 
 ## 场景标识
 
-- `scenario_key`：`efficiency-label-rate-low-efficiency`
+- `scenario_key`：`efficiency-label-rate`
 - 模块：效率模块
 - 指标对象：打标率
-- 运营对象：高完审、低打标的送审 reason / 策略
+- 运营对象：送审 reason / 策略在不同维度下的打标率表现
 - 当前状态：阶段 1 主线样板场景
 
 ## 参考来源
@@ -13,17 +13,18 @@
 本场景只吸收以下已验证 Skill 中与打标率流程直接相关的内容：
 
 - `.trae/skills/warehouse-skill/`：数据治理、Semantic Layer first、provenance、字段映射和数据质量 gate。
-- `.trae/skills/low-efficiency-strategy-analysis/`：低效 reason 分级、维度拆解和输出结构。
+- `.trae/skills/low-efficiency-strategy-analysis/`：低打标率分级、维度拆解和输出结构。
 
 不直接迁移旧 Skill 的完整实现、历史目录结构或在线工具权限。
 
 ## 触发意图
 
+- 查询打标率、进审量、完审量、打标量趋势，并要求可复核口径。
+- 查询高打标率或低打标率的策略 / reason。
+- 按机审一级标签、场景、项目等维度拆解打标率。
 - 近 N 天有哪些高完审、低打标 reason。
 - 打标率低的策略 / reason 是否需要分级。
 - notice、P2、P1、P0 低效策略清单。
-- 按机审一级标签、场景、项目等维度拆解低效 reason。
-- 查询打标率、进审量、完审量、打标量趋势，并要求可复核口径。
 
 ## 排除意图
 

@@ -14,7 +14,7 @@
 | 场景 | 路径 | 状态 |
 | --- | --- | --- |
 | 自动处置准确率 | `human_review_ops/references/scenarios/efficiency-auto-disposal-accuracy/` | stage_0_5_placeholder |
-| 打标率低效 reason 分析 | `human_review_ops/references/scenarios/efficiency-label-rate-low-efficiency/` | stage_1_primary |
+| 打标率 | `human_review_ops/references/scenarios/efficiency-label-rate/` | stage_1_primary |
 
 ## 调试约束
 

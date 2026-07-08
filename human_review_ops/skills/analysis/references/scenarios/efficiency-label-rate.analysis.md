@@ -1,12 +1,13 @@
-# 分析规则：打标率低效 reason 分析
+# 分析规则：打标率
 
 ## 分析模式
 
 | 模式 | 触发条件 | 主要产出 |
 | --- | --- | --- |
 | `label_rate_trend` | 用户只问打标率、进审量、完审量趋势 | QueryPlan + 趋势口径说明 + source_footer |
-| `low_efficiency_grading` | 用户问低效策略、P0/P1/P2/notice、低效 reason 清单 | 四级分级清单 + 综合去重清单 |
-| `dimension_breakdown` | 用户要求按机审一级标签、场景、项目等维度拆解 | `dimensions × reason` 明细 + `dimensions` 汇总 |
+| `label_rate_ranking` | 用户查询高打标率、低打标率、TopN / BottomN 策略或 reason | 排序清单 + evidence |
+| `low_label_rate_grading` | 用户明确问低效策略、P0/P1/P2/notice、低打标 reason 清单 | 四级分级清单 + 综合去重清单 |
+| `dimension_breakdown` | 用户要求按机审一级标签、场景、项目或其他维度拆解 | `dimensions × reason` 明细 + `dimensions` 汇总 |
 
 ## 通用分析顺序
 
@@ -15,7 +16,8 @@
 3. 优先进行 Semantic Layer 发现，搜索 metric、dimension、segment 和 freshness。
 4. 判断是否需要 fallback：
    - 普通趋势查询不应过早 fallback。
-   - 低效分级可 fallback 到受控 SQL 模板。
+   - 高 / 低打标率排序优先走语义层或治理数据集。
+   - 低打标率分级可 fallback 到受控 SQL 模板。
    - 维度拆解可 fallback 到受控维度拆解 SQL。
 5. 生成 QueryPlan。
 6. 做数据就绪 gate：权限、分区、行数、分母、字段映射。
@@ -48,13 +50,24 @@
   "source_priority": ["semantic_layer", "governed_dataset", "curated_raw_sql"],
   "allowed_sources": ["semantic_layer", "olap_content_security_community.dws_sft_tcs_review_task_detail_di"],
   "forbidden_sources": ["temporary_table", "ownerless_legacy_sql", "deprecated_strategy_effect_table"],
-  "fallback_reason": "complex_grading_rule_not_covered_by_semantic_layer",
+  "fallback_reason": "none",
   "quality_checks": ["freshness_gate", "denominator_not_zero", "field_mapping_check"],
   "review_required": true
 }
 ```
 
-## 模式 A：低效分级
+## 模式 A：打标率排序
+
+适用于用户查询高打标率、低打标率、TopN、BottomN 或普通策略表现。
+
+输出要求：
+
+- 按用户要求升序或降序排序。
+- 用户未指定时，先澄清是看高打标率、低打标率，还是整体分布。
+- 每条策略 / reason 必须带 evidence：进审量、完审量、打标量、打标率、时间窗口。
+- 不套用 P0/P1/P2/notice，除非用户明确要求低效分级。
+
+## 模式 B：低打标率分级
 
 默认跑全等级：`notice`、`P2`、`P1`、`P0`。
 
@@ -72,7 +85,7 @@
 - 每条 reason 必须带 evidence：日均进审、日均完审、日均打标、打标率、命中条件。
 - 某级无命中时写“本期 0 条”，查询失败时写失败原因。
 
-## 模式 B：维度拆解
+## 模式 C：维度拆解
 
 先拉 `day × dimensions × reason` 日粒度明细，再跨日聚合：
 
@@ -84,8 +97,10 @@
 
 输出：
 
-- `dimensions × reason` 低效明细。
+- `dimensions × reason` 明细。
 - `dimensions` 全量汇总。
+
+如果用户指定的维度不在 `metric_contract.md` 支持维度中，必须先通过 Semantic Layer / 数据集字段发现确认字段，不能直接拼字段名。
 
 ## 停止条件
 
