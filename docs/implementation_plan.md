@@ -777,50 +777,41 @@ human_review_ops/evals/efficiency-label-rate/eval_samples.jsonl
 | 阶段 1 P1 真实只读查询 | 已通过 Aeolus 数据集 `3888816` 执行打标率只读查询，支持 `--days`、`--dimensions` 和 `--query-mode`。 | 通过 |
 | 阶段 1 P1 低打标率分级 | 已通过真实只读 SQL 输出 notice/P2/P1/P0 分级结果、综合去重结果、evidence 和 provenance。 | 通过 |
 
-### 12.2 已完成任务
+### 12.2 已完成任务看板
 
-- [x] 初始化 GitHub 仓库并推送主分支。
-- [x] 将运行态开发产物统一收敛到 `human_review_ops/`。
-- [x] 创建人审运营 Agent 最小元文件。
-- [x] 创建四类通用 Skill 最小模板。
-- [x] 创建效率模块 / 自动处置准确率样板场景包。
-- [x] 基于已验证的 `warehouse-skill` 和 `low-efficiency-strategy-analysis`，新增效率模块 / 打标率主线场景包。
-- [x] 创建 Skill 内调试快照。
-- [x] 创建评估样例和 QueryPlan 断言。
-- [x] 创建 retrieval_policy 和 tool_call_record schema。
-- [x] 创建工具权限策略。
-- [x] 创建打包和校验脚本的最小实现。
-- [x] 更新 HTML 架构演示和核心文档路径。
-- [x] 完成阶段 0.5 TRAE 调试验证记录：`human_review_ops/evals/efficiency-auto-disposal-accuracy/trae_debug_runs/20260708_stage_0_5.md`。
-- [x] 新增阶段 0.5 校验脚本：`human_review_ops/tools/validators/validate_trae_stage_0_5.py`。
-- [x] 人工复核并保存 TRAE 自定义智能体「人审运营智能体」提示词和调用条件。
-- [x] 完成打标率 Claude 数据层合规评估：`human_review_ops/evals/efficiency-label-rate/claude_data_layer_compliance.md`。
-- [x] 完成阶段 1 感知 + 分析最小链路运行记录：`human_review_ops/evals/efficiency-label-rate/stage_1_runs/20260708_minimal_chain.md`。
-- [x] 新增阶段 1 runner 和校验脚本：`run_stage_1_minimal_chain.py`、`validate_stage_1_minimal_chain.py`。
-- [x] 完成阶段 1 P1 mock / 只读 Tool 接入记录：`human_review_ops/evals/efficiency-label-rate/stage_1_runs/20260708_mock_tool_chain.md`。
-- [x] 新增阶段 1 P1 runner 和校验脚本：`run_stage_1_mock_tool_chain.py`、`validate_stage_1_mock_tool_chain.py`。
-- [x] 完成阶段 1 P1 mock 只读执行结果记录：`human_review_ops/evals/efficiency-label-rate/stage_1_runs/20260708_readonly_execution.md`。
-- [x] 新增阶段 1 P1 只读执行 runner 和校验脚本：`run_stage_1_readonly_execution_chain.py`、`validate_stage_1_readonly_execution_chain.py`。
-- [x] 完成阶段 1 P1 真实只读 Tool 接入准备度检查：`human_review_ops/evals/efficiency-label-rate/stage_1_runs/20260708_real_readonly_readiness.md`。
-- [x] 新增真实只读 Tool 准备度 runner 和校验脚本：`run_stage_1_real_readonly_readiness.py`、`validate_stage_1_real_readonly_readiness.py`。
-- [x] 完成阶段 1 P1 真实只读打标率查询记录：`human_review_ops/evals/efficiency-label-rate/stage_1_runs/20260708_real_readonly_label_rate.md`。
-- [x] 新增真实只读打标率 runner 和校验脚本：`run_stage_1_real_readonly_label_rate.py`、`validate_stage_1_real_readonly_label_rate.py`。
-- [x] 完成真实只读打标率查询参数化：支持 `--days`、`--dimensions`、`--query-mode=ranking/group_count`，并生成 7 天、14 天、多维度和计数回归产物。
-- [x] 完成阶段 1 P1 低打标率分级真实只读查询：`human_review_ops/evals/efficiency-label-rate/stage_1_runs/20260708_real_readonly_label_rate_grading_results.jsonl`。
-- [x] 新增真实只读低打标率分级 runner 和校验脚本：`run_stage_1_real_readonly_label_rate_grading.py`、`validate_stage_1_real_readonly_label_rate_grading.py`。
+| 阶段 | 优先级 / 类型 | 已完成内容 | 验收标准 / 产物 | 状态 |
+| --- | --- | --- | --- | --- |
+| 基础建设 | 基础 | 初始化 GitHub 仓库并推送主分支。 | 仓库地址：`https://github.com/hardyai716/human_review_agent_skill_hub.git`。 | 已完成 |
+| 基础建设 | 基础 | 将运行态开发产物统一收敛到 `human_review_ops/`。 | 运行态 Agent、Skill、场景包、eval、schema、tool 均位于 `human_review_ops/`。 | 已完成 |
+| 基础建设 | 基础 | 创建人审运营 Agent 最小元文件。 | 具备身份、能力、安装、路由、权限、记忆、评估和 TRAE 调试文件。 | 已完成 |
+| 基础建设 | 基础 | 创建四类通用 Skill 最小模板。 | 感知、分析、通知、解决 Skill 均具备 `SKILL.md`、`common.md`、`scenario-index.md`。 | 已完成 |
+| 基础建设 | 基础 | 创建样板场景包。 | 已具备自动处置准确率占位场景包和打标率主线场景包。 | 已完成 |
+| 基础建设 | 基础 | 创建 Skill 内调试快照。 | 四类 Skill 已具备样板场景调试快照。 | 已完成 |
+| 基础建设 | 基础 | 创建评估样例和 QueryPlan 断言。 | `eval_samples.jsonl`、`expected_outputs.md`、`query_plan_assertions.md` 已具备。 | 已完成 |
+| 基础建设 | 基础 | 创建 schema、工具策略、打包和校验脚本最小实现。 | 已具备 retrieval_policy、tool_call_record schema、工具权限策略、packager 和 validator。 | 已完成 |
+| 基础建设 | 文档 | 更新 HTML 架构演示和核心文档路径。 | 架构演示与核心文档路径已同步到 `human_review_ops/`。 | 已完成 |
+| 阶段 0.5 | P0 | 在 TRAE 创建自定义智能体「人审运营智能体」。 | 能加载 Agent 调试配置和四类 Skill；UI 已确认，配置已人工复核。 | 已完成 |
+| 阶段 0.5 | P0 | 使用 5 条样例跑调试闭环。 | 每条样例都有 `trae_debug_checklist.md` 格式记录；本轮覆盖 6 条样例。 | 已完成 |
+| 阶段 0.5 | P0 | 验证 `human_review_ops/references/scenarios/` 跨目录读取。 | 根目录读取通过；Skill 快照可作为回退。 | 已完成 |
+| 阶段 0.5 | 校验 | 新增阶段 0.5 校验脚本。 | `validate_trae_stage_0_5.py` 校验通过。 | 已完成 |
+| 阶段 1 | P0 | 以打标率为主线，跑通感知 + 分析最小链路。 | 输出 `scenario_key`、`task_type`、QueryPlan、source_footer；运行记录：`20260708_minimal_chain.md`。 | 已完成 |
+| 阶段 1 | P0 | 新增阶段 1 最小链路 runner 和校验脚本。 | `run_stage_1_minimal_chain.py`、`validate_stage_1_minimal_chain.py`。 | 已完成 |
+| 阶段 1 | P1 | 接入 mock / 只读 Tool。 | 只读工具调用有 `tool_call_record`，且不会写状态；运行记录：`20260708_mock_tool_chain.md`。 | 已完成 |
+| 阶段 1 | P1 | 新增 mock / 只读 Tool runner 和校验脚本。 | `run_stage_1_mock_tool_chain.py`、`validate_stage_1_mock_tool_chain.py`。 | 已完成 |
+| 阶段 1 | P1 | 基于 QueryPlan 执行只读查询并输出分析结果与依据。 | 输出数据来源、指标口径、证据字段、source_footer 和 provenance；运行记录：`20260708_readonly_execution.md`。 | 已完成 |
+| 阶段 1 | P1 | 新增只读执行 runner 和校验脚本。 | `run_stage_1_readonly_execution_chain.py`、`validate_stage_1_readonly_execution_chain.py`。 | 已完成 |
+| 阶段 1 | P1 | 完成真实只读 Tool 接入准备度检查。 | `20260708_real_readonly_readiness.json` 校验通过。 | 已完成 |
+| 阶段 1 | P1 | 新增真实只读 Tool 准备度 runner 和校验脚本。 | `run_stage_1_real_readonly_readiness.py`、`validate_stage_1_real_readonly_readiness.py`。 | 已完成 |
+| 阶段 1 | P1 | 接入真实只读 Tool。 | 替换 mock fixture，保留 QueryPlan、tool_call_record、analysis_result 和 provenance 契约；已支持时间窗口、维度与计数模式。 | 已完成 |
+| 阶段 1 | P1 | 新增真实只读打标率 runner 和校验脚本。 | `run_stage_1_real_readonly_label_rate.py`、`validate_stage_1_real_readonly_label_rate.py`。 | 已完成 |
+| 阶段 1 | P1 | 完成真实只读打标率查询参数化。 | 支持 `--days`、`--dimensions`、`--query-mode=ranking/group_count`；生成 7 天、14 天、多维度和计数回归产物。 | 已完成 |
+| 阶段 1 | P1 | 接入低打标率分级注册 SQL。 | 基于真实只读入口输出 notice/P2/P1/P0 分级结果，保留 evidence 与 provenance；结果文件：`20260708_real_readonly_label_rate_grading_results.jsonl`。 | 已完成 |
+| 阶段 1 | P1 | 新增真实只读低打标率分级 runner 和校验脚本。 | `run_stage_1_real_readonly_label_rate_grading.py`、`validate_stage_1_real_readonly_label_rate_grading.py`。 | 已完成 |
 
 ### 12.3 下一阶段实施计划
 
 | 优先级 | 阶段 | 任务 | 验收标准 | 状态 |
 | --- | --- | --- | --- | --- |
-| P0 | 阶段 0.5 | 在 TRAE 创建自定义智能体「人审运营智能体」。 | 能加载 Agent 调试配置和四类 Skill。 | 已完成（UI 已确认，配置已人工复核） |
-| P0 | 阶段 0.5 | 使用 5 条样例跑调试闭环。 | 每条样例都有 `trae_debug_checklist.md` 格式记录。 | 已完成（本轮覆盖 6 条样例） |
-| P0 | 阶段 0.5 | 验证 `human_review_ops/references/scenarios/` 跨目录读取。 | 成功读取则优先使用目标态场景包；失败则记录原因并使用 Skill 内快照。 | 已完成（根目录读取通过，Skill 快照可回退） |
-| P0 | 阶段 1 | 以打标率为主线，跑通感知 + 分析最小链路。 | 输出 `scenario_key`、`task_type`、QueryPlan、source_footer。 | 已完成（不接真实查询） |
-| P1 | 阶段 1 | 接入 mock / 只读 Tool。 | 只读工具调用有 tool_call_record，且不会写状态。 | 已完成（mock 预检，不做真实查询） |
-| P1 | 阶段 1 | 基于 QueryPlan 执行只读查询并输出分析结果与依据。 | 输出数据来源、指标口径、证据字段、source_footer 和 provenance；不写状态、不发送通知。 | 已完成（mock 只读执行，未接真实数据） |
-| P1 | 阶段 1 | 接入真实只读 Tool。 | 替换 mock fixture，保留 QueryPlan、tool_call_record、analysis_result 和 provenance 契约。 | 已完成（支持时间窗口、维度与计数模式） |
-| P1 | 阶段 1 | 接入低打标率分级注册 SQL。 | 基于真实只读入口输出 notice/P2/P1/P0 分级结果，保留 evidence 与 provenance。 | 已完成（真实 Aeolus 只读查询与校验通过） |
 | P2 | 阶段 2 | 按需生成通知草稿和 Owner 建议。 | 仅在用户明确要求或分析结果触发治理/升级条件时生成；不发送真实通知，输出 Owner 依据和置信度。 | 待开始 |
 | P2 | 阶段 2 | 记录人工处理状态。 | 仅在进入处置/跟进任务时输出 manual_tracking，不写线上状态。 | 待开始 |
 | P2 | 阶段 2 | 支持局部调度。 | `query_only`、`owner_lookup_only`、`notification_only`、`resolution_only` 均可独立执行。 | 待开始 |
@@ -828,7 +819,7 @@ human_review_ops/evals/efficiency-label-rate/eval_samples.jsonl
 
 ### 12.4 进度更新规则
 
-- 每完成一项开发任务，必须把 `12.2 已完成任务` 或 `12.3 下一阶段实施计划` 中对应状态同步更新。
+- 每完成一项开发任务，必须把 `12.2 已完成任务看板` 或 `12.3 下一阶段实施计划` 中对应状态同步更新。
 - 每次 TRAE 调试失败，必须补充调试检查记录，并把失败归因到路由、检索、Skill 输出、工具权限或场景包内容之一。
 - 每次修改场景包，必须重新运行场景包结构校验和相关评估样例。
 
