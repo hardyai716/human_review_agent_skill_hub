@@ -40,4 +40,5 @@ disallowed-tools:
 - `assets/efficiency-label-rate/low_efficiency_grading_card_template.json`
 - `assets/efficiency-label-rate/card_schema_notes.md`
 - `scripts/render_label_rate_grading_card.py`
+- `scripts/resolve_label_rate_poc_routing.py`
 - `scripts/card_hash.py`

@@ -16,6 +16,7 @@
 - `validate_stage_1_real_readonly_label_rate.py`：校验真实只读打标率查询结果，支持 `--days`、`--dimensions` 和 `--query-mode` 校验对应 SQL，确保 SQL 包含 A/B/C/D 过滤、结果未截断，明细行满足 `label_rate < 0.1`，计数模式返回合法分组数。
 - `validate_stage_1_real_readonly_label_rate_grading.py`：校验真实只读低打标率分级结果，确保 notice/P2/P1/P0 全等级执行、证据字段完整、综合结果按最高等级去重且不触发通知或写状态。
 - `validate_stage_2_label_rate_notification_draft.py`：校验阶段 2 通知草稿产物，确保 summary、CSV、xlsx、Card 2.0、hash、`_meta` 清洗和发送摘要一致。
+- `validate_stage_2_label_rate_poc_routing.py`：校验阶段 2 POC / 触达对象路由占位产物，确保 `routing_mode=placeholder`、`fallback_to_default_user=true`、各等级角色和动作固定、`default_recipient=self`，且不群发、不写线上状态。
 
 ## 使用约束
 

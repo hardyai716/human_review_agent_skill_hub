@@ -6,11 +6,11 @@
   - [x] SubTask 1.3: 更新 Notification Skill 文案，避免继续使用泛泛的 Owner 路由概念。
   - [x] SubTask 1.4: 运行格式检查，提交并推送本任务变更。
 
-- [ ] Task 2: 实现 POC / 触达对象路由占位。
-  - [ ] SubTask 2.1: 新增 Notification Skill 脚本，用于生成 `poc_routing_plan.json`。
-  - [ ] SubTask 2.2: 新增 stage 2 runner，基于现有分级结果输出 POC 路由占位产物。
-  - [ ] SubTask 2.3: 新增 validator，校验 `routing_mode=placeholder`、等级角色范围和 `default_recipient=self`。
-  - [ ] SubTask 2.4: 运行验证，更新计划文档，提交并推送。
+- [x] Task 2: 实现 POC / 触达对象路由占位。
+  - [x] SubTask 2.1: 新增 Notification Skill 脚本，用于生成 `poc_routing_plan.json`。
+  - [x] SubTask 2.2: 新增 stage 2 runner，基于现有分级结果输出 POC 路由占位产物。
+  - [x] SubTask 2.3: 新增 validator，校验 `routing_mode=placeholder`、等级角色范围和 `default_recipient=self`。
+  - [x] SubTask 2.4: 运行验证，更新计划文档，提交并推送。
 
 - [ ] Task 3: 增强通知草稿并生成群推送门禁计划。
   - [ ] SubTask 3.1: 生成 `notification_draft.json`，合并卡片草稿、数据链接、POC 路由占位和口径说明。

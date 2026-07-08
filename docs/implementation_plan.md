@@ -810,6 +810,8 @@ human_review_ops/evals/efficiency-label-rate/eval_samples.jsonl
 | 阶段 2 | P2 | 生成低打标率分级通知卡片草稿。 | 生成 summary、notice/P2/P1/P0/综合 CSV、xlsx、Card 2.0、hash 校验和 publish summary。 | 已完成 |
 | 阶段 2 | P2 | 新增通知卡片草稿 runner 和校验脚本。 | `run_stage_2_label_rate_notification_draft.py`、`validate_stage_2_label_rate_notification_draft.py`。 | 已完成 |
 | 阶段 2 | P2 | 完成单人飞书卡片预览推送。 | 以用户明确要求为前提，导入飞书表格并单独推送给用户本人；发送前剥离 `_meta`。 | 已完成 |
+| 阶段 2 | P2 | 实现 POC / 触达对象路由占位。 | 生成 `poc_routing_plan.json`，固定 `routing_mode=placeholder`、`fallback_to_default_user=true`、`default_recipient=self`，不编造真实 POC。 | 已完成 |
+| 阶段 2 | P2 | 新增 POC 路由占位 runner 和校验脚本。 | `run_stage_2_label_rate_poc_routing.py`、`validate_stage_2_label_rate_poc_routing.py`。 | 已完成 |
 
 ### 12.3 阶段 2 实施计划
 
@@ -830,8 +832,8 @@ human_review_ops/evals/efficiency-label-rate/eval_samples.jsonl
 
 | 优先级 | 任务 | 要做什么 | 产物路径 | 验收标准 | 状态 |
 | --- | --- | --- | --- | --- | --- |
-| P2 | POC / 触达对象路由占位 | 固化 notice/P2/P1/P0 的触达角色范围；当前真实 POC 映射为空，所有等级默认路由到用户本人。 | `stage_2_runs/.../poc_routing_plan.json` | 输出 `routing_mode=placeholder`、`fallback_to_default_user=true`、各等级 `target_roles`、`default_recipient=self`；不编造具体 POC。 | 待开始 |
-| P2 | 等级触达规则固化 | 按 SOP 语义定义等级触达范围：notice 群同步策略明细；P2 周知治理 BP、审核 VOC POC、人审运营；P1 增加治理 BP +1、VOC 负责人、人审运营负责人；P0 额外周知治理负责人。 | `owner_routing.md`、`poc_routing_plan.json` | 每个等级均有角色范围、动作要求、是否需要人工确认；规则可被 validator 校验。 | 待开始 |
+| P2 | POC / 触达对象路由占位 | 固化 notice/P2/P1/P0 的触达角色范围；当前真实 POC 映射为空，所有等级默认路由到用户本人。 | `stage_2_runs/.../poc_routing_plan.json` | 输出 `routing_mode=placeholder`、`fallback_to_default_user=true`、各等级 `target_roles`、`default_recipient=self`；不编造具体 POC。 | 已完成 |
+| P2 | 等级触达规则固化 | 按 SOP 语义定义等级触达范围：notice 群同步策略明细；P2 周知治理 BP、审核 VOC POC、人审运营；P1 增加治理 BP +1、VOC 负责人、人审运营负责人；P0 额外周知治理负责人。 | `owner_routing.md`、`poc_routing_plan.json` | 每个等级均有角色范围、动作要求、是否需要人工确认；规则可被 validator 校验。 | 已完成 |
 | P2 | 通知草稿增强 | 将当前 Card 草稿与 POC 路由占位合并，说明当前为默认本人验证，后续接真实 POC 映射。 | `stage_2_runs/.../notification_draft.json`、`publish/*.card.json` | 草稿包含等级统计、数据链接、POC 占位策略、口径说明；发送前 `_meta` 已剥离；未确认时不群发。 | 待开始 |
 | P2 | 群推送门禁计划 | 生成真实群推送前的 `send_plan.json`，记录目标类型、目标来源、发送身份、发送内容和人工确认要求。 | `stage_2_runs/.../send_plan.json` | 默认 `requires_confirmation=true`、`group_send_blocked=true`；未确认时 validator 要求 `sent=false`。 | 待开始 |
 | P2 | 人工处理状态本地记录 | 针对进入处置 / 跟进的任务，生成本地 `manual_tracking` 记录，包含状态、证据、人工备注、下一步和是否继续观察。 | `stage_2_runs/.../manual_tracking.json` | 状态符合 `state_machine.md`；包含 `evidence_refs`、`operator_note`、`next_action`；不写线上状态。 | 待开始 |
