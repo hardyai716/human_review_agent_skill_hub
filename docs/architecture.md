@@ -85,7 +85,7 @@
 
 Skill 不直接绕过编排层执行高风险动作。所有执行动作都需要读取场景权限配置，并写入审计。
 
-通用 Skill 不直接内置某项运营内容的规则。每次调用必须带上 `scenario_package_ref`，该字段用于定位当前场景包；前期 TRAE 调试态可指向 Skill 内快照，目标治理态应指向根目录 `references/scenarios/{scenario}`。
+通用 Skill 不直接内置某项运营内容的规则。每次调用必须带上 `scenario_package_ref`，该字段用于定位当前场景包；前期 TRAE 调试态可指向 Skill 内快照，目标治理态应指向根目录 `human_review_ops/references/scenarios/{scenario}`。
 
 Skill 与 Tool/MCP/CLI 的关系：
 
@@ -126,7 +126,7 @@ CLI 的定位：
 
 ### 3.5 场景流程包与配置层
 
-每项运营内容都在根目录 `references/scenarios/` 下作为完整场景流程包维护，而不是只作为通用 Skill 的补充说明。前期 TRAE 调试时，可把该 Skill 需要的场景文件同步到本 Skill 的 `references/scenarios/` 快照目录，并由 `references/scenario-index.md` 挂载。场景流程包内容：
+每项运营内容都在根目录 `human_review_ops/references/scenarios/` 下作为完整场景流程包维护，而不是只作为通用 Skill 的补充说明。前期 TRAE 调试时，可把该 Skill 需要的场景文件同步到本 Skill 的 `human_review_ops/skills/{skill}/references/scenarios/` 快照目录，并由 `references/scenario-index.md` 挂载。场景流程包内容：
 
 - SOP 规则。
 - 业务场景分类。
@@ -146,7 +146,7 @@ CLI 的定位：
 推荐包结构：
 
 ```text
-references/scenarios/{scenario}/
+human_review_ops/references/scenarios/{scenario}/
   perception.md
   analysis.md
   notification.md

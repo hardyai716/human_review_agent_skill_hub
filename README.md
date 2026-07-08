@@ -13,6 +13,10 @@
 
 - `docs/implementation_plan.md`
 
+运行态开发产物统一放在：
+
+- `human_review_ops/`
+
 当前阶段目标：
 
 1. 先跑通效率模块样板场景：`efficiency-auto-disposal-accuracy`。

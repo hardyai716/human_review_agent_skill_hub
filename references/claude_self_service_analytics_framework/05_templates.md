@@ -12,7 +12,7 @@
 1. 识别业务域和运营内容。
 2. 识别任务类型：日常分析 / 周期推送 / 撞线预警 / 临时问答。
 3. 查询语义层或指标注册表。
-4. 加载 `references/scenarios/{scenario}.metric_contract.md`。
+4. 加载 `human_review_ops/references/scenarios/{scenario}/metric_contract.md`。
 5. 输出 resolved_entities、allowed_sources、forbidden_sources。
 6. 如果指标或粒度不明确，必须澄清。
 
@@ -165,7 +165,7 @@ Owner：[metric_owner/data_owner]
 ## 6. 场景包最小模板
 
 ```text
-references/scenarios/{scenario}/
+human_review_ops/references/scenarios/{scenario}/
   metric_contract.md
   perception.md
   analysis.md

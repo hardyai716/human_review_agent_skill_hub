@@ -48,104 +48,100 @@
 后续开发应收敛到以下结构：
 
 ```text
-references/
-  scenarios/
+human_review_ops/
+  references/
+    scenarios/
+      efficiency-auto-disposal-accuracy/
+        scenario_manifest.md
+        state_machine.md
+        sla.md
+        metric_contract.md
+        dataset_reference.md
+        owner_routing.md
+        notification_templates.md
+        analysis.md
+        examples.md
+  agents/
+    human_review_ops_agent/
+      agent.md
+      identity.md
+      capability_manifest.md
+      install_plan.md
+      routing_policy.md
+      permission_policy.md
+      memory_policy.md
+      evaluation_policy.md
+      trae_debug_profile.md
+      trae_debug_checklist.md
+  skills/
+    perception/
+      SKILL.md
+      references/
+        common.md
+        scenario-index.md
+        scenarios/
+          efficiency-auto-disposal-accuracy.manifest.md
+          efficiency-auto-disposal-accuracy.metric_contract.md
+          efficiency-auto-disposal-accuracy.dataset_reference.md
+          efficiency-auto-disposal-accuracy.examples.md
+    analysis/
+      SKILL.md
+      references/
+        common.md
+        scenario-index.md
+        scenarios/
+          efficiency-auto-disposal-accuracy.metric_contract.md
+          efficiency-auto-disposal-accuracy.dataset_reference.md
+          efficiency-auto-disposal-accuracy.analysis.md
+          efficiency-auto-disposal-accuracy.examples.md
+    notification/
+      SKILL.md
+      references/
+        common.md
+        scenario-index.md
+        scenarios/
+          efficiency-auto-disposal-accuracy.owner_routing.md
+          efficiency-auto-disposal-accuracy.notification_templates.md
+          efficiency-auto-disposal-accuracy.sla.md
+    resolution/
+      SKILL.md
+      references/
+        common.md
+        scenario-index.md
+        scenarios/
+          efficiency-auto-disposal-accuracy.state_machine.md
+          efficiency-auto-disposal-accuracy.sla.md
+          efficiency-auto-disposal-accuracy.owner_routing.md
+          efficiency-auto-disposal-accuracy.examples.md
+  evals/
     efficiency-auto-disposal-accuracy/
-      scenario_manifest.md
-      state_machine.md
-      sla.md
-      metric_contract.md
-      dataset_reference.md
-      owner_routing.md
-      notification_templates.md
-      analysis.md
-      examples.md
-
-agents/
-  human_review_ops_agent/
-    agent.md
-    identity.md
-    capability_manifest.md
-    install_plan.md
-    routing_policy.md
-    permission_policy.md
-    memory_policy.md
-    evaluation_policy.md
-    trae_debug_profile.md
-    trae_debug_checklist.md
-
-skills/
-  perception/
-    SKILL.md
-    references/
-      common.md
-      scenario-index.md
-      scenarios/
-        efficiency-auto-disposal-accuracy.manifest.md
-        efficiency-auto-disposal-accuracy.metric_contract.md
-        efficiency-auto-disposal-accuracy.dataset_reference.md
-        efficiency-auto-disposal-accuracy.examples.md
-  analysis/
-    SKILL.md
-    references/
-      common.md
-      scenario-index.md
-      scenarios/
-        efficiency-auto-disposal-accuracy.metric_contract.md
-        efficiency-auto-disposal-accuracy.dataset_reference.md
-        efficiency-auto-disposal-accuracy.analysis.md
-        efficiency-auto-disposal-accuracy.examples.md
-  notification/
-    SKILL.md
-    references/
-      common.md
-      scenario-index.md
-      scenarios/
-        efficiency-auto-disposal-accuracy.owner_routing.md
-        efficiency-auto-disposal-accuracy.notification_templates.md
-        efficiency-auto-disposal-accuracy.sla.md
-  resolution/
-    SKILL.md
-    references/
-      common.md
-      scenario-index.md
-      scenarios/
-        efficiency-auto-disposal-accuracy.state_machine.md
-        efficiency-auto-disposal-accuracy.sla.md
-        efficiency-auto-disposal-accuracy.owner_routing.md
-        efficiency-auto-disposal-accuracy.examples.md
-
-evals/
-  efficiency-auto-disposal-accuracy/
-    eval_samples.jsonl
-    expected_outputs.md
-    query_plan_assertions.md
-
-schemas/
-  event.schema.json
-  analysis_result.schema.json
-  resolution_result.schema.json
-  retrieval_policy.schema.json
-  tool_call_record.schema.json
-
-tools/
-  packagers/
-    build_skill_package.py
-  policies/
-    efficiency-auto-disposal.tool-policy.md
-  validators/
-    validate_scenario_package.py
-    validate_skill_package.py
-    validate_query_plan.py
-    validate_source_footer.py
+      eval_samples.jsonl
+      expected_outputs.md
+      query_plan_assertions.md
+  schemas/
+    event.schema.json
+    analysis_result.schema.json
+    resolution_result.schema.json
+    retrieval_policy.schema.json
+    tool_call_record.schema.json
+  tools/
+    packagers/
+      build_skill_package.py
+    policies/
+      efficiency-auto-disposal.tool-policy.md
+    validators/
+      validate_scenario_package.py
+      validate_skill_package.py
+      validate_query_plan.py
+      validate_source_footer.py
 ```
 
 说明：
 
-- 目标态采用 Skill 兄弟目录下的 `references/scenarios/` 维护完整场景流程包，这是长期唯一业务事实来源。
-- 前期使用 TRAE 调试时，如果跨目录读取不稳定，可以把必要场景文件同步到 `skills/*/references/scenarios/`，作为本地调试快照，先把 Skill 流程跑通。
-- 本地调试快照不是长期主数据；后续若 TRAE/MCP 能稳定读取兄弟目录，Skill 应优先通过 `scenario-index.md` 指向根目录 `references/scenarios/`。
-- 如果未来要单 Skill 独立发布，再由打包脚本把 `references/scenarios/` 中该 Skill 需要的文件复制进发布包，保证发布包自包含。
+- 目标态采用 Skill 兄弟目录下的 `human_review_ops/references/scenarios/` 维护完整场景流程包，这是长期唯一业务事实来源。
+- 前期使用 TRAE 调试时，如果跨目录读取不稳定，可以把必要场景文件同步到 `human_review_ops/skills/*/references/scenarios/`，作为本地调试快照，先把 Skill 流程跑通。
+- 本地调试快照不是长期主数据；后续若 TRAE/MCP 能稳定读取兄弟目录，Skill 应优先通过 `scenario-index.md` 指向根目录 `human_review_ops/references/scenarios/`。
+- 如果未来要单 Skill 独立发布，再由打包脚本把 `human_review_ops/references/scenarios/` 中该 Skill 需要的文件复制进发布包，保证发布包自包含。
 - 发布门禁必须校验根目录场景包与 Skill 内调试/发布快照的版本、摘要或 hash，避免多份文件发生口径漂移。
 
 ## 5. Claude Skill 规范落地要求
@@ -168,10 +164,10 @@ tools/
 
 | 目录 | Skill 名称 | 说明 |
 | --- | --- | --- |
-| `skills/perception/` | `perceiving-ops-events` | 识别运营模块、指标、任务类型和数据就绪。 |
-| `skills/analysis/` | `analyzing-ops-metrics` | 生成查询计划、执行只读分析、输出归因和来源脚注。 |
-| `skills/notification/` | `routing-ops-notifications` | 生成通知卡片、建议责任人和升级对象。 |
-| `skills/resolution/` | `tracking-ops-resolution` | 记录人工处理状态、结论、证据和复查标记。 |
+| `human_review_ops/skills/perception/` | `perceiving-ops-events` | 识别运营模块、指标、任务类型和数据就绪。 |
+| `human_review_ops/skills/analysis/` | `analyzing-ops-metrics` | 生成查询计划、执行只读分析、输出归因和来源脚注。 |
+| `human_review_ops/skills/notification/` | `routing-ops-notifications` | 生成通知卡片、建议责任人和升级对象。 |
+| `human_review_ops/skills/resolution/` | `tracking-ops-resolution` | 记录人工处理状态、结论、证据和复查标记。 |
 
 ### 5.2 支持文件不要深层嵌套
 
@@ -183,8 +179,8 @@ tools/
 - 每个 Skill 的 `references/scenario-index.md` 必须一级列出可读取场景文件的直接链接。
 - 不允许 `common.md -> scenario.md -> dataset_reference.md` 这种链式阅读。
 - 所有场景关键文件必须能从 `SKILL.md` 或 `scenario-index.md` 直接定位。
-- 目标态场景流程包放在根目录 `references/scenarios/{scenario_key}/`。
-- 前期 TRAE 调试态允许在 `skills/{skill_name}/references/scenarios/` 放置快照文件，但必须标明来源并可由脚本重新生成。
+- 目标态场景流程包放在根目录 `human_review_ops/references/scenarios/{scenario_key}/`。
+- 前期 TRAE 调试态允许在 `human_review_ops/skills/{skill_name}/references/scenarios/` 放置快照文件，但必须标明来源并可由脚本重新生成。
 - 单 Skill 独立发布时，支持文件必须位于该 Skill 自己的 `references/` 目录内，由打包脚本从根目录场景包生成。
 - 超过 100 行的参考文件顶部必须有目录。
 
@@ -196,21 +192,21 @@ tools/
 
 | 阶段 | 场景文件位置 | 用途 | 约束 |
 | --- | --- | --- | --- |
-| 前期 TRAE 调试态 | `skills/{skill_name}/references/scenarios/` | 保证单个 Skill 在 TRAE 中可直接跑通，减少跨目录读取风险。 | 只能作为根目录场景包的快照，不能手工漂移。 |
-| 目标治理态 | `references/scenarios/{scenario_key}/` | 长期维护完整场景流程包，供 Agent 和 Skill 按 `scenario_key` 检索。 | 作为唯一业务事实来源，变更必须走评审和回测。 |
+| 前期 TRAE 调试态 | `human_review_ops/skills/{skill_name}/references/scenarios/` | 保证单个 Skill 在 TRAE 中可直接跑通，减少跨目录读取风险。 | 只能作为根目录场景包的快照，不能手工漂移。 |
+| 目标治理态 | `human_review_ops/references/scenarios/{scenario_key}/` | 长期维护完整场景流程包，供 Agent 和 Skill 按 `scenario_key` 检索。 | 作为唯一业务事实来源，变更必须走评审和回测。 |
 | 单 Skill 发布态 | 发布包内 `references/scenarios/` | 独立发布时随 Skill 打包，保证包自包含。 | 由打包脚本从目标治理态生成。 |
 
 | Skill | 一级索引文件 | 挂载的场景文件 | 用途 |
 | --- | --- | --- | --- |
-| 感知 Skill | `skills/perception/references/scenario-index.md` | `references/scenarios/*.manifest.md`、`*.metric_contract.md`、`*.dataset_reference.md`、`*.examples.md` | 识别场景、指标、任务类型、数据就绪。 |
-| 分析 Skill | `skills/analysis/references/scenario-index.md` | `references/scenarios/*.metric_contract.md`、`*.dataset_reference.md`、`*.analysis.md`、`*.examples.md` | 生成 QueryPlan、选择字段、归因分析。 |
-| 通知 Skill | `skills/notification/references/scenario-index.md` | `references/scenarios/*.owner_routing.md`、`*.notification_templates.md`、`*.sla.md` | 生成通知、建议 Owner、判断升级。 |
-| 解决 Skill | `skills/resolution/references/scenario-index.md` | `references/scenarios/*.state_machine.md`、`*.sla.md`、`*.owner_routing.md`、`*.examples.md` | 推进状态、回收结论、关闭或复查。 |
+| 感知 Skill | `human_review_ops/skills/perception/references/scenario-index.md` | `references/scenarios/*.manifest.md`、`*.metric_contract.md`、`*.dataset_reference.md`、`*.examples.md` | 识别场景、指标、任务类型、数据就绪。 |
+| 分析 Skill | `human_review_ops/skills/analysis/references/scenario-index.md` | `references/scenarios/*.metric_contract.md`、`*.dataset_reference.md`、`*.analysis.md`、`*.examples.md` | 生成 QueryPlan、选择字段、归因分析。 |
+| 通知 Skill | `human_review_ops/skills/notification/references/scenario-index.md` | `references/scenarios/*.owner_routing.md`、`*.notification_templates.md`、`*.sla.md` | 生成通知、建议 Owner、判断升级。 |
+| 解决 Skill | `human_review_ops/skills/resolution/references/scenario-index.md` | `references/scenarios/*.state_machine.md`、`*.sla.md`、`*.owner_routing.md`、`*.examples.md` | 推进状态、回收结论、关闭或复查。 |
 
 示例索引：
 
 ```markdown
-# skills/analysis/references/scenario-index.md
+# human_review_ops/skills/analysis/references/scenario-index.md
 
 ## efficiency-auto-disposal-accuracy
 
@@ -310,7 +306,7 @@ partial_workflow
 - 调试目标：验证 Agent 路由、Skill 调用、场景包读取、Tool/MCP/CLI 权限边界。
 - 启用能力：感知、分析、通知、解决四个 Skill。
 - 默认运行模式：`debug_only`，优先只读，不执行真实写入。
-- 场景读取策略：优先验证 `references/scenarios/` 跨目录读取；如 TRAE 不稳定，则使用 `skills/*/references/scenarios/` 调试快照。
+- 场景读取策略：优先验证 `human_review_ops/references/scenarios/` 跨目录读取；如 TRAE 不稳定，则使用 `human_review_ops/skills/*/references/scenarios/` 调试快照。
 - 工具策略：先使用 mock 或只读 Tool；真实通知、写状态、更新配置必须人工确认。
 - 调试样例：自动处置准确率查询、责任人定位、预警通知草稿、人工处理记录。
 
@@ -320,7 +316,7 @@ partial_workflow
 - 能按 `scenario-index.md` 加载正确场景文件，不误读无关场景。
 - 能分别调通感知、分析、通知、解决 Skill。
 - 能输出 QueryPlan、source_footer、routing evidence、manual tracking 等关键结构。
-- 能证明跨目录 `references/scenarios/` 可读；若不可读，能切换到 Skill 内调试快照。
+- 能证明跨目录 `human_review_ops/references/scenarios/` 可读；若不可读，能切换到 Skill 内调试快照。
 - 不能发送真实通知、写入线上状态或更新业务配置，除非经过人工确认。
 
 ### 6.7 `trae_debug_checklist.md`
@@ -333,7 +329,7 @@ partial_workflow
 - 识别出的 `scenario_key`、`task_type`、`run_mode`。
 - 调用的 Skill。
 - 读取的场景文件路径。
-- 是否使用根目录 `references/scenarios/`。
+- 是否使用根目录 `human_review_ops/references/scenarios/`。
 - 是否使用 Skill 内调试快照。
 - Tool/MCP/CLI 调用记录。
 - 是否触发人工确认。
@@ -352,9 +348,9 @@ partial_workflow
 
 文件：
 
-- `skills/perception/SKILL.md`
-- `skills/perception/references/common.md`
-- `skills/perception/references/scenario-index.md`
+- `human_review_ops/skills/perception/SKILL.md`
+- `human_review_ops/skills/perception/references/common.md`
+- `human_review_ops/skills/perception/references/scenario-index.md`
 
 职责：
 
@@ -376,9 +372,9 @@ partial_workflow
 
 文件：
 
-- `skills/analysis/SKILL.md`
-- `skills/analysis/references/common.md`
-- `skills/analysis/references/scenario-index.md`
+- `human_review_ops/skills/analysis/SKILL.md`
+- `human_review_ops/skills/analysis/references/common.md`
+- `human_review_ops/skills/analysis/references/scenario-index.md`
 
 职责：
 
@@ -397,9 +393,9 @@ partial_workflow
 
 文件：
 
-- `skills/notification/SKILL.md`
-- `skills/notification/references/common.md`
-- `skills/notification/references/scenario-index.md`
+- `human_review_ops/skills/notification/SKILL.md`
+- `human_review_ops/skills/notification/references/common.md`
+- `human_review_ops/skills/notification/references/scenario-index.md`
 
 职责：
 
@@ -416,9 +412,9 @@ partial_workflow
 
 文件：
 
-- `skills/resolution/SKILL.md`
-- `skills/resolution/references/common.md`
-- `skills/resolution/references/scenario-index.md`
+- `human_review_ops/skills/resolution/SKILL.md`
+- `human_review_ops/skills/resolution/references/common.md`
+- `human_review_ops/skills/resolution/references/scenario-index.md`
 
 职责：
 
@@ -452,19 +448,19 @@ partial_workflow
 目标态根目录路径：
 
 ```text
-references/scenarios/efficiency-auto-disposal-accuracy/
+human_review_ops/references/scenarios/efficiency-auto-disposal-accuracy/
 ```
 
 TRAE 调试快照 / 未来发布包内路径示例：
 
 ```text
-skills/analysis/references/scenarios/efficiency-auto-disposal-accuracy.metric_contract.md
-skills/analysis/references/scenarios/efficiency-auto-disposal-accuracy.dataset_reference.md
-skills/analysis/references/scenarios/efficiency-auto-disposal-accuracy.analysis.md
-skills/analysis/references/scenarios/efficiency-auto-disposal-accuracy.examples.md
+human_review_ops/skills/analysis/references/scenarios/efficiency-auto-disposal-accuracy.metric_contract.md
+human_review_ops/skills/analysis/references/scenarios/efficiency-auto-disposal-accuracy.dataset_reference.md
+human_review_ops/skills/analysis/references/scenarios/efficiency-auto-disposal-accuracy.analysis.md
+human_review_ops/skills/analysis/references/scenarios/efficiency-auto-disposal-accuracy.examples.md
 ```
 
-`references/scenarios/` 是长期维护的完整场景流程包。前期 TRAE 调试时，可以把其中必要文件同步到 Skill 内部 `references/scenarios/` 快照目录；实际运行时，Agent 先选择 Skill，再由该 Skill 的 `references/scenario-index.md` 决定读取本地快照还是根目录场景包。
+`human_review_ops/references/scenarios/` 是长期维护的完整场景流程包。前期 TRAE 调试时，可以把其中必要文件同步到 Skill 内部 `human_review_ops/skills/{skill_name}/references/scenarios/` 快照目录；实际运行时，Agent 先选择 Skill，再由该 Skill 的 `references/scenario-index.md` 决定读取本地快照还是目标态场景包。
 
 文件：
 
@@ -523,7 +519,7 @@ skills/analysis/references/scenarios/efficiency-auto-disposal-accuracy.examples.
 
 新增文件：
 
-- `schemas/retrieval_policy.schema.json`
+- `human_review_ops/schemas/retrieval_policy.schema.json`
 
 字段：
 
@@ -540,7 +536,7 @@ skills/analysis/references/scenarios/efficiency-auto-disposal-accuracy.examples.
 
 新增文件：
 
-- `schemas/tool_call_record.schema.json`
+- `human_review_ops/schemas/tool_call_record.schema.json`
 
 字段：
 
@@ -562,7 +558,7 @@ skills/analysis/references/scenarios/efficiency-auto-disposal-accuracy.examples.
 路径：
 
 ```text
-evals/efficiency-auto-disposal-accuracy/eval_samples.jsonl
+human_review_ops/evals/efficiency-auto-disposal-accuracy/eval_samples.jsonl
 ```
 
 至少包含：
@@ -600,15 +596,15 @@ evals/efficiency-auto-disposal-accuracy/eval_samples.jsonl
 
 交付：
 
-- `agents/human_review_ops_agent/`
-- `skills/perception/`
-- `skills/analysis/`
-- `skills/notification/`
-- `skills/resolution/`
-- `references/scenarios/efficiency-auto-disposal-accuracy/`
-- `skills/*/references/scenarios/` 中的样板场景发布文件
-- `evals/efficiency-auto-disposal-accuracy/`
-- `tools/policies/`
+- `human_review_ops/agents/human_review_ops_agent/`
+- `human_review_ops/skills/perception/`
+- `human_review_ops/skills/analysis/`
+- `human_review_ops/skills/notification/`
+- `human_review_ops/skills/resolution/`
+- `human_review_ops/references/scenarios/efficiency-auto-disposal-accuracy/`
+- `human_review_ops/skills/*/references/scenarios/` 中的样板场景发布文件
+- `human_review_ops/evals/efficiency-auto-disposal-accuracy/`
+- `human_review_ops/tools/policies/`
 
 验收：
 
@@ -621,8 +617,8 @@ evals/efficiency-auto-disposal-accuracy/eval_samples.jsonl
 交付：
 
 - TRAE 自定义智能体：`人审运营智能体`。
-- `agents/human_review_ops_agent/trae_debug_profile.md`。
-- `agents/human_review_ops_agent/trae_debug_checklist.md`。
+- `human_review_ops/agents/human_review_ops_agent/trae_debug_profile.md`。
+- `human_review_ops/agents/human_review_ops_agent/trae_debug_checklist.md`。
 - 自动处置准确率样板调试用例。
 - Skill 内调试快照与根目录场景包读取验证记录。
 
@@ -630,8 +626,8 @@ evals/efficiency-auto-disposal-accuracy/eval_samples.jsonl
 
 1. 创建 TRAE 自定义智能体「人审运营智能体」。
 2. 绑定或安装感知、分析、通知、解决四个 Skill。
-3. 使用 Skill 内 `references/scenarios/` 调试快照跑通最小流程。
-4. 验证是否能稳定读取根目录 `references/scenarios/`。
+3. 使用 Skill 内 `human_review_ops/skills/{skill}/references/scenarios/` 调试快照跑通最小流程。
+4. 验证是否能稳定读取根目录 `human_review_ops/references/scenarios/`。
 5. 逐步接入只读 Tool/MCP/CLI。
 6. 仅生成通知草稿和人工处理记录，不发送真实通知、不写线上状态。
 
@@ -641,7 +637,7 @@ evals/efficiency-auto-disposal-accuracy/eval_samples.jsonl
 - 找人类任务能进入 `owner_lookup_only`，并输出 Owner 依据和置信度。
 - 通知类任务只能生成草稿或测试卡片，不能绕过人工确认。
 - 解决类任务只能记录人工状态、结论、证据和是否继续观察。
-- 若根目录 `references/scenarios/` 跨目录读取失败，必须明确记录失败原因，并继续使用 Skill 内调试快照。
+- 若根目录 `human_review_ops/references/scenarios/` 跨目录读取失败，必须明确记录失败原因，并继续使用 Skill 内调试快照。
 - 若根目录跨目录读取稳定，则后续优先让 `scenario-index.md` 指向根目录场景包。
 
 ### 阶段 1：样板场景跑通

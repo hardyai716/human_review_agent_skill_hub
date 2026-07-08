@@ -1184,7 +1184,7 @@
         </article>
         <article class="principle-card reveal delay-1">
           <h3>Skill负责方法，不内置场景差异</h3>
-          <p>感知、分析、通知、解决是通用能力。真正的业务差异由 `scenario_package_ref` 和 scenario-index 定位；前期可读 Skill 内快照，目标态读取根目录 references/scenarios。</p>
+          <p>感知、分析、通知、解决是通用能力。真正的业务差异由 `scenario_package_ref` 和 scenario-index 定位；前期可读 Skill 内快照，目标态读取根目录 human_review_ops/references/scenarios。</p>
           <div class="tag-row">
             <span class="tag">感知</span>
             <span class="tag">分析</span>
@@ -1332,7 +1332,7 @@
           <p class="section-kicker">Architecture Decision Record · 架构决策记录</p>
           <h2>四个通用 Skill 与场景流程包引用策略</h2>
         </div>
-        <p class="section-note">本节记录能力拆分、场景治理和前期调试策略。结论是：稳定动作沉淀为通用 Skill，变化事实沉淀在 Skill 兄弟目录的 references/scenarios；前期 TRAE 调试可使用 Skill 内本地快照先跑通流程。</p>
+        <p class="section-note">本节记录能力拆分、场景治理和前期调试策略。结论是：稳定动作沉淀为通用 Skill，变化事实沉淀在 human_review_ops/references/scenarios；前期 TRAE 调试可使用 Skill 内本地快照先跑通流程。</p>
       </div>
 
       <div class="data-grid">
@@ -1565,7 +1565,7 @@
           <p class="section-kicker">能力模块目录</p>
           <h2>每个 Skill 长什么样、谁来维护、如何扩展</h2>
         </div>
-        <p class="section-note">四个 Skill 只沉淀通用方法。目标态完整场景流程包放在根目录 references/scenarios；前期 TRAE 调试时，每个 Skill 可以在 references/scenarios 下保留本地快照，先保证流程跑通。</p>
+        <p class="section-note">四个 Skill 只沉淀通用方法。目标态完整场景流程包放在 human_review_ops/references/scenarios；前期 TRAE 调试时，每个 Skill 可以在 human_review_ops/skills/{skill}/references/scenarios 下保留本地快照，先保证流程跑通。</p>
       </div>
 
       <div class="asset-grid">
@@ -1573,40 +1573,41 @@
           <h3>通用 Skill 的目录骨架</h3>
           <p>每个 Skill 都有自己的能力说明（`SKILL.md`），定义能力边界、输入输出、禁止事项和引用路径；具体场景规则放在 references（参考资料）下。</p>
           <div class="tree-block" aria-label="能力模块目录结构">
-            <div>skills/</div>
-            <div>├── perception/                         <span>感知 Skill：识别场景、指标、任务类型、数据就绪</span></div>
-            <div>│   ├── SKILL.md                         <span>能力说明：触发条件、输入输出、禁止事项</span></div>
-            <div>│   └── references/</div>
-            <div>│       ├── common.md                     <span>通用感知规则</span></div>
-            <div>│       ├── scenario-index.md             <span>一级索引：直达本 Skill 内置场景文件</span></div>
-            <div>│       └── scenarios/                    <span>TRAE 调试快照：可由根目录场景包生成</span></div>
-            <div>├── analysis/                             <span>分析 Skill：查询计划、归因、质量检查、结论</span></div>
-            <div>│   ├── SKILL.md</div>
-            <div>│   └── references/</div>
-            <div>│       ├── common.md</div>
-            <div>│       ├── scenario-index.md</div>
-            <div>│       └── scenarios/</div>
-            <div>├── notification/                         <span>触达 Skill：模板、收件人、升级、卡片</span></div>
-            <div>│   ├── SKILL.md</div>
-            <div>│   └── references/</div>
-            <div>│       ├── common.md</div>
-            <div>│       ├── scenario-index.md</div>
-            <div>│       └── scenarios/</div>
-            <div>├── resolution/                           <span>解决 Skill：状态跟进、结论回收、闭环复查</span></div>
-            <div>│   ├── SKILL.md</div>
-            <div>│   └── references/</div>
-            <div>│       ├── common.md</div>
-            <div>│       ├── scenario-index.md</div>
-            <div>│       └── scenarios/</div>
-            <div>└── build output                           <span>如需单独发布，再把需要的场景文件打入 Skill 包</span></div>
+            <div>human_review_ops/</div>
+            <div>└── skills/</div>
+            <div>    ├── perception/                         <span>感知 Skill：识别场景、指标、任务类型、数据就绪</span></div>
+            <div>    │   ├── SKILL.md                         <span>能力说明：触发条件、输入输出、禁止事项</span></div>
+            <div>    │   └── references/</div>
+            <div>    │       ├── common.md                     <span>通用感知规则</span></div>
+            <div>    │       ├── scenario-index.md             <span>一级索引：直达本 Skill 内置场景文件</span></div>
+            <div>    │       └── scenarios/                    <span>TRAE 调试快照：可由根目录场景包生成</span></div>
+            <div>    ├── analysis/                             <span>分析 Skill：查询计划、归因、质量检查、结论</span></div>
+            <div>    │   ├── SKILL.md</div>
+            <div>    │   └── references/</div>
+            <div>    │       ├── common.md</div>
+            <div>    │       ├── scenario-index.md</div>
+            <div>    │       └── scenarios/</div>
+            <div>    ├── notification/                         <span>触达 Skill：模板、收件人、升级、卡片</span></div>
+            <div>    │   ├── SKILL.md</div>
+            <div>    │   └── references/</div>
+            <div>    │       ├── common.md</div>
+            <div>    │       ├── scenario-index.md</div>
+            <div>    │       └── scenarios/</div>
+            <div>    ├── resolution/                           <span>解决 Skill：状态跟进、结论回收、闭环复查</span></div>
+            <div>    │   ├── SKILL.md</div>
+            <div>    │   └── references/</div>
+            <div>    │       ├── common.md</div>
+            <div>    │       ├── scenario-index.md</div>
+            <div>    │       └── scenarios/</div>
+            <div>    └── build output                           <span>如需单独发布，再把需要的场景文件打入 Skill 包</span></div>
           </div>
         </article>
 
         <article class="asset-card reveal delay-1">
           <h3>目标态场景包与调试快照</h3>
-          <p>完整场景包长期放在根目录 references/scenarios，作为唯一业务事实来源。前期用 TRAE 调试时，可把单个 Skill 必需文件同步到 Skill 内部，等跨目录读取验证稳定后再切回根目录引用。</p>
+          <p>完整场景包长期放在 human_review_ops/references/scenarios，作为唯一业务事实来源。前期用 TRAE 调试时，可把单个 Skill 必需文件同步到 Skill 内部，等跨目录读取验证稳定后再切回根目录引用。</p>
           <div class="tree-block" aria-label="场景流程包目录结构">
-            <div>references/scenarios/{scenario_key}/          <span>目标态完整场景流程包</span></div>
+            <div>human_review_ops/references/scenarios/{scenario_key}/          <span>目标态完整场景流程包</span></div>
             <div>├── scenario_manifest.md                 <span>场景清单：场景名、Owner、适用范围、入口关键词</span></div>
             <div>├── state_machine.md                     <span>独立状态机和退出条件</span></div>
             <div>├── sla.md                               <span>SLA 与升级规则</span></div>
@@ -1616,7 +1617,7 @@
             <div>├── notification_templates.md            <span>通知模板和等级话术</span></div>
             <div>└── examples.md                          <span>正例、反例、边界样例和回测断言</span></div>
             <div></div>
-            <div>skills/{skill}/references/scenarios/          <span>前期 TRAE 调试快照 / 未来发布包内文件</span></div>
+            <div>human_review_ops/skills/{skill}/references/scenarios/          <span>前期 TRAE 调试快照 / 未来发布包内文件</span></div>
             <div>└── {scenario_key}.{file_type}.md             <span>由根目录场景包生成，不手工漂移</span></div>
           </div>
         </article>
@@ -1700,73 +1701,47 @@
           <p>这是一个可落地样例，不表示效率模块只有这一类场景。根目录场景包维护完整事实；Skill 内 scenarios 目录用于前期 TRAE 调试快照，后续可切到直接引用根目录。</p>
           <div class="tree-block" aria-label="效率模块自动处置准确率完整目录示例">
             <div>human-review-ops/</div>
-            <div>├── references/</div>
-            <div>│   └── scenarios/</div>
-            <div>│       └── efficiency-auto-disposal-accuracy/ <span>目标态完整场景流程包</span></div>
-            <div>│           ├── scenario_manifest.md</div>
-            <div>│           ├── state_machine.md</div>
-            <div>│           ├── sla.md</div>
-            <div>│           ├── metric_contract.md</div>
-            <div>│           ├── dataset_reference.md</div>
-            <div>│           ├── owner_routing.md</div>
-            <div>│           ├── notification_templates.md</div>
-            <div>│           ├── analysis.md</div>
-            <div>│           └── examples.md</div>
-            <div>├── agents/</div>
-            <div>│   └── human_review_ops_agent/</div>
-            <div>│       ├── agent.md                         <span>调度器总说明</span></div>
-            <div>│       ├── identity.md                      <span>身份说明与行为边界</span></div>
-            <div>│       ├── capability_manifest.md           <span>启用感知/分析/触达/解决 Skill</span></div>
-            <div>│       ├── install_plan.md                   <span>安装、灰度、回滚计划</span></div>
-            <div>│       ├── routing_policy.md                <span>run_mode / task_type / scenario_key 路由</span></div>
-            <div>│       ├── permission_policy.md             <span>Tool/MCP/CLI 权限策略</span></div>
-            <div>│       └── evaluation_policy.md             <span>安装后验收与回测规则</span></div>
-            <div>├── skills/</div>
-            <div>│   ├── perception/</div>
-            <div>│   │   ├── SKILL.md                         <span>识别效率模块、自动处置准确率、策略维度</span></div>
-            <div>│   │   └── references/</div>
-            <div>│   │       ├── common.md</div>
-            <div>│   │       ├── scenario-index.md             <span>只引用本 Skill 包内文件</span></div>
-            <div>│   │       └── scenarios/</div>
-            <div>│   │           ├── efficiency-auto-disposal-accuracy.manifest.md</div>
-            <div>│   │           ├── efficiency-auto-disposal-accuracy.metric_contract.md</div>
-            <div>│   │           ├── efficiency-auto-disposal-accuracy.dataset_reference.md</div>
-            <div>│   │           └── efficiency-auto-disposal-accuracy.examples.md</div>
-            <div>│   ├── analysis/</div>
-            <div>│   │   ├── SKILL.md                         <span>生成 QueryPlan、执行只读查询、归因</span></div>
-            <div>│   │   └── references/</div>
-            <div>│   │       ├── common.md</div>
-            <div>│   │       ├── scenario-index.md</div>
-            <div>│   │       └── scenarios/</div>
-            <div>│   │           ├── efficiency-auto-disposal-accuracy.metric_contract.md</div>
-            <div>│   │           ├── efficiency-auto-disposal-accuracy.dataset_reference.md</div>
-            <div>│   │           ├── efficiency-auto-disposal-accuracy.analysis.md</div>
-            <div>│   │           └── efficiency-auto-disposal-accuracy.examples.md</div>
-            <div>│   ├── notification/</div>
-            <div>│   │   ├── SKILL.md                         <span>生成测试通知卡片和升级建议</span></div>
-            <div>│   │   └── references/</div>
-            <div>│   │       ├── scenario-index.md</div>
-            <div>│   │       └── scenarios/</div>
-            <div>│   │           ├── efficiency-auto-disposal-accuracy.owner_routing.md</div>
-            <div>│   │           ├── efficiency-auto-disposal-accuracy.notification_templates.md</div>
-            <div>│   │           └── efficiency-auto-disposal-accuracy.sla.md</div>
-            <div>│   └── resolution/</div>
-            <div>│       ├── SKILL.md                         <span>记录人工状态、结论、证据和复查</span></div>
-            <div>│       └── references/</div>
-            <div>│           ├── scenario-index.md</div>
-            <div>│           └── scenarios/</div>
-            <div>│               ├── efficiency-auto-disposal-accuracy.state_machine.md</div>
-            <div>│               ├── efficiency-auto-disposal-accuracy.sla.md</div>
-            <div>│               ├── efficiency-auto-disposal-accuracy.owner_routing.md</div>
-            <div>│               └── efficiency-auto-disposal-accuracy.examples.md</div>
-            <div>├── evals/</div>
-            <div>│   └── efficiency-auto-disposal-accuracy/</div>
-            <div>│       ├── eval_samples.jsonl               <span>评估样例：查询、预警、责任人定位</span></div>
-            <div>│       ├── expected_outputs.md              <span>期望 QueryPlan / source_footer</span></div>
-            <div>│       └── query_plan_assertions.md         <span>字段、过滤条件、维度断言</span></div>
-            <div>└── tools/</div>
-            <div>    └── policies/</div>
-            <div>        └── efficiency-auto-disposal.tool-policy.md <span>只读查询、通知、写状态权限</span></div>
+            <div>└── human_review_ops/</div>
+            <div>    ├── references/</div>
+            <div>    │   └── scenarios/</div>
+            <div>    │       └── efficiency-auto-disposal-accuracy/ <span>目标态完整场景流程包</span></div>
+            <div>    │           ├── scenario_manifest.md</div>
+            <div>    │           ├── state_machine.md</div>
+            <div>    │           ├── sla.md</div>
+            <div>    │           ├── metric_contract.md</div>
+            <div>    │           ├── dataset_reference.md</div>
+            <div>    │           ├── owner_routing.md</div>
+            <div>    │           ├── notification_templates.md</div>
+            <div>    │           ├── analysis.md</div>
+            <div>    │           └── examples.md</div>
+            <div>    ├── agents/</div>
+            <div>    │   └── human_review_ops_agent/</div>
+            <div>    │       ├── agent.md                         <span>调度器总说明</span></div>
+            <div>    │       ├── routing_policy.md                <span>run_mode / task_type / scenario_key 路由</span></div>
+            <div>    │       ├── permission_policy.md             <span>Tool/MCP/CLI 权限策略</span></div>
+            <div>    │       ├── trae_debug_profile.md            <span>TRAE 调试智能体说明</span></div>
+            <div>    │       └── trae_debug_checklist.md          <span>调试检查清单</span></div>
+            <div>    ├── skills/</div>
+            <div>    │   ├── perception/</div>
+            <div>    │   │   ├── SKILL.md                         <span>识别效率模块、自动处置准确率、策略维度</span></div>
+            <div>    │   │   └── references/scenarios/             <span>感知调试快照</span></div>
+            <div>    │   ├── analysis/</div>
+            <div>    │   │   ├── SKILL.md                         <span>生成 QueryPlan、执行只读查询、归因</span></div>
+            <div>    │   │   └── references/scenarios/             <span>分析调试快照</span></div>
+            <div>    │   ├── notification/</div>
+            <div>    │   │   ├── SKILL.md                         <span>生成测试通知卡片和升级建议</span></div>
+            <div>    │   │   └── references/scenarios/             <span>通知调试快照</span></div>
+            <div>    │   └── resolution/</div>
+            <div>    │       ├── SKILL.md                         <span>记录人工状态、结论、证据和复查</span></div>
+            <div>    │       └── references/scenarios/             <span>解决调试快照</span></div>
+            <div>    ├── evals/</div>
+            <div>    │   └── efficiency-auto-disposal-accuracy/</div>
+            <div>    │       ├── eval_samples.jsonl               <span>评估样例：查询、预警、责任人定位</span></div>
+            <div>    │       ├── expected_outputs.md              <span>期望 QueryPlan / source_footer</span></div>
+            <div>    │       └── query_plan_assertions.md         <span>字段、过滤条件、维度断言</span></div>
+            <div>    └── tools/</div>
+            <div>        └── policies/</div>
+            <div>            └── efficiency-auto-disposal.tool-policy.md <span>只读查询、通知、写状态权限</span></div>
           </div>
         </article>
 
@@ -1873,7 +1848,7 @@
           <h3>Agent自身目录建议</h3>
           <p>建议把 Agent的身份、能力安装、权限和路由文件独立放在 Agent自身层。身份识别文件（identify.md）可作为别名，但长期建议统一为身份说明（identity.md），避免命名不一致。</p>
           <div class="tree-block" aria-label="Agent自身说明文件目录">
-            <div>agents/human_review_ops_agent/</div>
+            <div>human_review_ops/agents/human_review_ops_agent/</div>
             <div>  调度器总说明（agent.md）<span>目标、职责、边界、默认运行模式</span></div>
             <div>  身份说明（identity.md）<span>服务对象、可做/不可做、语气和交互原则</span></div>
             <div>  身份识别兼容文件（identify.md）<span>如已有该文件，可映射到身份说明（identity.md）</span></div>
@@ -2412,7 +2387,7 @@
 
   <footer class="shell footer">
     <div class="footer-inner">
-      <span>基于 `docs/architecture.md`、`configs/state_machine.md`、`docs/implementation_plan.md` 生成。</span>
+      <span>基于 `docs/architecture.md`、`human_review_ops/configs/state_machine.md`、`docs/implementation_plan.md` 生成。</span>
       <span id="stamp">本地静态演示</span>
     </div>
   </footer>

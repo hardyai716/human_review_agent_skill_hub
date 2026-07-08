@@ -37,86 +37,83 @@
 - 数据资产和 Tool/MCP/CLI 调用边界。
 - 验收样例和历史案例。
 
-因此，本架构中的 reference 不再被视为“场景补充说明”，而是“场景流程包”。通用能力 Skill 负责稳定的方法论和接口，目标态根目录 `references/scenarios/` 负责完整业务事实；前期 TRAE 调试态可把必要文件同步到各 Skill 的 `references/scenarios/`，并由 `references/scenario-index.md` 一级挂载。
+因此，本架构中的 reference 不再被视为“场景补充说明”，而是“场景流程包”。通用能力 Skill 负责稳定的方法论和接口，目标态根目录 `human_review_ops/references/scenarios/` 负责完整业务事实；前期 TRAE 调试态可把必要文件同步到各 Skill 的 `human_review_ops/skills/{skill}/references/scenarios/`，并由 `references/scenario-index.md` 一级挂载。
 
 ### 2.2 推荐目录
 
 ```text
-references/
-  scenarios/
-    quality_inspection/
-      perception.md
-      analysis.md
-      notification.md
-      resolution.md
-      state_machine.md
-      sla.md
-      metric_contract.md
-      owner_routing.md
-      notification_templates.md
-      tool_policy.md
-      examples.md
-
-skills/
-  perception/
-    SKILL.md
-    references/
-      common.md
-      scenario-index.md
-      scenarios/
-        quality_inspection.perception.md
-        quality_inspection.state_machine.md
-        quality_inspection.sla.md
-        quality_inspection.metric_contract.md
-        quality_inspection.owner_routing.md
-        quality_inspection.tool_policy.md
-        quality_inspection.examples.md
-
-  analysis/
-    SKILL.md
-    references/
-      common.md
-      scenario-index.md
-      scenarios/
-        quality_inspection.analysis.md
-        quality_inspection.state_machine.md
-        quality_inspection.sla.md
-        quality_inspection.metric_contract.md
-        quality_inspection.owner_routing.md
-        quality_inspection.tool_policy.md
-        quality_inspection.examples.md
-
-  notification/
-    SKILL.md
-    references/
-      common.md
-      owner_routing_common.md
-      escalation_policy_common.md
-      scenario-index.md
-      scenarios/
-        quality_inspection.notification.md
-        quality_inspection.state_machine.md
-        quality_inspection.sla.md
-        quality_inspection.owner_routing.md
-        quality_inspection.notification_templates.md
-        quality_inspection.tool_policy.md
-        quality_inspection.examples.md
-
-  resolution/
-    SKILL.md
-    references/
-      common.md
-      sla_policy_common.md
-      closure_standard_common.md
-      scenario-index.md
-      scenarios/
-        quality_inspection.resolution.md
-        quality_inspection.state_machine.md
-        quality_inspection.sla.md
-        quality_inspection.owner_routing.md
-        quality_inspection.notification_templates.md
-        quality_inspection.tool_policy.md
-        quality_inspection.examples.md
+human_review_ops/
+  references/
+    scenarios/
+      quality_inspection/
+        perception.md
+        analysis.md
+        notification.md
+        resolution.md
+        state_machine.md
+        sla.md
+        metric_contract.md
+        owner_routing.md
+        notification_templates.md
+        tool_policy.md
+        examples.md
+  skills/
+    perception/
+      SKILL.md
+      references/
+        common.md
+        scenario-index.md
+        scenarios/
+          quality_inspection.perception.md
+          quality_inspection.state_machine.md
+          quality_inspection.sla.md
+          quality_inspection.metric_contract.md
+          quality_inspection.owner_routing.md
+          quality_inspection.tool_policy.md
+          quality_inspection.examples.md
+    analysis/
+      SKILL.md
+      references/
+        common.md
+        scenario-index.md
+        scenarios/
+          quality_inspection.analysis.md
+          quality_inspection.state_machine.md
+          quality_inspection.sla.md
+          quality_inspection.metric_contract.md
+          quality_inspection.owner_routing.md
+          quality_inspection.tool_policy.md
+          quality_inspection.examples.md
+    notification/
+      SKILL.md
+      references/
+        common.md
+        owner_routing_common.md
+        escalation_policy_common.md
+        scenario-index.md
+        scenarios/
+          quality_inspection.notification.md
+          quality_inspection.state_machine.md
+          quality_inspection.sla.md
+          quality_inspection.owner_routing.md
+          quality_inspection.notification_templates.md
+          quality_inspection.tool_policy.md
+          quality_inspection.examples.md
+    resolution/
+      SKILL.md
+      references/
+        common.md
+        sla_policy_common.md
+        closure_standard_common.md
+        scenario-index.md
+        scenarios/
+          quality_inspection.resolution.md
+          quality_inspection.state_machine.md
+          quality_inspection.sla.md
+          quality_inspection.owner_routing.md
+          quality_inspection.notification_templates.md
+          quality_inspection.tool_policy.md
+          quality_inspection.examples.md
 ```
 
 ### 2.3 `SKILL.md` 与场景流程包的职责边界
@@ -126,7 +123,7 @@ skills/
 | `SKILL.md` | 通用能力目标、触发条件、输入输出契约、执行步骤、质量检查、Tool/MCP/CLI 调用规则、失败降级 | 不写死某个运营场景的所有 SOP 细节，不重复维护大量业务规则 |
 | `references/common.md` | 通用术语、统一字段、通用判断口径、共用样例 | 不承载具体场景差异 |
 | `references/scenario-index.md` | 每个 Skill 的一级场景索引，直接挂载该 Skill 需要读取的场景文件 | 不承载业务正文，不做二级跳转 |
-| 根目录 `references/scenarios/{scenario}/` | 目标态完整场景流程包，包含该运营内容的状态机、SLA、Owner 路由、模板、工具边界、样例 | 不复制通用 Skill 的执行框架 |
+| 根目录 `human_review_ops/references/scenarios/{scenario}/` | 目标态完整场景流程包，包含该运营内容的状态机、SLA、Owner 路由、模板、工具边界、样例 | 不复制通用 Skill 的执行框架 |
 | Skill 内 `references/scenarios/{scenario}.{file_type}.md` | 前期 TRAE 调试快照，或未来单 Skill 发布包内文件 | 只能由根目录场景包生成，不能手工漂移 |
 
 ### 2.4 场景流程包必备文件
@@ -1087,7 +1084,7 @@ CLI 调用要求：
 | --- | --- |
 | Skill 目录 | 四个通用能力 Skill 目录存在。 |
 | SKILL.md | 每个 Skill 有触发条件、输入输出、执行步骤、质量检查、Tool/MCP/CLI 约束。 |
-| 场景流程包 | 目标态在根目录 `references/scenarios/{scenario}/` 下维护完整场景流程包；前期 TRAE 调试态可同步到各 Skill 包内的 `references/scenarios/{scenario}.{file_type}.md`，并由该 Skill 的 `references/scenario-index.md` 挂载。 |
+| 场景流程包 | 目标态在根目录 `human_review_ops/references/scenarios/{scenario}/` 下维护完整场景流程包；前期 TRAE 调试态可同步到各 Skill 包内的 `references/scenarios/{scenario}.{file_type}.md`，并由该 Skill 的 `references/scenario-index.md` 挂载。 |
 | Schema | 事件对象、分析结果、处理结果、工具调用记录都有结构化定义。 |
 | 状态机 | 状态、流转条件、人工卡点、降级和终态要求明确。 |
 | Tool/MCP/CLI 白名单 | 每个场景明确 allowed_tools、allowed_cli_commands、权限级别、超时和 fallback。 |

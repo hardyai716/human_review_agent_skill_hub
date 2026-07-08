@@ -89,7 +89,7 @@ Reference 文档必须面向 LLM 检索和使用，而不是只面向人读。
 每个运营内容建议有以下文件：
 
 ```text
-references/scenarios/{scenario}/
+human_review_ops/references/scenarios/{scenario}/
   metric_contract.md
   perception.md
   analysis.md

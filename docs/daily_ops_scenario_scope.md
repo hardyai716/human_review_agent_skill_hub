@@ -7,7 +7,7 @@
 - 当前阶段重点放在前两个节点：感知和分析。
 - 通知模块前期不深入建设动态 Owner 路由，测试阶段发送给指定人或指定群。
 - 解决模块前期不深入建设自动处理、复杂 SLA 和多级闭环，只做轻量记录、人工跟进和结论回收。
-- 每项运营内容仍然在根目录 `references/scenarios/` 中独立维护自己的状态机、SLA、Owner 路由、通知模板和解决闭环规则；前期 TRAE 调试时可同步到对应 Skill 包内。
+- 每项运营内容仍然在根目录 `human_review_ops/references/scenarios/` 中独立维护自己的状态机、SLA、Owner 路由、通知模板和解决闭环规则；前期 TRAE 调试时可同步到对应 Skill 包内。
 
 ## 2. 已识别运营内容
 
@@ -72,10 +72,10 @@
 
 ## 3. 场景流程包要求
 
-每项运营内容都应作为根目录场景流程包中的一个独立 `scenario_key` 建设，并在 TRAE 调试或发布时生成到各 Skill 自己的 `references/scenarios/`，再由该 Skill 的 `references/scenario-index.md` 挂载。
+每项运营内容都应作为根目录场景流程包中的一个独立 `scenario_key` 建设，并在 TRAE 调试或发布时生成到各 Skill 自己的 `human_review_ops/skills/{skill}/references/scenarios/`，再由该 Skill 的 `references/scenario-index.md` 挂载。
 
 ```text
-references/scenarios/{scenario}/
+human_review_ops/references/scenarios/{scenario}/
   perception.md
   analysis.md
   notification.md
