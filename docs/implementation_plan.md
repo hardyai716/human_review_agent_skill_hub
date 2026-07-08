@@ -16,7 +16,7 @@
 - Agent 能安装并调用感知、分析、触达、解决四类 Skill。
 - TRAE 自定义调试智能体「人审运营智能体」能作为前期开发入口，完成 Agent 路由、Skill 调用、场景包读取和工具边界验证。
 - Skill 能通过一级索引加载正确场景包，而不是深层链式查找。
-- 自动处置准确率样板场景能完成查询计划、字段选择、只读查询、来源脚注和结果输出。
+- 打标率低效 reason 分析主线场景能完成查询计划、字段选择、分级 / 维度拆解计划、来源脚注和结果输出。
 - 混淆字段、禁止字段、跨场景冲突、低置信度场景能被阻断或转人工确认。
 - 场景包变更必须通过结构校验、评估样例、查询计划断言和人工验收后才能启用。
 
@@ -27,7 +27,8 @@
 - Agent 自身文件。
 - TRAE 自定义调试智能体配置与调试检查清单。
 - 四个通用 Skill 的最小可用模板。
-- 一个效率模块样板场景：自动处置准确率分析/预警。
+- 一个阶段 1 主线样板场景：打标率低效 reason 分析。
+- 一个阶段 0.5 架构占位场景：自动处置准确率分析/预警。
 - 场景包一级索引和场景文件。
 - `retrieval_policy`、`run_mode`、`task_type` 等核心调度契约。
 - QueryPlan、source_footer、tool_call_record 等输出契约。
@@ -61,6 +62,16 @@ human_review_ops/
         notification_templates.md
         analysis.md
         examples.md
+      efficiency-label-rate-low-efficiency/
+        scenario_manifest.md
+        state_machine.md
+        sla.md
+        metric_contract.md
+        dataset_reference.md
+        owner_routing.md
+        notification_templates.md
+        analysis.md
+        examples.md
   agents/
     human_review_ops_agent/
       agent.md
@@ -84,6 +95,10 @@ human_review_ops/
           efficiency-auto-disposal-accuracy.metric_contract.md
           efficiency-auto-disposal-accuracy.dataset_reference.md
           efficiency-auto-disposal-accuracy.examples.md
+          efficiency-label-rate-low-efficiency.manifest.md
+          efficiency-label-rate-low-efficiency.metric_contract.md
+          efficiency-label-rate-low-efficiency.dataset_reference.md
+          efficiency-label-rate-low-efficiency.examples.md
     analysis/
       SKILL.md
       references/
@@ -94,6 +109,10 @@ human_review_ops/
           efficiency-auto-disposal-accuracy.dataset_reference.md
           efficiency-auto-disposal-accuracy.analysis.md
           efficiency-auto-disposal-accuracy.examples.md
+          efficiency-label-rate-low-efficiency.metric_contract.md
+          efficiency-label-rate-low-efficiency.dataset_reference.md
+          efficiency-label-rate-low-efficiency.analysis.md
+          efficiency-label-rate-low-efficiency.examples.md
     notification/
       SKILL.md
       references/
@@ -103,6 +122,9 @@ human_review_ops/
           efficiency-auto-disposal-accuracy.owner_routing.md
           efficiency-auto-disposal-accuracy.notification_templates.md
           efficiency-auto-disposal-accuracy.sla.md
+          efficiency-label-rate-low-efficiency.owner_routing.md
+          efficiency-label-rate-low-efficiency.notification_templates.md
+          efficiency-label-rate-low-efficiency.sla.md
     resolution/
       SKILL.md
       references/
@@ -113,8 +135,16 @@ human_review_ops/
           efficiency-auto-disposal-accuracy.sla.md
           efficiency-auto-disposal-accuracy.owner_routing.md
           efficiency-auto-disposal-accuracy.examples.md
+          efficiency-label-rate-low-efficiency.state_machine.md
+          efficiency-label-rate-low-efficiency.sla.md
+          efficiency-label-rate-low-efficiency.owner_routing.md
+          efficiency-label-rate-low-efficiency.examples.md
   evals/
     efficiency-auto-disposal-accuracy/
+      eval_samples.jsonl
+      expected_outputs.md
+      query_plan_assertions.md
+    efficiency-label-rate-low-efficiency/
       eval_samples.jsonl
       expected_outputs.md
       query_plan_assertions.md
@@ -129,6 +159,7 @@ human_review_ops/
       build_skill_package.py
     policies/
       efficiency-auto-disposal.tool-policy.md
+      efficiency-label-rate-low-efficiency.tool-policy.md
     validators/
       validate_scenario_package.py
       validate_skill_package.py
@@ -208,13 +239,13 @@ human_review_ops/
 ```markdown
 # human_review_ops/skills/analysis/references/scenario-index.md
 
-## efficiency-auto-disposal-accuracy
+## efficiency-label-rate-low-efficiency
 
-- 调试态指标契约：scenarios/efficiency-auto-disposal-accuracy.metric_contract.md
-- 调试态数据集说明：scenarios/efficiency-auto-disposal-accuracy.dataset_reference.md
-- 调试态分析规则：scenarios/efficiency-auto-disposal-accuracy.analysis.md
-- 调试态样例与边界：scenarios/efficiency-auto-disposal-accuracy.examples.md
-- 目标态场景包：../../../references/scenarios/efficiency-auto-disposal-accuracy/
+- 调试态指标契约：scenarios/efficiency-label-rate-low-efficiency.metric_contract.md
+- 调试态数据集说明：scenarios/efficiency-label-rate-low-efficiency.dataset_reference.md
+- 调试态分析规则：scenarios/efficiency-label-rate-low-efficiency.analysis.md
+- 调试态样例与边界：scenarios/efficiency-label-rate-low-efficiency.examples.md
+- 目标态场景包：../../../references/scenarios/efficiency-label-rate-low-efficiency/
 ```
 
 ## 6. Agent 自身文件开发任务
@@ -308,7 +339,7 @@ partial_workflow
 - 默认运行模式：`debug_only`，优先只读，不执行真实写入。
 - 场景读取策略：优先验证 `human_review_ops/references/scenarios/` 跨目录读取；如 TRAE 不稳定，则使用 `human_review_ops/skills/*/references/scenarios/` 调试快照。
 - 工具策略：先使用 mock 或只读 Tool；真实通知、写状态、更新配置必须人工确认。
-- 调试样例：自动处置准确率查询、责任人定位、预警通知草稿、人工处理记录。
+- 调试样例：打标率低效 reason 分析、P0/P1/P2/notice 分级、机审一级标签维度拆解、跨场景拒绝、低信息量澄清。
 
 验收：
 
@@ -428,18 +459,19 @@ partial_workflow
 
 - 未完成动作、证据、结论三件套时自动关闭。
 
-## 8. 样板场景：效率模块 / 自动处置准确率
+## 8. 阶段 1 主线样板场景：效率模块 / 打标率低效 reason 分析
 
 ### 8.1 场景目标
 
-验证 Agent 能在效率模块下识别自动处置准确率相关任务，并完成：
+验证 Agent 能在效率模块下识别打标率低效 reason 相关任务，并完成：
 
 - 场景识别。
 - 指标口径加载。
 - 数据集字段选择。
 - QueryPlan 生成。
-- 只读查询。
-- 归因分析。
+- 低效分级或维度拆解计划。
+- 只读查询前校验。
+- 分析结果结构化输出。
 - 责任人建议。
 - 来源脚注输出。
 
@@ -448,16 +480,16 @@ partial_workflow
 目标态根目录路径：
 
 ```text
-human_review_ops/references/scenarios/efficiency-auto-disposal-accuracy/
+human_review_ops/references/scenarios/efficiency-label-rate-low-efficiency/
 ```
 
 TRAE 调试快照 / 未来发布包内路径示例：
 
 ```text
-human_review_ops/skills/analysis/references/scenarios/efficiency-auto-disposal-accuracy.metric_contract.md
-human_review_ops/skills/analysis/references/scenarios/efficiency-auto-disposal-accuracy.dataset_reference.md
-human_review_ops/skills/analysis/references/scenarios/efficiency-auto-disposal-accuracy.analysis.md
-human_review_ops/skills/analysis/references/scenarios/efficiency-auto-disposal-accuracy.examples.md
+human_review_ops/skills/analysis/references/scenarios/efficiency-label-rate-low-efficiency.metric_contract.md
+human_review_ops/skills/analysis/references/scenarios/efficiency-label-rate-low-efficiency.dataset_reference.md
+human_review_ops/skills/analysis/references/scenarios/efficiency-label-rate-low-efficiency.analysis.md
+human_review_ops/skills/analysis/references/scenarios/efficiency-label-rate-low-efficiency.examples.md
 ```
 
 `human_review_ops/references/scenarios/` 是长期维护的完整场景流程包。前期 TRAE 调试时，可以把其中必要文件同步到 Skill 内部 `human_review_ops/skills/{skill_name}/references/scenarios/` 快照目录；实际运行时，Agent 先选择 Skill，再由该 Skill 的 `references/scenario-index.md` 决定读取本地快照还是目标态场景包。
@@ -558,16 +590,17 @@ human_review_ops/skills/analysis/references/scenarios/efficiency-auto-disposal-a
 路径：
 
 ```text
-human_review_ops/evals/efficiency-auto-disposal-accuracy/eval_samples.jsonl
+human_review_ops/evals/efficiency-label-rate-low-efficiency/eval_samples.jsonl
 ```
 
 至少包含：
 
-- 正例：自动处置准确率下降，按策略归因。
-- 正例：自动处置准确率下降，按队列归因。
-- 正例：自动处置准确率撞线预警。
-- 反例：质检准确率下降，不应命中效率模块。
-- 反例：底线事故数上升，不应命中自动处置准确率场景。
+- 正例：近 7 天高完审低打标 reason 分析。
+- 正例：低效策略分 P0/P1/P2/notice。
+- 正例：按机审一级标签拆解低打标 reason。
+- 正例：打标率和完审量趋势。
+- 反例：自动处置准确率下降，不应命中打标率场景。
+- 反例：质检准确率下降，不应命中打标率场景。
 - 混淆字段：字段名相似但口径不同。
 - 低置信度：缺少指标或时间窗口。
 
@@ -602,8 +635,10 @@ human_review_ops/evals/efficiency-auto-disposal-accuracy/eval_samples.jsonl
 - `human_review_ops/skills/notification/`
 - `human_review_ops/skills/resolution/`
 - `human_review_ops/references/scenarios/efficiency-auto-disposal-accuracy/`
+- `human_review_ops/references/scenarios/efficiency-label-rate-low-efficiency/`
 - `human_review_ops/skills/*/references/scenarios/` 中的样板场景发布文件
 - `human_review_ops/evals/efficiency-auto-disposal-accuracy/`
+- `human_review_ops/evals/efficiency-label-rate-low-efficiency/`
 - `human_review_ops/tools/policies/`
 
 验收：
@@ -619,7 +654,7 @@ human_review_ops/evals/efficiency-auto-disposal-accuracy/eval_samples.jsonl
 - TRAE 自定义智能体：`人审运营智能体`。
 - `human_review_ops/agents/human_review_ops_agent/trae_debug_profile.md`。
 - `human_review_ops/agents/human_review_ops_agent/trae_debug_checklist.md`。
-- 自动处置准确率样板调试用例。
+- 打标率低效 reason 分析样板调试用例。
 - Skill 内调试快照与根目录场景包读取验证记录。
 
 调试顺序：
@@ -644,7 +679,7 @@ human_review_ops/evals/efficiency-auto-disposal-accuracy/eval_samples.jsonl
 
 交付：
 
-- 自动处置准确率场景包。
+- 打标率低效 reason 分析场景包。
 - QueryPlan 断言。
 - 来源脚注模板。
 - 只读查询 Tool 策略。
@@ -709,11 +744,11 @@ human_review_ops/evals/efficiency-auto-disposal-accuracy/eval_samples.jsonl
 | 运行态开发目录 | 已统一收敛到 `human_review_ops/`。 | 通过 |
 | Agent 元文件 | 已具备身份、能力、安装、路由、权限、记忆、评估和 TRAE 调试文件。 | 通过 |
 | 四类 Skill 模板 | 感知、分析、通知、解决 Skill 已有最小 `SKILL.md`、`common.md`、`scenario-index.md`。 | 通过 |
-| 场景流程包 | 自动处置准确率场景包已落在 `human_review_ops/references/scenarios/`。 | 通过 |
+| 场景流程包 | 已具备自动处置准确率占位场景包；阶段 1 主线已切换为打标率低效 reason 分析场景包。 | 通过 |
 | TRAE 调试快照 | 四类 Skill 已具备样板场景调试快照。 | 通过 |
 | 评估样例 | 已具备 `eval_samples.jsonl`、`expected_outputs.md`、`query_plan_assertions.md`。 | 通过 |
 | Schema 契约 | 已具备 event、analysis_result、resolution_result、retrieval_policy、tool_call_record。 | 通过 |
-| Tool 策略 | 已具备自动处置准确率只读工具策略。 | 通过 |
+| Tool 策略 | 已具备自动处置准确率和打标率低效 reason 分析的只读工具策略。 | 通过 |
 | 打包和校验脚本 | 已具备最小 packager 和 validator 脚本。 | 通过 |
 | TRAE 调试验证 | 已在 TRAE 中确认「人审运营智能体 / human-review-operator」存在，阶段 0.5 样例记录与校验通过；用户已手动复核并保存提示词和调用条件。 | 通过 |
 
@@ -724,6 +759,7 @@ human_review_ops/evals/efficiency-auto-disposal-accuracy/eval_samples.jsonl
 - [x] 创建人审运营 Agent 最小元文件。
 - [x] 创建四类通用 Skill 最小模板。
 - [x] 创建效率模块 / 自动处置准确率样板场景包。
+- [x] 基于已验证的 `warehouse-skill` 和 `low-efficiency-strategy-analysis`，新增效率模块 / 打标率低效 reason 分析主线场景包。
 - [x] 创建 Skill 内调试快照。
 - [x] 创建评估样例和 QueryPlan 断言。
 - [x] 创建 retrieval_policy 和 tool_call_record schema。
@@ -741,7 +777,7 @@ human_review_ops/evals/efficiency-auto-disposal-accuracy/eval_samples.jsonl
 | P0 | 阶段 0.5 | 在 TRAE 创建自定义智能体「人审运营智能体」。 | 能加载 Agent 调试配置和四类 Skill。 | 已完成（UI 已确认，配置已人工复核） |
 | P0 | 阶段 0.5 | 使用 5 条样例跑调试闭环。 | 每条样例都有 `trae_debug_checklist.md` 格式记录。 | 已完成（本轮覆盖 6 条样例） |
 | P0 | 阶段 0.5 | 验证 `human_review_ops/references/scenarios/` 跨目录读取。 | 成功读取则优先使用目标态场景包；失败则记录原因并使用 Skill 内快照。 | 已完成（根目录读取通过，Skill 快照可回退） |
-| P0 | 阶段 1 | 跑通感知 + 分析最小链路。 | 输出 `scenario_key`、`task_type`、QueryPlan、source_footer。 | 待开始 |
+| P0 | 阶段 1 | 以打标率低效 reason 分析为主线，跑通感知 + 分析最小链路。 | 输出 `scenario_key`、`task_type`、QueryPlan、source_footer。 | 待开始 |
 | P1 | 阶段 1 | 接入 mock / 只读 Tool。 | 只读工具调用有 tool_call_record，且不会写状态。 | 待开始 |
 | P1 | 阶段 1 | 生成通知草稿和 Owner 建议。 | 不发送真实通知，输出 Owner 依据和置信度。 | 待开始 |
 | P1 | 阶段 1 | 记录人工处理状态。 | 输出 manual_tracking，不写线上状态。 | 待开始 |
