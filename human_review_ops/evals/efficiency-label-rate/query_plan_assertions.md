@@ -73,7 +73,7 @@
 
 ## tool_call_record 断言
 
-阶段 1 P1 接入 mock / 只读 Tool 后：
+阶段 1 P1 接入 mock / 只读 Tool 后，当前预检阶段：
 
 - 正例 QueryPlan 必须包含 `tool_calls`，值为 `tool_call_record.tool_call_id` 列表。
 - 顶层输出必须包含 `tool_call_records`。
@@ -84,3 +84,5 @@
 - 未列举维度必须生成字段发现类 mock 记录，但不得把未确认字段直接用于真实查询。
 - 低打标率分级和维度拆解若需要 `curated_raw_sql` fallback，必须生成受控 SQL guard 记录，且真实 SQL 执行状态必须是 blocked。
 - 反例和低信息量样例不得生成工具调用记录。
+
+后续接入真实只读执行时，应新增执行结果断言，校验数据来源、指标口径、过滤条件、质量检查、source_footer 和 provenance，不再把 mock 预检断言作为真实查询结论断言。

@@ -671,7 +671,7 @@ human_review_ops/evals/efficiency-label-rate/eval_samples.jsonl
 3. 使用 Skill 内 `human_review_ops/skills/{skill}/references/scenarios/` 调试快照跑通最小流程。
 4. 验证是否能稳定读取根目录 `human_review_ops/references/scenarios/`。
 5. 逐步接入只读 Tool/MCP/CLI。
-6. 仅生成通知草稿和人工处理记录，不发送真实通知、不写线上状态。
+6. 查询类任务优先跑通 QueryPlan 后的只读执行与依据记录；通知草稿、Owner 建议和人工处理记录只在用户明确要求，或分析结果触发治理/升级条件时生成，不发送真实通知、不写线上状态。
 
 验收：
 
@@ -690,14 +690,25 @@ human_review_ops/evals/efficiency-label-rate/eval_samples.jsonl
 - QueryPlan 断言。
 - 来源脚注模板。
 - 只读查询 Tool 策略。
-- 固定人/群测试通知。
+- 只读执行结果、证据字段和 provenance 记录。
 
 验收：
 
 - 正例命中率达到标准。
 - 反例拒绝率达到标准。
 - 混淆字段拒绝率达到标准。
-- 输出包含 QueryPlan 和 source_footer。
+- QueryPlan 校验通过后，Agent 应按用户问题执行可用的 mock / 只读查询链路。
+- 输出包含 QueryPlan、tool_call_record、source_footer、数据来源、指标口径和分析依据。
+- 不把通知草稿、Owner 建议或人工处理状态作为查询类任务的默认产出。
+- 只有覆盖样本池、未治理字段、权限不足、真实通知、线上写入或高风险动作才要求人工确认。
+
+执行原则：
+
+- Agent 不应把每一步都转成人工确认。
+- 当用户问题明确、场景命中、QueryPlan 通过断言、数据源属于允许来源、工具权限为只读时，Agent 应直接执行可用的只读查询或 mock 查询链路。
+- 执行后必须记录依据，包括数据来源、指标口径、时间窗口、过滤条件、质量检查、tool_call_record、source_footer 和 provenance。
+- 只有信息不足、字段无法确认、用户要求覆盖标准样本池、命中禁止来源、权限不足、真实通知、线上写入或高风险动作时，才进入澄清或人工确认。
+- Owner 建议不是查询类任务的前置步骤；只有结果需要治理跟进、通知、升级或用户明确询问“找谁”时才生成。
 
 ### 阶段 2：局部调度能力
 
@@ -793,8 +804,9 @@ human_review_ops/evals/efficiency-label-rate/eval_samples.jsonl
 | P0 | 阶段 0.5 | 验证 `human_review_ops/references/scenarios/` 跨目录读取。 | 成功读取则优先使用目标态场景包；失败则记录原因并使用 Skill 内快照。 | 已完成（根目录读取通过，Skill 快照可回退） |
 | P0 | 阶段 1 | 以打标率为主线，跑通感知 + 分析最小链路。 | 输出 `scenario_key`、`task_type`、QueryPlan、source_footer。 | 已完成（不接真实查询） |
 | P1 | 阶段 1 | 接入 mock / 只读 Tool。 | 只读工具调用有 tool_call_record，且不会写状态。 | 已完成（mock 预检，不做真实查询） |
-| P1 | 阶段 1 | 生成通知草稿和 Owner 建议。 | 不发送真实通知，输出 Owner 依据和置信度。 | 待开始 |
-| P1 | 阶段 1 | 记录人工处理状态。 | 输出 manual_tracking，不写线上状态。 | 待开始 |
+| P1 | 阶段 1 | 基于 QueryPlan 执行只读查询并输出分析结果与依据。 | 输出数据来源、指标口径、证据字段、source_footer 和 provenance；不写状态、不发送通知。 | 待开始 |
+| P2 | 阶段 2 | 按需生成通知草稿和 Owner 建议。 | 仅在用户明确要求或分析结果触发治理/升级条件时生成；不发送真实通知，输出 Owner 依据和置信度。 | 待开始 |
+| P2 | 阶段 2 | 记录人工处理状态。 | 仅在进入处置/跟进任务时输出 manual_tracking，不写线上状态。 | 待开始 |
 | P2 | 阶段 2 | 支持局部调度。 | `query_only`、`owner_lookup_only`、`notification_only`、`resolution_only` 均可独立执行。 | 待开始 |
 | P2 | 阶段 3 | 增加发布治理和回滚。 | 场景包有 draft、reviewing、enabled、disabled、rollback 状态。 | 待开始 |
 

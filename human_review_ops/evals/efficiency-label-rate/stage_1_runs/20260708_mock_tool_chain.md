@@ -53,7 +53,7 @@
 ## 边界说明
 
 - `mock_semantic_layer_catalog` 只模拟指标、维度和 freshness 预检记录，不返回真实数据。
-- `mock_curated_sql_guard` 只记录受控 SQL fallback 的人工确认要求，真实 SQL 执行保持 blocked。
+- `mock_curated_sql_guard` 只记录受控 SQL fallback 的只读模板和权限要求；当前 mock 模式不执行真实 SQL。
 - `mock_governed_dataset_catalog` 只记录未列举维度的字段发现要求，字段未确认前不得拼接查询。
 - 当前 source_footer 仍保持 `data_freshness=not_queried`。
 
@@ -61,6 +61,7 @@
 
 阶段 1 后续可以继续做：
 
-- 生成通知草稿和 Owner 建议。
-- 记录人工处理状态 `manual_tracking`。
-- 接入真实只读工具前，补齐真实 Semantic Layer / Aeolus 指标 ID 和具体治理 Owner。
+- 从 mock 预检升级为真实只读查询执行。
+- 输出分析结果、证据字段、数据来源、指标口径、source_footer 和 provenance。
+- 接入真实只读工具前，补齐真实 Semantic Layer / Aeolus 指标 ID。
+- 只有分析结果触发治理/升级，或用户明确要求“通知/找人”时，再生成通知草稿和 Owner 建议。

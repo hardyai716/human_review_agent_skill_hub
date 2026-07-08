@@ -16,12 +16,15 @@
 - 生成 source_footer。
 - 生成打标率趋势、排序、低打标率分级或维度拆解的查询计划。
 - 调用 mock / 只读预检 Tool 并生成 `tool_call_record`。
+- 在 QueryPlan 通过断言、数据源属于允许来源、工具权限为只读时，执行治理数据源的只读查询。
 - 生成通知草稿。
 - 记录调试检查清单。
 
 ## 需要人工确认
 
-- 调用真实 Semantic Layer、Aeolus、Hive 或 ClickHouse 查询。
+- 覆盖标准样本池或绕过默认 A/B/C/D 过滤。
+- 查询未治理来源、禁用来源或敏感明细。
+- 使用未确认字段、未确认粒度或未确认 Owner 的扩展维度。
 - 运行会产生线上副作用的 CLI。
 - 上传或发送正式报表。
 - 发送飞书消息。
@@ -52,4 +55,4 @@
 - `real_query_executed`
 - `status`
 
-阶段 1 P1 中，`execution_mode` 必须为 `mock_readonly_no_real_query`，`real_query_executed` 必须为 `false`。这些记录只能证明 QueryPlan 已通过 mock / 只读预检，不得作为真实数据结论。
+阶段 1 P1 中，`execution_mode` 可以为 `mock_readonly_no_real_query` 或未来的真实只读查询模式。mock 记录只能证明 QueryPlan 已通过预检，不得作为真实数据结论；真实只读查询记录必须同步写明数据来源、查询范围、指标口径、过滤条件和 source_footer。

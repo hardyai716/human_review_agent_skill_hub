@@ -78,11 +78,12 @@ def build_tool_call_records(query_plan: dict[str, Any]) -> list[dict[str, Any]]:
                     f"Evaluate curated SQL fallback guard for {fallback_reason}."
                 ),
                 output_summary=(
-                    "Mock guard identified a controlled SQL fallback path, but real "
-                    "query execution is blocked until human confirmation. "
+                    "Mock guard identified a controlled SQL fallback path, but this "
+                    "debug run does not execute real queries. Future readonly "
+                    "execution must use pre-registered templates and permission checks. "
                     "No real query executed."
                 ),
-                error_reason="real_query_requires_human_confirmation",
+                error_reason="real_query_not_available_in_mock_mode",
             )
         )
 

@@ -33,7 +33,7 @@ disallowed-tools:
 
 - 默认只读。
 - 查询前必须生成 QueryPlan。
-- 阶段 1 P1 只能生成 mock / 只读 `tool_call_record`，不得执行真实查询。
+- 当前阶段可先生成 mock / 只读 `tool_call_record`；接入真实只读 Tool 后，QueryPlan 通过断言即可执行治理数据源只读查询。
 - 输出必须包含 source_footer。
 - 不使用未授权数据源。
 

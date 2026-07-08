@@ -47,4 +47,5 @@ STOPPED_NO_CONCLUSION
 - 口径、时间窗口或指标不明确：进入 `NEED_MORE_INFO`。
 - 数据未就绪：进入 `DATA_NOT_READY`，不得输出低效结论。
 - 权限不足：进入 `PERMISSION_BLOCKED`。
-- 真实查询、真实通知、线上写状态：进入 `HUMAN_REVIEW_REQUIRED`。
+- QueryPlan 通过且工具权限为只读时，可以进入只读查询执行。
+- 真实通知、线上写状态、覆盖样本池、未治理字段、禁用来源或高风险动作：进入 `HUMAN_REVIEW_REQUIRED`。

@@ -6,8 +6,8 @@
 | --- | --- | --- | --- |
 | 感知 Skill | `human_review_ops/skills/perception/` | debug_enabled | 识别场景、指标、任务类型和数据就绪。 |
 | 分析 Skill | `human_review_ops/skills/analysis/` | debug_enabled | 生成 QueryPlan、分析结论和 source_footer。 |
-| 通知 Skill | `human_review_ops/skills/notification/` | debug_enabled | 生成通知草稿和 Owner 建议。 |
-| 解决 Skill | `human_review_ops/skills/resolution/` | debug_enabled | 记录人工处理状态、结论和证据。 |
+| 通知 Skill | `human_review_ops/skills/notification/` | debug_enabled | 在用户明确要求或分析结果触发跟进时，生成通知草稿和 Owner 建议。 |
+| 解决 Skill | `human_review_ops/skills/resolution/` | debug_enabled | 在进入处置/跟进任务时，记录人工处理状态、结论和证据。 |
 
 ## 已启用场景
 
