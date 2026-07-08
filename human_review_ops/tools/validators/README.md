@@ -9,6 +9,7 @@
 - `validate_query_plan.py`：校验 QueryPlan JSON 是否包含治理字段。
 - `validate_source_footer.py`：校验 source_footer JSON 是否包含来源说明字段。
 - `validate_trae_stage_0_5.py`：校验阶段 0.5 TRAE 调试记录是否覆盖环境、样例、权限和读取策略。
+- `validate_stage_1_minimal_chain.py`：校验阶段 1 感知 + 分析最小链路是否输出 `scenario_key`、`task_type`、QueryPlan 和 source_footer，且不触发真实查询或写入。
 
 ## 使用约束
 
