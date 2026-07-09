@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run a custom multi-dimension low label-rate query and notification flow."""
+"""Run a custom multi-dimension low label-rate query flow."""
 
 from __future__ import annotations
 
@@ -40,7 +40,7 @@ DEFAULT_OUTPUT_DIR = (
     / "evals"
     / SCENARIO_KEY
     / "stage_2_runs"
-    / "20260709_custom_label_rate_breakdown_20260629_20260705"
+    / "20260709_custom_label_rate_breakdown_summary_default_20260629_20260705"
 )
 DEFAULT_DIMENSIONS = [
     "mach_root_label_name",
@@ -94,7 +94,8 @@ def main() -> None:
     parser.add_argument("--output-dir", default=str(DEFAULT_OUTPUT_DIR))
     parser.add_argument("--limit", type=int, default=50000)
     parser.add_argument("--top-n", type=int, default=10)
-    parser.add_argument("--import-workbook", action="store_true")
+    parser.add_argument("--import-workbook", dest="import_workbook", action="store_true", default=True)
+    parser.add_argument("--no-import-workbook", dest="import_workbook", action="store_false")
     parser.add_argument("--send-chat-id")
     parser.add_argument("--identity", choices=["bot", "user"], default="bot")
     parser.add_argument("--title", default="6月29日-7月5日低打标率多维明细")
@@ -124,6 +125,7 @@ def main() -> None:
     )
     result_path = output_dir / "custom_label_rate_breakdown_results.jsonl"
     summary_path = output_dir / "summary.json"
+    analysis_summary_path = output_dir / "analysis_summary.md"
     card_with_meta_path = publish_dir / f"{REPORT_TYPE}.card.with_meta.json"
     card_path = publish_dir / f"{REPORT_TYPE}.card.json"
     hash_check_path = publish_dir / "card_hash_check.json"
@@ -154,32 +156,35 @@ def main() -> None:
     records = build_records(summary=summary, rows=rows, payload=payload, sql=sql)
     write_jsonl(result_path, records)
 
-    top_rows = build_top_rows(rows, args.top_n)
-    card_with_meta = render_card(
-        summary=summary,
-        top_rows=top_rows,
-        sheet_url=sheet_url,
-        title=args.title,
-    )
-    card_json = strip_internal_keys(card_with_meta)
-    write_json(card_with_meta_path, card_with_meta)
-    write_json(card_path, card_json, compact=True)
-    write_json(
-        hash_check_path,
-        {
-            "ok": True,
-            "data_hash": card_with_meta["_meta"]["_data_hash"],
-            "top_rows_count": len(top_rows),
-            "top_rows": top_rows,
-            "internal_meta_removed": "_meta" not in card_json,
-            "design_check": card_design_check(card_with_meta),
-        },
-    )
+    analysis_top_rows = rows[: args.top_n]
+    summary["outputs"]["analysis_summary_md"] = relative_to_root(analysis_summary_path)
+    write_text(analysis_summary_path, build_analysis_summary(summary, analysis_top_rows))
 
     sent_payload = None
     send_channel = None
     card_send_error = None
     if args.send_chat_id:
+        card_top_rows = build_card_top_rows(rows, args.top_n)
+        card_with_meta = render_card(
+            summary=summary,
+            top_rows=card_top_rows,
+            sheet_url=sheet_url,
+            title=args.title,
+        )
+        card_json = strip_internal_keys(card_with_meta)
+        write_json(card_with_meta_path, card_with_meta)
+        write_json(card_path, card_json, compact=True)
+        write_json(
+            hash_check_path,
+            {
+                "ok": True,
+                "data_hash": card_with_meta["_meta"]["_data_hash"],
+                "top_rows_count": len(card_top_rows),
+                "top_rows": card_top_rows,
+                "internal_meta_removed": "_meta" not in card_json,
+                "design_check": card_design_check(card_with_meta),
+            },
+        )
         try:
             sent_payload = send_card(
                 chat_id=args.send_chat_id,
@@ -194,7 +199,7 @@ def main() -> None:
             card_send_error = summarize_error(exc)
             sent_payload = send_markdown(
                 chat_id=args.send_chat_id,
-                markdown=build_markdown_message(summary, top_rows, sheet_url),
+                markdown=build_markdown_message(summary, analysis_top_rows, sheet_url),
                 identity=args.identity,
                 idempotency_key=safe_idempotency_key(
                     f"{REPORT_TYPE}-markdown-{start_date.isoformat()}-{end_date.isoformat()}-{datetime.now().isoformat()}"
@@ -207,13 +212,14 @@ def main() -> None:
         "scenario_key": SCENARIO_KEY,
         "output_dir": relative_to_root(output_dir),
         "summary_json": relative_to_root(summary_path),
+        "analysis_summary_md": relative_to_root(analysis_summary_path),
         "result_jsonl": relative_to_root(result_path),
         "csv": relative_to_root(csv_path),
         "workbook": relative_to_root(workbook_path),
         "sheet_url": sheet_url,
-        "card_json": relative_to_root(card_path),
-        "card_json_with_meta": relative_to_root(card_with_meta_path),
-        "card_hash_check": relative_to_root(hash_check_path),
+        "card_json": relative_to_root(card_path) if args.send_chat_id else None,
+        "card_json_with_meta": relative_to_root(card_with_meta_path) if args.send_chat_id else None,
+        "card_hash_check": relative_to_root(hash_check_path) if args.send_chat_id else None,
         "send_channel": send_channel,
         "card_send_error": card_send_error,
         "sent": sent_payload is not None,
@@ -237,7 +243,9 @@ def main() -> None:
     print(
         "Custom label-rate breakdown wrote "
         f"{relative_to_root(output_dir)}; rows={len(rows)}; "
-        f"sent={publish_summary['sent']}; message_id={publish_summary['message_id']}"
+        f"sheet_url={sheet_url}; sent={publish_summary['sent']}; "
+        f"message_id={publish_summary['message_id']}\n"
+        f"{build_console_summary(summary, analysis_top_rows)}"
     )
 
 
@@ -595,7 +603,7 @@ def build_records(
     ]
 
 
-def build_top_rows(rows: list[dict[str, Any]], top_n: int) -> list[dict[str, Any]]:
+def build_card_top_rows(rows: list[dict[str, Any]], top_n: int) -> list[dict[str, Any]]:
     top_rows = []
     for index, row in enumerate(rows[:top_n], 1):
         top_rows.append(
@@ -610,6 +618,82 @@ def build_top_rows(rows: list[dict[str, Any]], top_n: int) -> list[dict[str, Any
             }
         )
     return top_rows
+
+
+def build_console_summary(summary: dict[str, Any], top_rows: list[dict[str, Any]]) -> str:
+    lines = [
+        "Summary:",
+        f"- low_label_rate_group_count={summary['row_count']}",
+        f"- weighted_label_rate={summary['weighted_label_rate'] * 100:.2f}%",
+        f"- sheet_url={summary['outputs'].get('sheet_url')}",
+        "- top_groups:",
+    ]
+    for row in top_rows[:5]:
+        lines.append(
+            (
+                f"  - {row['mach_root_label_name']} | {row['strategy_id']} | "
+                f"{row['strategy_name']} | {row['reason']} | "
+                f"avg_done={row['avg_review_done_cnt']:.0f} | "
+                f"avg_label={row['avg_label_cnt']:.0f} | "
+                f"label_rate={row['label_rate'] * 100:.2f}%"
+            )
+        )
+    return "\n".join(lines)
+
+
+def build_analysis_summary(summary: dict[str, Any], top_rows: list[dict[str, Any]]) -> str:
+    period = summary["period"]
+    lines = [
+        "# 自定义低打标率多维查询汇总",
+        "",
+        "## 结论摘要",
+        "",
+        f"- 时间窗口：`{period['start_date']}` ~ `{period['end_date']}`。",
+        "- 维度：`机审一级标签 × strategy_id × strategy_name × reason`。",
+        f"- 命中打标率 `<0.1` 的分组数：`{summary['row_count']}`。",
+        f"- 命中分组加权打标率：`{summary['weighted_label_rate'] * 100:.2f}%`。",
+        f"- 完整飞书电子表格：{summary['outputs'].get('sheet_url') or '未导入'}",
+        "",
+        "## Top 分组",
+        "",
+        "| 排名 | 机审一级标签 | strategy_id | strategy_name | reason | 日均进审量 | 日均完审量 | 日均打标量 | 打标率 |",
+        "| --- | --- | --- | --- | --- | ---: | ---: | ---: | ---: |",
+    ]
+    for index, row in enumerate(top_rows, 1):
+        lines.append(
+            "| {rank} | {label} | {sid} | {sname} | {reason} | {avg_in:.0f} | {avg_done:.0f} | {avg_label:.0f} | {rate:.2f}% |".format(
+                rank=index,
+                label=row["mach_root_label_name"],
+                sid=row["strategy_id"],
+                sname=str(row["strategy_name"]).replace("|", "\\|"),
+                reason=str(row["reason"]).replace("|", "\\|"),
+                avg_in=row["avg_review_in_cnt"],
+                avg_done=row["avg_review_done_cnt"],
+                avg_label=row["avg_label_cnt"],
+                rate=row["label_rate"] * 100,
+            )
+        )
+    lines.extend(
+        [
+            "",
+            "## 口径方法",
+            "",
+            "- 日均进审量：`SUM(进审量_reviewid) / COUNT(DISTINCT p_date)`。",
+            "- 日均完审量：`SUM(完审量_reviewid) / COUNT(DISTINCT p_date)`。",
+            "- 日均打标量：`SUM(打标量__reviewid) / COUNT(DISTINCT p_date)`。",
+            "- 打标率：`SUM(打标量__reviewid) / SUM(完审量_reviewid)`。",
+            "- 过滤：标准 A/B/C/D 过滤、`完审量 > 0`、`打标率 < 0.1`。",
+            "",
+            "## Provenance",
+            "",
+            "> Source: governed_dataset  ",
+            "> Confidence: high  ",
+            f"> Freshness: checked_at={period.get('checked_at')}  ",
+            "> Owner: 人审效率域数据 Owner  ",
+            "> Reviewed: sql_review_passed",
+        ]
+    )
+    return "\n".join(lines) + "\n"
 
 
 def render_card(
@@ -742,9 +826,9 @@ def build_markdown_message(
     for row in top_rows[:5]:
         lines.append(
             (
-                f"{row['rank']}. {row['reason']}："
-                f"日均进审 {row['avg_in']:,}，日均完审 {row['avg_done']:,}，"
-                f"日均打标 {row['avg_labeled']:,}，打标率 {row['label_rate'] * 100:.2f}%"
+                f"{row['mach_root_label_name']} / {row['strategy_id']} / {row['strategy_name']} / {row['reason']}："
+                f"日均进审 {row['avg_review_in_cnt']:.0f}，日均完审 {row['avg_review_done_cnt']:.0f}，"
+                f"日均打标 {row['avg_label_cnt']:.0f}，打标率 {row['label_rate'] * 100:.2f}%"
             )
         )
     lines.extend(
@@ -855,6 +939,11 @@ def write_jsonl(path: Path, records: list[dict[str, Any]]) -> None:
         "".join(json.dumps(record, ensure_ascii=False, separators=(",", ":")) + "\n" for record in records),
         encoding="utf-8",
     )
+
+
+def write_text(path: Path, text: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
 
 
 def import_workbook(workbook_path: Path, name: str) -> str:

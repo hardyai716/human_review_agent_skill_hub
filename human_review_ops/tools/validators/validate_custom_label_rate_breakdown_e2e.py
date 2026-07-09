@@ -23,7 +23,7 @@ DEFAULT_OUTPUT_DIR = (
     / "evals"
     / "efficiency-label-rate"
     / "stage_2_runs"
-    / "20260709_custom_label_rate_breakdown_20260629_20260705"
+    / "20260709_custom_label_rate_breakdown_summary_default_20260629_20260705"
 )
 EXPECTED_DIMENSIONS = [
     "mach_root_label_name",
@@ -101,11 +101,10 @@ def validate(output_dir: Path, *, expect_group_sent: bool) -> None:
         "custom_label_rate_breakdown_results.jsonl",
         "custom_label_rate_breakdown.csv",
         "custom_label_rate_breakdown_2026-06-29_2026-07-05.xlsx",
-        "publish/custom_label_rate_breakdown.card.json",
-        "publish/custom_label_rate_breakdown.card.with_meta.json",
         "publish/custom_label_rate_breakdown.publish_summary.json",
-        "publish/card_hash_check.json",
     ]
+    if not expect_group_sent:
+        required_files.append("analysis_summary.md")
     if expect_group_sent:
         required_files.append("group_send_validation.json")
     for relative in required_files:
@@ -115,19 +114,27 @@ def validate(output_dir: Path, *, expect_group_sent: bool) -> None:
     summary = load_json(output_dir / "summary.json")
     records = load_jsonl(output_dir / "custom_label_rate_breakdown_results.jsonl")
     csv_rows = read_csv_rows(output_dir / "custom_label_rate_breakdown.csv")
-    card = load_json(output_dir / "publish" / "custom_label_rate_breakdown.card.json")
-    card_with_meta = load_json(
-        output_dir / "publish" / "custom_label_rate_breakdown.card.with_meta.json"
-    )
     publish_summary = load_json(
         output_dir / "publish" / "custom_label_rate_breakdown.publish_summary.json"
     )
-    hash_check = load_json(output_dir / "publish" / "card_hash_check.json")
+    card_path = output_dir / "publish" / "custom_label_rate_breakdown.card.json"
+    card_with_meta_path = output_dir / "publish" / "custom_label_rate_breakdown.card.with_meta.json"
+    hash_check_path = output_dir / "publish" / "card_hash_check.json"
 
-    assert_summary(summary)
+    require_analysis_summary = not expect_group_sent or (output_dir / "analysis_summary.md").exists()
+    assert_summary(summary, require_analysis_summary=require_analysis_summary)
+    if (output_dir / "analysis_summary.md").exists():
+        assert_analysis_summary(output_dir / "analysis_summary.md", summary)
     assert_records(records, summary)
     assert_csv(csv_rows, summary)
-    assert_card(card, card_with_meta, hash_check)
+    if card_path.exists() or card_with_meta_path.exists() or hash_check_path.exists():
+        if not (card_path.exists() and card_with_meta_path.exists() and hash_check_path.exists()):
+            raise AssertionError("Card artifacts must be complete when present.")
+        assert_card(
+            load_json(card_path),
+            load_json(card_with_meta_path),
+            load_json(hash_check_path),
+        )
     assert_publish_summary(publish_summary, summary, expect_group_sent=expect_group_sent)
     if expect_group_sent:
         assert_group_send_validation(
@@ -137,7 +144,11 @@ def validate(output_dir: Path, *, expect_group_sent: bool) -> None:
         )
 
 
-def assert_summary(summary: dict[str, Any]) -> None:
+def assert_summary(
+    summary: dict[str, Any],
+    *,
+    require_analysis_summary: bool,
+) -> None:
     if summary.get("schema_version") != "custom_label_rate_breakdown.v1":
         raise AssertionError("summary schema_version mismatch.")
     if summary.get("scenario_key") != "efficiency-label-rate":
@@ -167,10 +178,25 @@ def assert_summary(summary: dict[str, Any]) -> None:
         raise AssertionError("summary weighted_label_rate out of range.")
     if not summary.get("outputs", {}).get("sheet_url"):
         raise AssertionError("summary sheet_url missing.")
+    if require_analysis_summary and not summary.get("outputs", {}).get("analysis_summary_md"):
+        raise AssertionError("summary analysis_summary_md missing.")
     sql = summary.get("sql", "")
     for snippet in REQUIRED_SQL_SNIPPETS:
         if snippet not in sql:
             raise AssertionError(f"SQL missing required snippet: {snippet}")
+
+
+def assert_analysis_summary(path: Path, summary: dict[str, Any]) -> None:
+    text = path.read_text(encoding="utf-8")
+    for snippet in (
+        "自定义低打标率多维查询汇总",
+        "机审一级标签 × strategy_id × strategy_name × reason",
+        str(summary["row_count"]),
+        "完整飞书电子表格",
+        "Provenance",
+    ):
+        if snippet not in text:
+            raise AssertionError(f"analysis_summary missing snippet: {snippet}")
 
 
 def assert_records(records: list[dict[str, Any]], summary: dict[str, Any]) -> None:
@@ -292,6 +318,8 @@ def assert_publish_summary(
         raise AssertionError("publish_summary sheet_url mismatch.")
     if publish_summary.get("sent") is not expect_group_sent:
         raise AssertionError("publish_summary sent mismatch.")
+    if publish_summary.get("analysis_summary_md") != summary.get("outputs", {}).get("analysis_summary_md"):
+        raise AssertionError("publish_summary analysis_summary_md mismatch.")
     if expect_group_sent:
         if publish_summary.get("send_identity") not in {"bot", "user"}:
             raise AssertionError("publish_summary send_identity missing.")
@@ -299,6 +327,8 @@ def assert_publish_summary(
             raise AssertionError("publish_summary target_chat_id missing.")
         if not publish_summary.get("message_id"):
             raise AssertionError("publish_summary message_id missing.")
+        if publish_summary.get("send_channel") not in {"interactive_card", "markdown_fallback"}:
+            raise AssertionError("publish_summary send_channel mismatch.")
 
 
 def assert_group_send_validation(
