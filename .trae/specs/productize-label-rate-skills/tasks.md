@@ -38,6 +38,10 @@
   - [x] SubTask 7.2: 运行完整轻量回归：场景包校验、AgentBuddy 发布校验、POC 映射校验、阶段 1/阶段 2 相关 validator。
   - [x] SubTask 7.3: 提交并推送全部变更到 `origin/main`。
 
+- [x] Task 8: 修复系统化验证发现的 `analysis/SKILL.md` 操作手册内容不一致。
+  - [x] SubTask 8.1: 更新 `human_review_ops/skills/analysis/SKILL.md` 的脚本章节，删除“尚未提供下沉后的分析脚本”和“不调用不存在的 `scripts/` 入口”等过期描述，改为明确调用 `scripts/label_rate_analysis.py` 生成 QueryPlan、source_footer、SQL、分级规则和标准化输出。
+  - [x] SubTask 8.2: 重新运行 `validate_skill_productization.py --strict`、`validate_label_rate_analysis_scripts.py`、`validate_skill_standalone_smoke.py`，并复核 checklist 第 3 项。
+
 # Task Dependencies
 
 - Task 2 depends on Task 1.

@@ -1,0 +1,13 @@
+- [x] 四个核心 Skill 均包含 `test-prompts.json`，且每个文件同时覆盖 should-trigger 与 should-not-trigger 示例。
+- [x] 产品化 validator 能检查 `SKILL.md` 必备章节、触发测试文件、脚本编译和本机绝对路径风险。
+- [x] 四个 `SKILL.md` 均包含使用条件、禁止使用条件、输入、输出、workflow、reference loading、scripts、failure modes、validation、examples。
+- [x] analysis Skill 包含可独立调用的打标率 QueryPlan、source_footer、SQL 构造、分级规则和输出标准化脚本。
+- [x] 阶段 1 runner 已复用 analysis Skill scripts，且原有阶段 1 输出契约不回退。
+- [x] notification Skill 包含可独立调用的通知草稿、send_plan、CSV/XLSX 报表构造脚本，并继续复用现有 Card 和 POC 路由脚本。
+- [x] 阶段 2 通知 runner 已复用 notification Skill scripts，且真实发送仍受 runner 或 Agent 门禁控制。
+- [x] perception Skill 包含可独立调用的打标率场景识别和 readiness 结构化生成脚本。
+- [x] standalone smoke validator 能验证四个 Skill 的自包含资产、脚本编译、最小 dry-run 和外部依赖声明。
+- [x] `skill_release_manifest.json` 或等价发布清单能描述四个 Skill 的可发布资产、脚本入口和依赖。
+- [x] `docs/implementation_plan.md` 已同步本次 Skill 产品化改造结果。
+- [x] 场景包校验、AgentBuddy 发布校验、POC 映射校验、阶段 1/阶段 2 相关 validator 均通过。
+- [x] 全部变更已提交并推送到 `origin/main`。

@@ -156,12 +156,25 @@ disallowed-tools:
 
 ## 脚本
 
-当前 Task 2 只增强操作手册，`analysis` 尚未提供下沉后的分析脚本。执行时必须遵守：
+`human_review_ops/skills/analysis/scripts/label_rate_analysis.py` 是打标率低效分级的可复用分析入口。该脚本无副作用，不执行 SQL、不发送通知、不写线上状态；它负责生成和标准化分析资产：
 
-- 不调用不存在的 `scripts/` 入口。
-- 不声称已运行 QueryPlan、SQL 构造或分级脚本。
-- 后续 Task 3 增加脚本后，优先调用脚本生成 QueryPlan、SQL、分级和 source_footer，再按本手册复核只读边界。
-- 当前可按本手册和 references 生成确定性 QueryPlan 与只读 SQL 草稿，但真实执行仍由宿主 Agent 或 runner 的只读工具完成。
+- `parse_levels()`：解析 `notice`、`P2`、`P1`、`P0` 等级参数。
+- `sql_by_level()`：生成各等级只读 SQL，复用指标契约中的样本池过滤、四维粒度和低打标率分级规则。
+- `build_query_plan(levels, sql_map)`：生成 QueryPlan，包含来源优先级、允许/禁止来源、质量检查和 `sql_by_level`。
+- `build_records(payloads, levels, sql_map, row_enricher=None)`：把只读查询返回 payload 标准化为 `environment`/`sample` 记录，包含 `readonly_execution`、`analysis_result`、`source_footer` 和 `provenance`。
+- `build_source_footer(...)`、`build_readonly_execution(...)`、`build_analysis_result(...)`：生成来源页脚、只读执行摘要和标准化分析结果。
+
+可用 dry-run 验证脚本输出结构：
+
+```bash
+python3 human_review_ops/skills/analysis/scripts/label_rate_analysis.py --dry-run --levels notice,P2,P1,P0
+```
+
+脚本与阶段 1 runner 的分工：
+
+- `label_rate_analysis.py` 负责 QueryPlan、source_footer、打标率 SQL 构造、分级规则、结果标准化和 smoke 样例。
+- `human_review_ops/tools/runners/run_stage_1_real_readonly_label_rate_grading.py` 保留阶段 1 编排、Aeolus 只读查询、POC 名称补充和 eval 文件写入；它通过 `label_rate_analysis.parse_levels()`、`label_rate_analysis.sql_by_level()` 和 `label_rate_analysis.build_records(...)` 复用分析脚本。
+- 宿主 Agent 无只读执行权限时，只输出 QueryPlan 或只读执行请求，不绕过 runner 或工具权限门禁执行真实查询。
 
 ## 失败处理
 
@@ -175,14 +188,18 @@ disallowed-tools:
 
 ## 验证
 
-运行产品化严格校验：
+运行产品化、脚本级和独立运行校验：
 
 ```bash
-PYTHONDONTWRITEBYTECODE=1 python3 human_review_ops/tools/validators/validate_skill_productization.py --strict
+python3 human_review_ops/tools/validators/validate_skill_productization.py --strict
+python3 human_review_ops/tools/validators/validate_label_rate_analysis_scripts.py
+python3 human_review_ops/tools/validators/validate_skill_standalone_smoke.py
 ```
 
 人工验证点：
 
+- `label_rate_analysis.py --dry-run` 输出 JSON，且包含 `QueryPlan`、`source_footer`、`readonly_execution`、`analysis_result` 和 `provenance`。
+- 阶段 1 低打标率 runner 复用 `label_rate_analysis.parse_levels()`、`label_rate_analysis.sql_by_level()` 和 `label_rate_analysis.build_records(...)`。
 - 每次查询前都有查询计划 (QueryPlan)。
 - SQL 只读，且未出现写入、建表、删表或线上状态更新。
 - 打标率按 `SUM(label_cnt) / SUM(review_done_cnt)` 重算。
