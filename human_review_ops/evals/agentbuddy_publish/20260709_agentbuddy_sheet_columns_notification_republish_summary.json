@@ -1,0 +1,27 @@
+{
+  "schema_version": "agentbuddy_republish_summary.v1",
+  "published_at": "2026-07-09T17:15:00+08:00",
+  "group": "skills.byted.org/lizhongtao/hunman_review_ops",
+  "access": "restricted",
+  "reason": "Remove duplicate level-count chart from label-rate card and refine Feishu workbook output columns.",
+  "skills": [
+    {
+      "skill_name": "routing-ops-notifications",
+      "source": "./human_review_ops/skills/notification",
+      "command": "NPM_CONFIG_REGISTRY=http://bnpm.byted.org npx -y agentbuddy@latest skill publish ./human_review_ops/skills/notification --group skills.byted.org/lizhongtao/hunman_review_ops --access restricted --region cn -y",
+      "status": "published",
+      "id": "skills:skills.byted.org/lizhongtao/hunman_review_ops/routing-ops-notifications:1.0.6",
+      "verification_command": "NPM_CONFIG_REGISTRY=http://bnpm.byted.org npx -y agentbuddy@latest skill find notifications",
+      "verification_result": "skills.byted.org/lizhongtao/hunman_review_ops@routing-ops-notifications"
+    }
+  ],
+  "validation": {
+    "validate_agentbuddy_publish": "passed",
+    "validate_scenario_package_efficiency_label_rate": "passed",
+    "stage_1_sheet_columns_grading": "passed",
+    "stage_2_poc_routing": "passed",
+    "stage_2_notification_draft_expect_sent": "passed",
+    "stage_2_manual_tracking": "passed",
+    "stage_2_partial_dispatch": "passed"
+  }
+}
