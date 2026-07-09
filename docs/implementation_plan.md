@@ -820,6 +820,7 @@ human_review_ops/evals/efficiency-label-rate/eval_samples.jsonl
 | 阶段 2 | P2 | 完成自定义多维低打标率泛化验证。 | 查询 `2026-06-29` 至 `2026-07-05` 期间 `机审一级标签 × strategy_id × strategy_name × reason` 维度下打标率 `<0.1` 的明细；默认输出汇总、TopN、CSV/XLSX 和飞书电子表格，不默认发送卡片；显式传入群聊时才进入发送验证。 | 已完成 |
 | 发布准备 | P2 | 完成 AgentBuddy Git 仓库上传准备。 | 新增 `.agentbuddy/publish.yaml`，按 AgentBuddy `path + items` 白名单协议声明四个 Skill；新增 `validate_agentbuddy_publish.py` 校验发布清单、Skill frontmatter、调试快照、脚本编译和本机绝对路径。 | 已完成 |
 | 发布验证 | P2 | 完成 AgentBuddy restricted 空间发布。 | 将 `perceiving-ops-events`、`analyzing-ops-metrics`、`routing-ops-notifications`、`tracking-ops-resolution` 发布到 `skills.byted.org/lizhongtao/hunman_review_ops`；四个 Skill 均可通过 AgentBuddy 搜索命中，发布摘要记录在 `human_review_ops/evals/agentbuddy_publish/20260709_agentbuddy_publish_summary.json`。 | 已完成 |
+| 发布验证 | P2 | 同步 AgentBuddy 指标契约 SQL 片段版本。 | 将打标率默认样本池由自然语言枚举改为可直接复用的 SQL 片段后，重新发布 `perceiving-ops-events` 与 `analyzing-ops-metrics` 到 AgentBuddy restricted 空间，版本升至 `1.0.1`。 | 已完成 |
 
 ### 12.3 阶段 3 / 后续实施计划
 
