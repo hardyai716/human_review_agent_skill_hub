@@ -1,0 +1,623 @@
+{
+  "schema_version": "label_rate_mach_label_poc_routing_plan.v1",
+  "scenario_key": "efficiency-label-rate",
+  "report_type": "custom_label_rate_breakdown",
+  "source_result": "evals/efficiency-label-rate/stage_2_runs/20260709_custom_label_rate_breakdown_summary_default_20260629_20260705/custom_label_rate_breakdown_results.jsonl",
+  "source_sheet_url": "https://bytedance.larkoffice.com/sheets/WwjIsQK4Ahn6RCtT9NOckMxUnpc",
+  "routing_mode": "mach_root_label_mapping",
+  "routing_key": "mach_root_label_name",
+  "real_poc_mapping_used": true,
+  "real_poc_mapping_source": {
+    "type": "lark_sheet",
+    "url": "https://bytedance.larkoffice.com/sheets/TpxwsA8zohUZkVtJ4J9cDcXUnbg?sheet=HKdm9w",
+    "confirmed_at": "2026-07-09",
+    "confirmation_method": "user_provided_mapping"
+  },
+  "contact_resolution_status": "name_only",
+  "row_count": 10293,
+  "mapped_row_count": 10293,
+  "unmapped_row_count": 0,
+  "missing_route_dimension_count": 0,
+  "mapped_label_count": 12,
+  "unmapped_labels": [],
+  "poc_summary": [
+    {
+      "poc_name": "杜衡",
+      "poc_open_id": null,
+      "mach_root_label_names": [
+        "国家安全"
+      ],
+      "row_count": 3374,
+      "top_reasons": [
+        {
+          "reason": "national_security_regular_OCR_words_review",
+          "strategy_id": "10013031733",
+          "avg_review_done_cnt": 6764.714285714285,
+          "label_rate": 0.06138998585094926
+        },
+        {
+          "reason": "LS_regular_BASE_OCR_words_review",
+          "strategy_id": "10012811198",
+          "avg_review_done_cnt": 4201.142857142857,
+          "label_rate": 0.015403971708378672
+        },
+        {
+          "reason": "national_security_tibetan_risk_user_list_manual",
+          "strategy_id": "10032388172",
+          "avg_review_done_cnt": 3443.4285714285716,
+          "label_rate": 0.06828742117490873
+        },
+        {
+          "reason": "model_llm_gandalf_8class_p2_ls_manual",
+          "strategy_id": "10033554719",
+          "avg_review_done_cnt": 3346.8333333333335,
+          "label_rate": 0.04979831681689159
+        },
+        {
+          "reason": "national_security_regular_title_words_review",
+          "strategy_id": "10012811200",
+          "avg_review_done_cnt": 3132.0,
+          "label_rate": 0.09861339171684
+        }
+      ]
+    },
+    {
+      "poc_name": "张发奇",
+      "poc_open_id": null,
+      "mach_root_label_names": [
+        "偏激社会情绪和涉外言论",
+        "指令舆情相关"
+      ],
+      "row_count": 2218,
+      "top_reasons": [
+        {
+          "reason": "fence_recall",
+          "strategy_id": "10008330225",
+          "avg_review_done_cnt": 6483.0,
+          "label_rate": 0.040281174941054626
+        },
+        {
+          "reason": "ZL_eva_227415_general_multi_rept_review",
+          "strategy_id": "10027554497",
+          "avg_review_done_cnt": 4747.4,
+          "label_rate": 0.051522938871803516
+        },
+        {
+          "reason": "ZL_antidirt_10518_aigc_ocr_aigc_review",
+          "strategy_id": "10022271678",
+          "avg_review_done_cnt": 2494.8571428571427,
+          "label_rate": 0.09573980760421438
+        },
+        {
+          "reason": "model_llm_safe_mind_leader_beyond_rule_leader_name_chinese_charactor_zl_friend_see_review",
+          "strategy_id": "10019351880",
+          "avg_review_done_cnt": 2253.714285714286,
+          "label_rate": 0.0406947261663286
+        },
+        {
+          "reason": "n1_attack_eva_xijiu_review",
+          "strategy_id": "10020031117",
+          "avg_review_done_cnt": 885.4285714285714,
+          "label_rate": 0.007421748951274605
+        }
+      ]
+    },
+    {
+      "poc_name": "宋诗慧",
+      "poc_open_id": null,
+      "mach_root_label_names": [
+        "领导人"
+      ],
+      "row_count": 1515,
+      "top_reasons": [
+        {
+          "reason": "title_leader_table_8578",
+          "strategy_id": "10003788046",
+          "avg_review_done_cnt": 8992.57142857143,
+          "label_rate": 0.06511723962635826
+        },
+        {
+          "reason": "core_protection_gov_user",
+          "strategy_id": "10006128216",
+          "avg_review_done_cnt": 4619.857142857143,
+          "label_rate": 6.184483131822258e-05
+        },
+        {
+          "reason": "leader_antidirt",
+          "strategy_id": "15811696",
+          "avg_review_done_cnt": 4320.285714285715,
+          "label_rate": 0.080980093909133
+        },
+        {
+          "reason": "leader_nlp_ocr_antidirt",
+          "strategy_id": "10012314255",
+          "avg_review_done_cnt": 3318.0,
+          "label_rate": 0.09235339705502454
+        },
+        {
+          "reason": "N1_chuxing_model_llm_pe_review",
+          "strategy_id": "10029566172",
+          "avg_review_done_cnt": 3235.1666666666665,
+          "label_rate": 0.01700066972335274
+        }
+      ]
+    },
+    {
+      "poc_name": "齐思蕾",
+      "poc_open_id": null,
+      "mach_root_label_names": [
+        "党和国家形象负面"
+      ],
+      "row_count": 1504,
+      "top_reasons": [
+        {
+          "reason": "tuwen_eva_120363_parodyingmartyrs_homogenization_ocr_title_review",
+          "strategy_id": "10024100858",
+          "avg_review_done_cnt": 2256.5714285714284,
+          "label_rate": 0.08229931628260319
+        },
+        {
+          "reason": "antidirt_eva_party_state_military_gov_8873_title_review",
+          "strategy_id": "10012612014",
+          "avg_review_done_cnt": 1944.142857142857,
+          "label_rate": 0.09861121316775663
+        },
+        {
+          "reason": "eva_0845_govhr_review",
+          "strategy_id": "10008386569",
+          "avg_review_done_cnt": 1414.4285714285713,
+          "label_rate": 0.031915968084031916
+        },
+        {
+          "reason": "eva_045_wenge_sh",
+          "strategy_id": "10004801327",
+          "avg_review_done_cnt": 1258.142857142857,
+          "label_rate": 0.07266946746905871
+        },
+        {
+          "reason": "model_llm_mechanisms_improper_use_review",
+          "strategy_id": "10028068996",
+          "avg_review_done_cnt": 1127.857142857143,
+          "label_rate": 0.08499050031665611
+        }
+      ]
+    },
+    {
+      "poc_name": "叶健",
+      "poc_open_id": null,
+      "mach_root_label_names": [
+        "违法违规"
+      ],
+      "row_count": 500,
+      "top_reasons": [
+        {
+          "reason": "risk_of_illegal_bypass_vpn_accelerator_v1",
+          "strategy_id": "10026036091",
+          "avg_review_done_cnt": 1273.2857142857142,
+          "label_rate": 0.0831369909121508
+        },
+        {
+          "reason": "risk_of_illegal_drug_list_v0626",
+          "strategy_id": "10033607810",
+          "avg_review_done_cnt": 1252.857142857143,
+          "label_rate": 0.08677309007981757
+        },
+        {
+          "reason": "risk_of_illegal_load_ad_list_v0121",
+          "strategy_id": "10022853771",
+          "avg_review_done_cnt": 127.71428571428571,
+          "label_rate": 0.07941834451901567
+        },
+        {
+          "reason": "risk_of_hainan_daigou_low_score_v1",
+          "strategy_id": "10020547186",
+          "avg_review_done_cnt": 26.428571428571427,
+          "label_rate": 0.010810810810810811
+        },
+        {
+          "reason": "attack_N1_high_risk_keywords",
+          "strategy_id": "10033607810",
+          "avg_review_done_cnt": 14.666666666666666,
+          "label_rate": 0.022727272727272728
+        }
+      ]
+    },
+    {
+      "poc_name": "张宇轩",
+      "poc_open_id": null,
+      "mach_root_label_names": [
+        "侵犯未成年权益"
+      ],
+      "row_count": 447,
+      "top_reasons": [
+        {
+          "reason": "juvenile_pojiefangchenmi",
+          "strategy_id": "10032123015",
+          "avg_review_done_cnt": 926.5714285714286,
+          "label_rate": 0.09697810669133518
+        },
+        {
+          "reason": "mouliertongcaizhuang",
+          "strategy_id": "10022130710",
+          "avg_review_done_cnt": 158.42857142857142,
+          "label_rate": 0.08566275924256087
+        },
+        {
+          "reason": "underage_zaohunzaoyun_keywords",
+          "strategy_id": "10023503462",
+          "avg_review_done_cnt": 99.28571428571429,
+          "label_rate": 0.058992805755395686
+        },
+        {
+          "reason": "recall_weichengnianpeiwanpeiliaodaida_review",
+          "strategy_id": "10014498285",
+          "avg_review_done_cnt": 79.28571428571429,
+          "label_rate": 0.07927927927927927
+        },
+        {
+          "reason": "recall_jubaodisu_review",
+          "strategy_id": "10026280618",
+          "avg_review_done_cnt": 68.85714285714286,
+          "label_rate": 0.0995850622406639
+        }
+      ]
+    },
+    {
+      "poc_name": "刘小楷",
+      "poc_open_id": null,
+      "mach_root_label_names": [
+        "色情性化"
+      ],
+      "row_count": 363,
+      "top_reasons": [
+        {
+          "reason": "sqds_sqdl_key_word_high_acc_review",
+          "strategy_id": "10013833877",
+          "avg_review_done_cnt": 4397.428571428572,
+          "label_rate": 0.08037164576700669
+        },
+        {
+          "reason": "sqds_sqdl_wy_mp_review",
+          "strategy_id": "10023903408",
+          "avg_review_done_cnt": 1418.5714285714287,
+          "label_rate": 0.07915407854984895
+        },
+        {
+          "reason": "sqds_sqll_zuqiu_vv_eva_review",
+          "strategy_id": "10032378726",
+          "avg_review_done_cnt": 862.7142857142857,
+          "label_rate": 0.033614836893525415
+        },
+        {
+          "reason": "sqds_sqdl_czxxcc_low_fans_review",
+          "strategy_id": "10025295440",
+          "avg_review_done_cnt": 118.28571428571429,
+          "label_rate": 0.018115942028985508
+        },
+        {
+          "reason": "sqds_sqdl_czxxcc_review",
+          "strategy_id": "10030221280",
+          "avg_review_done_cnt": 34.714285714285715,
+          "label_rate": 0.02880658436213992
+        }
+      ]
+    },
+    {
+      "poc_name": "陈雅静",
+      "poc_open_id": null,
+      "mach_root_label_names": [
+        "不良行为或争议价值观",
+        "危险行为"
+      ],
+      "row_count": 251,
+      "top_reasons": [
+        {
+          "reason": "safety_value_yyfqtdldyt_pxdl_v1_review",
+          "strategy_id": "10011746841",
+          "avg_review_done_cnt": 293.4,
+          "label_rate": 0.010906612133605999
+        },
+        {
+          "reason": "safety_public_eva_keywords_lgbt_rainbow_v2_review",
+          "strategy_id": "10013310374",
+          "avg_review_done_cnt": 237.28571428571428,
+          "label_rate": 0.0975316074653823
+        },
+        {
+          "reason": "toxic_culture_lgbt_transgender_experience_v1_auto_review",
+          "strategy_id": "10023486881",
+          "avg_review_done_cnt": 134.42857142857142,
+          "label_rate": 0.09564293304994687
+        },
+        {
+          "reason": "youth_7382_title",
+          "strategy_id": "10024588906",
+          "avg_review_done_cnt": 84.5,
+          "label_rate": 0.05325443786982249
+        },
+        {
+          "reason": "toxic_culture_talk_about_zym_v3_auto_review",
+          "strategy_id": "10024138566",
+          "avg_review_done_cnt": 49.666666666666664,
+          "label_rate": 0.03355704697986577
+        }
+      ]
+    },
+    {
+      "poc_name": "陈思乔",
+      "poc_open_id": null,
+      "mach_root_label_names": [
+        "引人不适",
+        "短期策略迁移"
+      ],
+      "row_count": 121,
+      "top_reasons": [
+        {
+          "reason": "special_Illegal_arts_keywords_manual",
+          "strategy_id": "10024813633",
+          "avg_review_done_cnt": 18.0,
+          "label_rate": 0.07142857142857142
+        },
+        {
+          "reason": "fengjin_wanghong_eva_s2_nhs_review",
+          "strategy_id": "10010169295",
+          "avg_review_done_cnt": 14.714285714285714,
+          "label_rate": 0.08737864077669903
+        },
+        {
+          "reason": "review_sensitive_faces",
+          "strategy_id": "10004251878",
+          "avg_review_done_cnt": 9.142857142857142,
+          "label_rate": 0.015625
+        },
+        {
+          "reason": "african_blessing_eval",
+          "strategy_id": "10008813201",
+          "avg_review_done_cnt": 6.666666666666667,
+          "label_rate": 0.05
+        },
+        {
+          "reason": "Illegal_arts_keywords_manual",
+          "strategy_id": "10023590423",
+          "avg_review_done_cnt": 6.428571428571429,
+          "label_rate": 0.08888888888888889
+        }
+      ]
+    }
+  ],
+  "assignment_preview": [
+    {
+      "mach_root_label_name": "领导人",
+      "poc_name": "宋诗慧",
+      "poc_open_id": null,
+      "mapping_status": "mapped_name_only",
+      "strategy_id": "10003788046",
+      "strategy_name": "【送人审】N1-title词表",
+      "reason": "title_leader_table_8578",
+      "avg_review_done_cnt": 8992.57142857143,
+      "label_rate": 0.06511723962635826
+    },
+    {
+      "mach_root_label_name": "国家安全",
+      "poc_name": "杜衡",
+      "poc_open_id": null,
+      "mapping_status": "mapped_name_only",
+      "strategy_id": "10013031733",
+      "strategy_name": "【人审】国家安全-常规词表-OCR",
+      "reason": "national_security_regular_OCR_words_review",
+      "avg_review_done_cnt": 6764.714285714285,
+      "label_rate": 0.06138998585094926
+    },
+    {
+      "mach_root_label_name": "指令舆情相关",
+      "poc_name": "张发奇",
+      "poc_open_id": null,
+      "mapping_status": "mapped_name_only",
+      "strategy_id": "10008330225",
+      "strategy_name": "【ZL送人审】指令地理条件命中召回-300vv",
+      "reason": "fence_recall",
+      "avg_review_done_cnt": 6483.0,
+      "label_rate": 0.040281174941054626
+    },
+    {
+      "mach_root_label_name": "指令舆情相关",
+      "poc_name": "张发奇",
+      "poc_open_id": null,
+      "mapping_status": "mapped_name_only",
+      "strategy_id": "10027554497",
+      "strategy_name": "【ZL送人审】综合_指令自见综合&举报-副本34",
+      "reason": "ZL_eva_227415_general_multi_rept_review",
+      "avg_review_done_cnt": 4747.4,
+      "label_rate": 0.051522938871803516
+    },
+    {
+      "mach_root_label_name": "领导人",
+      "poc_name": "宋诗慧",
+      "poc_open_id": null,
+      "mapping_status": "mapped_name_only",
+      "strategy_id": "10006128216",
+      "strategy_name": "核心政务号|政务号白名单",
+      "reason": "core_protection_gov_user",
+      "avg_review_done_cnt": 4619.857142857143,
+      "label_rate": 6.184483131822258e-05
+    },
+    {
+      "mach_root_label_name": "色情性化",
+      "poc_name": "刘小楷",
+      "poc_open_id": null,
+      "mapping_status": "mapped_name_only",
+      "strategy_id": "10013833877",
+      "strategy_name": "色情低俗-色情导流-词表-高准机审",
+      "reason": "sqds_sqdl_key_word_high_acc_review",
+      "avg_review_done_cnt": 4397.428571428572,
+      "label_rate": 0.08037164576700669
+    },
+    {
+      "mach_root_label_name": "领导人",
+      "poc_name": "宋诗慧",
+      "poc_open_id": null,
+      "mapping_status": "mapped_name_only",
+      "strategy_id": "15811696",
+      "strategy_name": "【送审】领导人标题敏感词-旧",
+      "reason": "leader_antidirt",
+      "avg_review_done_cnt": 4320.285714285715,
+      "label_rate": 0.080980093909133
+    },
+    {
+      "mach_root_label_name": "国家安全",
+      "poc_name": "杜衡",
+      "poc_open_id": null,
+      "mapping_status": "mapped_name_only",
+      "strategy_id": "10012811198",
+      "strategy_name": "【人审-LS风险】BASE_OCR_LS常规词表_8883",
+      "reason": "LS_regular_BASE_OCR_words_review",
+      "avg_review_done_cnt": 4201.142857142857,
+      "label_rate": 0.015403971708378672
+    },
+    {
+      "mach_root_label_name": "国家安全",
+      "poc_name": "杜衡",
+      "poc_open_id": null,
+      "mapping_status": "mapped_name_only",
+      "strategy_id": "10032388172",
+      "strategy_name": "【人审-藏语队列】藏语风险用户全量进审",
+      "reason": "national_security_tibetan_risk_user_list_manual",
+      "avg_review_done_cnt": 3443.4285714285716,
+      "label_rate": 0.06828742117490873
+    },
+    {
+      "mach_root_label_name": "国家安全",
+      "poc_name": "杜衡",
+      "poc_open_id": null,
+      "mapping_status": "mapped_name_only",
+      "strategy_id": "10033554719",
+      "strategy_name": "识别_gandalf策略替换_时政8分类p2LS",
+      "reason": "model_llm_gandalf_8class_p2_ls_manual",
+      "avg_review_done_cnt": 3346.8333333333335,
+      "label_rate": 0.04979831681689159
+    },
+    {
+      "mach_root_label_name": "领导人",
+      "poc_name": "宋诗慧",
+      "poc_open_id": null,
+      "mapping_status": "mapped_name_only",
+      "strategy_id": "10012314255",
+      "strategy_name": "【送审】领导人OCR敏感词-nlp",
+      "reason": "leader_nlp_ocr_antidirt",
+      "avg_review_done_cnt": 3318.0,
+      "label_rate": 0.09235339705502454
+    },
+    {
+      "mach_root_label_name": "领导人",
+      "poc_name": "宋诗慧",
+      "poc_open_id": null,
+      "mapping_status": "mapped_name_only",
+      "strategy_id": "10029566172",
+      "strategy_name": "识别_N1出行",
+      "reason": "N1_chuxing_model_llm_pe_review",
+      "avg_review_done_cnt": 3235.1666666666665,
+      "label_rate": 0.01700066972335274
+    },
+    {
+      "mach_root_label_name": "国家安全",
+      "poc_name": "杜衡",
+      "poc_open_id": null,
+      "mapping_status": "mapped_name_only",
+      "strategy_id": "10012811200",
+      "strategy_name": "【人审】国家安全-常规词表-标题",
+      "reason": "national_security_regular_title_words_review",
+      "avg_review_done_cnt": 3132.0,
+      "label_rate": 0.09861339171684
+    },
+    {
+      "mach_root_label_name": "领导人",
+      "poc_name": "宋诗慧",
+      "poc_open_id": null,
+      "mapping_status": "mapped_name_only",
+      "strategy_id": "15801160",
+      "strategy_name": "【送审】敏感人物旧模型-XP召回",
+      "reason": "leader_recall_xi",
+      "avg_review_done_cnt": 3092.0,
+      "label_rate": 0.07475512844206246
+    },
+    {
+      "mach_root_label_name": "国家安全",
+      "poc_name": "杜衡",
+      "poc_open_id": null,
+      "mapping_status": "mapped_name_only",
+      "strategy_id": "10001819210",
+      "strategy_name": "【国家安全】雪山狮子旗eva-进审藏语",
+      "reason": "xueshanshizi_eva_33346_v6_2_jinshen",
+      "avg_review_done_cnt": 2789.5714285714284,
+      "label_rate": 0.06652327546474113
+    },
+    {
+      "mach_root_label_name": "国家安全",
+      "poc_name": "杜衡",
+      "poc_open_id": null,
+      "mapping_status": "mapped_name_only",
+      "strategy_id": "10034206201",
+      "strategy_name": "【人审-藏语队列】达赖生日扩召回策略_疑似涉藏分裂分子",
+      "reason": "national_security_tibetan_risk_user_list_for_dailai_birthday_temp_manual",
+      "avg_review_done_cnt": 2689.5,
+      "label_rate": 0.044060234244283326
+    },
+    {
+      "mach_root_label_name": "领导人",
+      "poc_name": "宋诗慧",
+      "poc_open_id": null,
+      "mapping_status": "mapped_name_only",
+      "strategy_id": "10010019712",
+      "strategy_name": "【送审】ocr领导人词表召回",
+      "reason": "ocr_leader_table_500recall",
+      "avg_review_done_cnt": 2629.4285714285716,
+      "label_rate": 0.040964902749103554
+    },
+    {
+      "mach_root_label_name": "领导人",
+      "poc_name": "宋诗慧",
+      "poc_open_id": null,
+      "mapping_status": "mapped_name_only",
+      "strategy_id": "10030630872",
+      "strategy_name": "识别_游戏画面小字号文本",
+      "reason": "model_llm_pe_N1_game_little_ocr_review",
+      "avg_review_done_cnt": 2578.0,
+      "label_rate": 0.020558572536850273
+    },
+    {
+      "mach_root_label_name": "领导人",
+      "poc_name": "宋诗慧",
+      "poc_open_id": null,
+      "mapping_status": "mapped_name_only",
+      "strategy_id": "10006132401",
+      "strategy_name": "gov进审-召回",
+      "reason": "is_govB_media",
+      "avg_review_done_cnt": 2538.714285714286,
+      "label_rate": 0.0021945866861741038
+    },
+    {
+      "mach_root_label_name": "指令舆情相关",
+      "poc_name": "张发奇",
+      "poc_open_id": null,
+      "mapping_status": "mapped_name_only",
+      "strategy_id": "10022271678",
+      "strategy_name": "【ZL送人审】指令准入_ocr词表_AIGC",
+      "reason": "ZL_antidirt_10518_aigc_ocr_aigc_review",
+      "avg_review_done_cnt": 2494.8571428571427,
+      "label_rate": 0.09573980760421438
+    }
+  ],
+  "routing_constraints": {
+    "requires_contact_resolution_before_real_send": true,
+    "requires_human_confirmation_before_real_send": true,
+    "group_send_blocked": true,
+    "group_send_allowed": false,
+    "real_notification_executed": false,
+    "online_write_executed": false,
+    "online_state_write_allowed": false
+  },
+  "limitations": [
+    "当前映射仅到 POC 姓名，尚未解析飞书 open_id。",
+    "真实触达前必须完成联系人解析、目标确认和发送门禁校验。"
+  ]
+}

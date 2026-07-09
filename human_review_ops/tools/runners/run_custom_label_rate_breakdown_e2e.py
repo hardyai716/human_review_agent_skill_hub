@@ -24,6 +24,9 @@ sys.path.insert(0, str(NOTIFICATION_SCRIPTS))
 
 from card_hash import strip_internal_keys  # noqa: E402
 from render_label_rate_grading_card import render_grading_card  # noqa: E402
+from resolve_label_rate_poc_routing import (  # noqa: E402
+    build_custom_dimension_poc_routing_plan,
+)
 
 
 SCENARIO_KEY = "efficiency-label-rate"
@@ -126,6 +129,7 @@ def main() -> None:
     result_path = output_dir / "custom_label_rate_breakdown_results.jsonl"
     summary_path = output_dir / "summary.json"
     analysis_summary_path = output_dir / "analysis_summary.md"
+    poc_routing_path = output_dir / "poc_routing_plan.json"
     card_with_meta_path = publish_dir / f"{REPORT_TYPE}.card.with_meta.json"
     card_path = publish_dir / f"{REPORT_TYPE}.card.json"
     hash_check_path = publish_dir / "card_hash_check.json"
@@ -158,6 +162,13 @@ def main() -> None:
 
     analysis_top_rows = rows[: args.top_n]
     summary["outputs"]["analysis_summary_md"] = relative_to_root(analysis_summary_path)
+    poc_routing_plan = build_custom_dimension_poc_routing_plan(
+        rows,
+        source_result=relative_to_root(result_path),
+        sheet_url=sheet_url,
+    )
+    summary["outputs"]["poc_routing_plan"] = relative_to_root(poc_routing_path)
+    write_json(poc_routing_path, poc_routing_plan)
     write_text(analysis_summary_path, build_analysis_summary(summary, analysis_top_rows))
 
     sent_payload = None
@@ -213,6 +224,7 @@ def main() -> None:
         "output_dir": relative_to_root(output_dir),
         "summary_json": relative_to_root(summary_path),
         "analysis_summary_md": relative_to_root(analysis_summary_path),
+        "poc_routing_plan": relative_to_root(poc_routing_path),
         "result_jsonl": relative_to_root(result_path),
         "csv": relative_to_root(csv_path),
         "workbook": relative_to_root(workbook_path),
@@ -682,7 +694,7 @@ def build_analysis_summary(summary: dict[str, Any], top_rows: list[dict[str, Any
             "- 日均完审量：`SUM(完审量_reviewid) / COUNT(DISTINCT p_date)`。",
             "- 日均打标量：`SUM(打标量__reviewid) / COUNT(DISTINCT p_date)`。",
             "- 打标率：`SUM(打标量__reviewid) / SUM(完审量_reviewid)`。",
-            "- 过滤：标准 A/B/C/D 过滤、`完审量 > 0`、`打标率 < 0.1`。",
+            "- 过滤：默认样本池 SQL 片段、`完审量 > 0`、`打标率 < 0.1`。",
             "",
             "## Provenance",
             "",

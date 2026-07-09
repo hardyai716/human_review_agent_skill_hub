@@ -142,6 +142,9 @@ def validate(output_dir: Path, *, expect_group_sent: bool) -> None:
             publish_summary,
             summary,
         )
+    poc_routing_path = output_dir / "poc_routing_plan.json"
+    if poc_routing_path.exists():
+        assert_poc_routing_plan(load_json(poc_routing_path), summary)
 
 
 def assert_summary(
@@ -197,6 +200,28 @@ def assert_analysis_summary(path: Path, summary: dict[str, Any]) -> None:
     ):
         if snippet not in text:
             raise AssertionError(f"analysis_summary missing snippet: {snippet}")
+
+
+def assert_poc_routing_plan(plan: dict[str, Any], summary: dict[str, Any]) -> None:
+    if plan.get("schema_version") != "label_rate_mach_label_poc_routing_plan.v1":
+        raise AssertionError("poc_routing_plan schema_version mismatch.")
+    if plan.get("routing_mode") != "mach_root_label_mapping":
+        raise AssertionError("poc_routing_plan routing_mode mismatch.")
+    if plan.get("routing_key") != "mach_root_label_name":
+        raise AssertionError("poc_routing_plan routing_key mismatch.")
+    if plan.get("row_count") != summary["row_count"]:
+        raise AssertionError("poc_routing_plan row_count mismatch.")
+    if plan.get("mapped_row_count", 0) <= 0:
+        raise AssertionError("poc_routing_plan mapped_row_count must be positive.")
+    if plan.get("missing_route_dimension_count") != 0:
+        raise AssertionError("poc_routing_plan should not miss mach_root_label_name.")
+    constraints = plan.get("routing_constraints", {})
+    if constraints.get("requires_contact_resolution_before_real_send") is not True:
+        raise AssertionError("poc_routing_plan must require contact resolution.")
+    if constraints.get("requires_human_confirmation_before_real_send") is not True:
+        raise AssertionError("poc_routing_plan must require human confirmation.")
+    if constraints.get("group_send_blocked") is not True:
+        raise AssertionError("poc_routing_plan must keep group_send_blocked=true.")
 
 
 def assert_records(records: list[dict[str, Any]], summary: dict[str, Any]) -> None:

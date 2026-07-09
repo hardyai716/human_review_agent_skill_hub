@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Resolve placeholder POC routing for label-rate grading results."""
+"""Resolve POC routing for label-rate results."""
 
 from __future__ import annotations
 
@@ -10,6 +10,12 @@ from typing import Any
 
 
 LEVEL_ORDER = ["notice", "P2", "P1", "P0"]
+DEFAULT_POC_MAPPING_PATH = (
+    Path(__file__).resolve().parents[1]
+    / "assets"
+    / "efficiency-label-rate"
+    / "mach_root_label_poc_mapping.json"
+)
 LEVEL_RULES: dict[str, dict[str, Any]] = {
     "notice": {
         "target_roles": ["群内同步策略明细和数据链接"],
@@ -80,6 +86,176 @@ def load_stage_1_sample(path: Path) -> dict[str, Any]:
     if "readonly_execution" not in sample:
         raise ValueError("Stage 1 source missing readonly_execution.")
     return sample
+
+
+def load_poc_mapping(path: Path | None = None) -> dict[str, Any]:
+    mapping_path = path or DEFAULT_POC_MAPPING_PATH
+    mapping = json.loads(mapping_path.read_text(encoding="utf-8"))
+    if mapping.get("schema_version") != "label_rate_mach_root_label_poc_mapping.v1":
+        raise ValueError("POC mapping schema_version mismatch.")
+    if mapping.get("scenario_key") != "efficiency-label-rate":
+        raise ValueError("POC mapping scenario_key mismatch.")
+    return mapping
+
+
+def poc_mapping_index(mapping: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    index: dict[str, dict[str, Any]] = {}
+    for entry in mapping.get("entries", []):
+        label = normalize_label(entry.get("mach_root_label_name"))
+        if not label:
+            continue
+        index[label] = entry
+    return index
+
+
+def normalize_label(value: Any) -> str:
+    return str(value or "").strip()
+
+
+def row_mach_root_label(row: dict[str, Any]) -> str:
+    return normalize_label(
+        row.get("mach_root_label_name")
+        or row.get("机审一级标签")
+        or row.get("mach_root_label")
+    )
+
+
+def resolve_row_poc(
+    row: dict[str, Any],
+    mapping_index: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
+    label = row_mach_root_label(row)
+    if not label:
+        return {
+            "mach_root_label_name": None,
+            "poc_name": None,
+            "poc_open_id": None,
+            "mapping_status": "missing_route_dimension",
+        }
+    entry = mapping_index.get(label)
+    if not entry:
+        return {
+            "mach_root_label_name": label,
+            "poc_name": None,
+            "poc_open_id": None,
+            "mapping_status": "unmapped_label",
+        }
+    return {
+        "mach_root_label_name": label,
+        "poc_name": entry.get("poc_name"),
+        "poc_open_id": entry.get("poc_open_id"),
+        "mapping_status": "mapped_name_only"
+        if not entry.get("poc_open_id")
+        else "mapped_open_id",
+    }
+
+
+def build_custom_dimension_poc_routing_plan(
+    rows: list[dict[str, Any]],
+    *,
+    source_result: str,
+    sheet_url: str | None = None,
+    mapping_path: Path | None = None,
+) -> dict[str, Any]:
+    mapping = load_poc_mapping(mapping_path)
+    index = poc_mapping_index(mapping)
+    assignments = [resolve_row_poc(row, index) | summarize_row(row) for row in rows]
+    mapped = [item for item in assignments if item["mapping_status"].startswith("mapped_")]
+    unmapped = [item for item in assignments if item["mapping_status"] == "unmapped_label"]
+    missing = [
+        item
+        for item in assignments
+        if item["mapping_status"] == "missing_route_dimension"
+    ]
+    return {
+        "schema_version": "label_rate_mach_label_poc_routing_plan.v1",
+        "scenario_key": "efficiency-label-rate",
+        "report_type": "custom_label_rate_breakdown",
+        "source_result": source_result,
+        "source_sheet_url": sheet_url,
+        "routing_mode": "mach_root_label_mapping",
+        "routing_key": "mach_root_label_name",
+        "real_poc_mapping_used": bool(mapped),
+        "real_poc_mapping_source": mapping.get("source"),
+        "contact_resolution_status": mapping.get("contact_resolution_status", "name_only"),
+        "row_count": len(rows),
+        "mapped_row_count": len(mapped),
+        "unmapped_row_count": len(unmapped),
+        "missing_route_dimension_count": len(missing),
+        "mapped_label_count": len({item["mach_root_label_name"] for item in mapped}),
+        "unmapped_labels": sorted(
+            {
+                item["mach_root_label_name"]
+                for item in unmapped
+                if item.get("mach_root_label_name")
+            }
+        ),
+        "poc_summary": build_poc_summary(mapped),
+        "assignment_preview": assignments[:20],
+        "routing_constraints": {
+            "requires_contact_resolution_before_real_send": True,
+            "requires_human_confirmation_before_real_send": True,
+            "group_send_blocked": True,
+            "group_send_allowed": False,
+            "real_notification_executed": False,
+            "online_write_executed": False,
+            "online_state_write_allowed": False,
+        },
+        "limitations": [
+            "当前映射仅到 POC 姓名，尚未解析飞书 open_id。",
+            "真实触达前必须完成联系人解析、目标确认和发送门禁校验。",
+        ],
+    }
+
+
+def summarize_row(row: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "strategy_id": row.get("strategy_id"),
+        "strategy_name": row.get("strategy_name"),
+        "reason": row.get("reason"),
+        "avg_review_done_cnt": row.get("avg_review_done_cnt"),
+        "label_rate": row.get("label_rate"),
+    }
+
+
+def build_poc_summary(assignments: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    grouped: dict[str, dict[str, Any]] = {}
+    for item in assignments:
+        poc_name = item.get("poc_name")
+        if not poc_name:
+            continue
+        bucket = grouped.setdefault(
+            poc_name,
+            {
+                "poc_name": poc_name,
+                "poc_open_id": item.get("poc_open_id"),
+                "mach_root_label_names": set(),
+                "row_count": 0,
+                "top_reasons": [],
+            },
+        )
+        bucket["mach_root_label_names"].add(item.get("mach_root_label_name"))
+        bucket["row_count"] += 1
+        if len(bucket["top_reasons"]) < 5:
+            bucket["top_reasons"].append(
+                {
+                    "reason": item.get("reason"),
+                    "strategy_id": item.get("strategy_id"),
+                    "avg_review_done_cnt": item.get("avg_review_done_cnt"),
+                    "label_rate": item.get("label_rate"),
+                }
+            )
+    result = []
+    for bucket in grouped.values():
+        result.append(
+            {
+                **bucket,
+                "mach_root_label_names": sorted(
+                    label for label in bucket["mach_root_label_names"] if label
+                ),
+            }
+        )
+    return sorted(result, key=lambda item: (-item["row_count"], item["poc_name"]))
 
 
 def build_poc_routing_plan(

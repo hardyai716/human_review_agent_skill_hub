@@ -821,6 +821,7 @@ human_review_ops/evals/efficiency-label-rate/eval_samples.jsonl
 | 发布准备 | P2 | 完成 AgentBuddy Git 仓库上传准备。 | 新增 `.agentbuddy/publish.yaml`，按 AgentBuddy `path + items` 白名单协议声明四个 Skill；新增 `validate_agentbuddy_publish.py` 校验发布清单、Skill frontmatter、调试快照、脚本编译和本机绝对路径。 | 已完成 |
 | 发布验证 | P2 | 完成 AgentBuddy restricted 空间发布。 | 将 `perceiving-ops-events`、`analyzing-ops-metrics`、`routing-ops-notifications`、`tracking-ops-resolution` 发布到 `skills.byted.org/lizhongtao/hunman_review_ops`；四个 Skill 均可通过 AgentBuddy 搜索命中，发布摘要记录在 `human_review_ops/evals/agentbuddy_publish/20260709_agentbuddy_publish_summary.json`。 | 已完成 |
 | 发布验证 | P2 | 同步 AgentBuddy 指标契约 SQL 片段版本。 | 将打标率默认样本池由自然语言枚举改为可直接复用的 SQL 片段后，重新发布 `perceiving-ops-events` 与 `analyzing-ops-metrics` 到 AgentBuddy restricted 空间，版本升至 `1.0.1`。 | 已完成 |
+| 阶段 2 | P1 | 接入打标率场景 POC 姓名级映射。 | 按 `mach_root_label_name` 映射 POC 姓名，映射来源为飞书表格 `HKdm9w`；自定义多维低打标率查询默认生成 `poc_routing_plan.json`，10293 行历史明细均命中 POC，真实触达前仍需 open_id 解析和人工确认。 | 已完成 |
 
 ### 12.3 阶段 3 / 后续实施计划
 
@@ -828,7 +829,7 @@ human_review_ops/evals/efficiency-label-rate/eval_samples.jsonl
 
 | 事项 | 当前结论 | 后续解锁条件 |
 | --- | --- | --- |
-| POC 映射 | 当前仅使用 placeholder，不编造真实 POC。 | 明确 SOP Wiki / 表格中的 `reason/strategy -> POC` 数据源和字段口径。 |
+| POC 映射 | 已接入 `mach_root_label_name -> POC 姓名` 映射；当前是姓名级，不含 open_id。 | 完成飞书联系人解析、歧义消解、open_id 存储策略和真实触达确认链路。 |
 | 分析粒度 | 当前按 `reason` 粒度完成端到端验证。 | 业务确认是否切换或补充 `strategy_name` 粒度。 |
 | 触达身份 | 开发验证阶段默认本人预览。 | 真实 POC 身份字段、open_id 解析方式和权限边界确认。 |
 | 群推送 | 已生成 `send_plan.json` 门禁，默认阻断群发；用户明确授权下已完成一次私有验证群发送。 | 真实 POC 群推送仍需人工确认目标群 / POC 收件人、发送身份和卡片内容。 |
@@ -840,7 +841,7 @@ human_review_ops/evals/efficiency-label-rate/eval_samples.jsonl
 
 | 优先级 | 任务 | 要做什么 | 预期产物 | 验收标准 | 状态 |
 | --- | --- | --- | --- | --- | --- |
-| P1 | 接入真实 POC 映射源 | 基于 SOP Wiki / 表格建立 `reason/strategy -> POC` 映射读取与校验，保留 placeholder fallback。 | POC 映射配置、读取 runner、validator、脱敏样例。 | 能输出真实 POC 或明确 fallback 原因；不泄露敏感身份；映射缺失可解释。 | 待开始 |
+| P1 | 接入 POC 联系人身份解析 | 基于当前 `mach_root_label_name -> POC 姓名` 映射，解析飞书 open_id，处理重名歧义，并保留姓名级 fallback。 | POC open_id 映射配置、联系人解析 runner、validator、脱敏样例。 | 能输出可触达 POC 或明确 fallback 原因；不泄露敏感身份；映射缺失可解释。 | 待开始 |
 | P1 | 固化触达对象解析 | 将角色范围、POC 身份、open_id 解析和置信度写入路由计划。 | 增强版 `poc_routing_plan.json`。 | notice/P2/P1/P0 均有可审计收件人来源、置信度和升级关系。 | 待开始 |
 | P1 | 建立群推送确认链路 | 在 `send_plan.json` 基础上增加人工确认状态和真实发送前检查。 | 确认记录、发送前 validator、群推送 dry-run 结果。 | 未确认不发送；确认后仅向指定群 / POC 发送；发送结果可追踪。 | 待开始 |
 | P2 | 设计回收闭环 | 设计联系人说明、处理计划、继续观察和关闭条件。 | 状态表 schema、卡片交互方案或本地回收样例。 | 可记录回复、处理结论、下一次观察时间；支持不写线上表的回退模式。 | 待开始 |

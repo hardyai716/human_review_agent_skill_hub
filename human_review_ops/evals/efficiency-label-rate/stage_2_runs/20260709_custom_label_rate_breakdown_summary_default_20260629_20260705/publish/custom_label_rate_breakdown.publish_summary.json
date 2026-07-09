@@ -17,5 +17,6 @@
   "send_identity": null,
   "target_chat_id": null,
   "message_id": null,
-  "send_result": null
+  "send_result": null,
+  "poc_routing_plan": "evals/efficiency-label-rate/stage_2_runs/20260709_custom_label_rate_breakdown_summary_default_20260629_20260705/poc_routing_plan.json"
 }
