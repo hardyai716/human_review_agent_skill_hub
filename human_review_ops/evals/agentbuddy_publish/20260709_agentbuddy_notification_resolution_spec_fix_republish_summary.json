@@ -4,7 +4,7 @@
   "group": "skills.byted.org/lizhongtao/hunman_review_ops",
   "access": "restricted",
   "reason": "Fix AgentBuddy static checks for routing-ops-notifications and tracking-ops-resolution: allowed frontmatter keys, YAML list allowed-tools, when-to-use descriptions, TOC for long references, and no extra root entries.",
-  "git_commit": "pending_commit_containing_this_summary",
+  "git_commit": "ff92e36",
   "skills": [
     {
       "skill_name": "routing-ops-notifications",
