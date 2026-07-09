@@ -1,0 +1,34 @@
+{
+  "schema_version": "custom_label_rate_breakdown_self_send_validation.v1",
+  "scenario_key": "efficiency-label-rate",
+  "report_type": "custom_label_rate_breakdown",
+  "validation_mode": "explicit_user_requested_self_send_after_default_no_send_run",
+  "source_output_dir": "evals/efficiency-label-rate/stage_2_runs/20260709_custom_label_rate_breakdown_rerun_20260629_20260705",
+  "recipient": {
+    "type": "user",
+    "target_user_open_id_prefix": "ou_7677e76..."
+  },
+  "message": {
+    "content_type": "markdown_summary",
+    "included_sections": [
+      "summary",
+      "top_5",
+      "sheet_url",
+      "methodology"
+    ],
+    "sheet_url": "https://bytedance.larkoffice.com/sheets/TpxwsA8zohUZkVtJ4J9cDcXUnbg"
+  },
+  "send_result": {
+    "sent": true,
+    "send_identity": "bot",
+    "chat_type": "p2p",
+    "chat_id": "oc_4cbbc6965db25f473fc5be2b7367e53d",
+    "message_id": "om_x100b6bc64ced24b4c3cce1d4df32178",
+    "create_time": "2026-07-09 12:14:26"
+  },
+  "safety": {
+    "group_send": false,
+    "requested_by_user": true,
+    "online_state_write": false
+  }
+}
