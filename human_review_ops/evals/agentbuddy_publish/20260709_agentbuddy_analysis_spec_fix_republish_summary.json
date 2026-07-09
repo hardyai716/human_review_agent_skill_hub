@@ -1,0 +1,27 @@
+{
+  "schema_version": "agentbuddy_republish_summary.v1",
+  "published_at": "2026-07-09T19:59:25+08:00",
+  "group": "skills.byted.org/lizhongtao/hunman_review_ops",
+  "access": "restricted",
+  "reason": "Fix AgentBuddy static checks for analyzing-ops-metrics: allowed frontmatter keys, YAML list allowed-tools, when-to-use description, TOC for long references, and no extra root entries.",
+  "git_commit": "cce668d",
+  "skills": [
+    {
+      "skill_name": "analyzing-ops-metrics",
+      "source": "./human_review_ops/skills/analysis",
+      "command": "NPM_CONFIG_REGISTRY=http://bnpm.byted.org npx -y agentbuddy@latest skill publish ./human_review_ops/skills/analysis --group skills.byted.org/lizhongtao/hunman_review_ops --access restricted --region cn -y",
+      "status": "published",
+      "id": "skills:skills.byted.org/lizhongtao/hunman_review_ops/analyzing-ops-metrics:1.0.4",
+      "verification_command": "NPM_CONFIG_REGISTRY=http://bnpm.byted.org npx -y agentbuddy@latest skill find analyzing-ops-metrics",
+      "verification_result": "skills.byted.org/lizhongtao/hunman_review_ops@analyzing-ops-metrics"
+    }
+  ],
+  "local_validation": {
+    "validate_skill_productization_strict": "passed",
+    "validate_skill_standalone_smoke": "passed",
+    "validate_agentbuddy_publish": "passed",
+    "validate_label_rate_analysis_scripts": "passed",
+    "agentbuddy_static_rule_mirror": "passed",
+    "git_diff_check": "passed"
+  }
+}
