@@ -1,0 +1,46 @@
+{
+  "schema_version": "agentbuddy_publish_summary.v1",
+  "published_at": "2026-07-09T15:02:17+08:00",
+  "group": "skills.byted.org/lizhongtao/hunman_review_ops",
+  "space_url": "https://skills.bytedance.net/space/skills.byted.org%2Flizhongtao%2Fhunman_review_ops",
+  "access": "restricted",
+  "ok": true,
+  "skills": [
+    {
+      "local_item": "perception",
+      "skill_name": "perceiving-ops-events",
+      "publish_method": "directory_retry",
+      "id": "skills:skills.byted.org/lizhongtao/hunman_review_ops/perceiving-ops-events:1.0.0",
+      "search_result": "skills.byted.org/lizhongtao/hunman_review_ops@perceiving-ops-events"
+    },
+    {
+      "local_item": "analysis",
+      "skill_name": "analyzing-ops-metrics",
+      "publish_method": "directory_retry",
+      "id": "skills:skills.byted.org/lizhongtao/hunman_review_ops/analyzing-ops-metrics:1.0.0",
+      "search_result": "skills.byted.org/lizhongtao/hunman_review_ops@analyzing-ops-metrics"
+    },
+    {
+      "local_item": "notification",
+      "skill_name": "routing-ops-notifications",
+      "publish_method": "zip_after_directory_network_errors",
+      "id": "skills:skills.byted.org/lizhongtao/hunman_review_ops/routing-ops-notifications:1.0.0",
+      "search_result": "skills.byted.org/lizhongtao/hunman_review_ops@routing-ops-notifications"
+    },
+    {
+      "local_item": "resolution",
+      "skill_name": "tracking-ops-resolution",
+      "publish_method": "directory",
+      "id": "skills:skills.byted.org/lizhongtao/hunman_review_ops/tracking-ops-resolution:1.0.0",
+      "search_result": "skills.byted.org/lizhongtao/hunman_review_ops@tracking-ops-resolution"
+    }
+  ],
+  "validation": {
+    "agentbuddy_find_checked": true,
+    "all_skills_found": true
+  },
+  "notes": [
+    "Initial directory upload hit transient AgentBuddy network errors for some skills.",
+    "perception and analysis succeeded after retry; notification succeeded via ZIP publish; resolution succeeded via directory publish."
+  ]
+}
