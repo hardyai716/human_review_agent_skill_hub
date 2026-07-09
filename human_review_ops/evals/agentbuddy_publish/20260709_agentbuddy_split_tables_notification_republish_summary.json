@@ -1,0 +1,27 @@
+{
+  "schema_version": "agentbuddy_republish_summary.v1",
+  "published_at": "2026-07-09T16:45:00+08:00",
+  "group": "skills.byted.org/lizhongtao/hunman_review_ops",
+  "access": "restricted",
+  "reason": "Split label-rate notification Card into P0/P1/P2/Notice tables and add label × POC summary table support.",
+  "skills": [
+    {
+      "skill_name": "routing-ops-notifications",
+      "source": "./human_review_ops/skills/notification",
+      "command": "NPM_CONFIG_REGISTRY=http://bnpm.byted.org npx -y agentbuddy@latest skill publish ./human_review_ops/skills/notification --group skills.byted.org/lizhongtao/hunman_review_ops --access restricted --region cn -y",
+      "status": "published",
+      "id": "skills:skills.byted.org/lizhongtao/hunman_review_ops/routing-ops-notifications:1.0.3",
+      "verification_command": "NPM_CONFIG_REGISTRY=http://bnpm.byted.org npx -y agentbuddy@latest skill find routing-ops",
+      "verification_result": "skills.byted.org/lizhongtao/hunman_review_ops@routing-ops-notifications"
+    }
+  ],
+  "validation": {
+    "validate_agentbuddy_publish": "passed",
+    "validate_scenario_package_efficiency_label_rate": "passed",
+    "stage_1_split_tables_grading": "passed",
+    "stage_2_poc_routing": "passed",
+    "stage_2_notification_draft_expect_sent": "passed",
+    "stage_2_manual_tracking": "passed",
+    "stage_2_partial_dispatch": "passed"
+  }
+}
