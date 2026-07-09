@@ -1,0 +1,305 @@
+human_review_ops/skills/perception/references/scenarios/efficiency-label-rate.dataset_reference.md
+  s_477d4c29497677::t_4e26f95db8f0f3 33-34,54-71 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a4f1c008b753815d65e0e0f","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Range":[33,34]},{"Range":[54,71]}]}]}
+  s_477d4c29497677::t_d1e0f03dd66ca5 72
+human_review_ops/references/scenarios/efficiency-label-rate/metric_contract.md
+  s_477d4c29497677::t_e7f4e37f7b6c44 93-94 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a4f1c1e8b753815d65e0e45","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Range":[93,94]}]}]}
+human_review_ops/skills/analysis/references/scenarios/efficiency-label-rate.metric_contract.md
+  s_477d4c29497677::t_6b25ba4cc14316 93-94 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a4f1c2b8b753815d65e0e6c","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Range":[93,94]}]}]}
+human_review_ops/skills/perception/references/scenarios/efficiency-label-rate.metric_contract.md
+  s_477d4c29497677::t_4ca771b1214618 93-94 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a4f1c3d8b753815d65e0e96","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Range":[93,94]}]}]}
+human_review_ops/references/scenarios/efficiency-label-rate/dataset_reference.md
+  s_477d4c29497677::t_6448c619eb3770 55-56,76-94,108 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a4f1bd98b753815d65e0dbe","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Range":[55,56]},{"Range":[76,94]},{"Single":108}]}]}
+human_review_ops/skills/analysis/references/scenarios/efficiency-label-rate.dataset_reference.md
+  s_477d4c29497677::t_a1a8c43c3fa28d 55-56,76-94,108 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a4f1bec8b753815d65e0de5","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Range":[55,56]},{"Range":[76,94]},{"Single":108}]}]}
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "23114cf28a30eebb6a51748577de8263cee21837",
+  "prompts": {},
+  "sessions": {
+    "s_477d4c29497677": {
+      "agent_id": {
+        "tool": "trae",
+        "id": "6a4e1b708b753815d65de15b",
+        "model": "gpt-5.5__max"
+      },
+      "human_author": "hardyai716 <hardyai716@users.noreply.github.com>"
+    }
+  },
+  "attestation_metadata": {
+    "human_review_ops/references/scenarios/efficiency-label-rate/dataset_reference.md": [
+      {
+        "hash": "s_477d4c29497677::t_6448c619eb3770",
+        "line_ranges": [
+          {
+            "Range": [
+              55,
+              56
+            ]
+          },
+          {
+            "Range": [
+              76,
+              94
+            ]
+          },
+          {
+            "Single": 108
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a4f1bd98b753815d65e0dbe",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Range": [
+                  55,
+                  56
+                ]
+              },
+              {
+                "Range": [
+                  76,
+                  94
+                ]
+              },
+              {
+                "Single": 108
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "human_review_ops/references/scenarios/efficiency-label-rate/metric_contract.md": [
+      {
+        "hash": "s_477d4c29497677::t_e7f4e37f7b6c44",
+        "line_ranges": [
+          {
+            "Range": [
+              93,
+              94
+            ]
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a4f1c1e8b753815d65e0e45",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Range": [
+                  93,
+                  94
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "human_review_ops/skills/analysis/references/scenarios/efficiency-label-rate.dataset_reference.md": [
+      {
+        "hash": "s_477d4c29497677::t_a1a8c43c3fa28d",
+        "line_ranges": [
+          {
+            "Range": [
+              55,
+              56
+            ]
+          },
+          {
+            "Range": [
+              76,
+              94
+            ]
+          },
+          {
+            "Single": 108
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a4f1bec8b753815d65e0de5",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Range": [
+                  55,
+                  56
+                ]
+              },
+              {
+                "Range": [
+                  76,
+                  94
+                ]
+              },
+              {
+                "Single": 108
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "human_review_ops/skills/analysis/references/scenarios/efficiency-label-rate.metric_contract.md": [
+      {
+        "hash": "s_477d4c29497677::t_6b25ba4cc14316",
+        "line_ranges": [
+          {
+            "Range": [
+              93,
+              94
+            ]
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a4f1c2b8b753815d65e0e6c",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Range": [
+                  93,
+                  94
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "human_review_ops/skills/perception/references/scenarios/efficiency-label-rate.dataset_reference.md": [
+      {
+        "hash": "s_477d4c29497677::t_4e26f95db8f0f3",
+        "line_ranges": [
+          {
+            "Range": [
+              33,
+              34
+            ]
+          },
+          {
+            "Range": [
+              54,
+              71
+            ]
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a4f1c008b753815d65e0e0f",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Range": [
+                  33,
+                  34
+                ]
+              },
+              {
+                "Range": [
+                  54,
+                  71
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "human_review_ops/skills/perception/references/scenarios/efficiency-label-rate.metric_contract.md": [
+      {
+        "hash": "s_477d4c29497677::t_4ca771b1214618",
+        "line_ranges": [
+          {
+            "Range": [
+              93,
+              94
+            ]
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a4f1c3d8b753815d65e0e96",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Range": [
+                  93,
+                  94
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "remote_transcripts": {
+    "s_477d4c29497677": {
+      "tool": "trae",
+      "conversation_id": "6a4e1b708b753815d65de15b",
+      "session_id": "6a4e1b708b753815d65de15b",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_477d4c29497677::t_4ca771b1214618": {
+      "tool": "trae",
+      "conversation_id": "6a4e1b708b753815d65de15b",
+      "session_id": "6a4e1b708b753815d65de15b",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_477d4c29497677::t_4e26f95db8f0f3": {
+      "tool": "trae",
+      "conversation_id": "6a4e1b708b753815d65de15b",
+      "session_id": "6a4e1b708b753815d65de15b",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_477d4c29497677::t_6448c619eb3770": {
+      "tool": "trae",
+      "conversation_id": "6a4e1b708b753815d65de15b",
+      "session_id": "6a4e1b708b753815d65de15b",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_477d4c29497677::t_6b25ba4cc14316": {
+      "tool": "trae",
+      "conversation_id": "6a4e1b708b753815d65de15b",
+      "session_id": "6a4e1b708b753815d65de15b",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_477d4c29497677::t_a1a8c43c3fa28d": {
+      "tool": "trae",
+      "conversation_id": "6a4e1b708b753815d65de15b",
+      "session_id": "6a4e1b708b753815d65de15b",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_477d4c29497677::t_e7f4e37f7b6c44": {
+      "tool": "trae",
+      "conversation_id": "6a4e1b708b753815d65de15b",
+      "session_id": "6a4e1b708b753815d65de15b",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    }
+  }
+}
