@@ -18,11 +18,11 @@
   - [x] SubTask 3.3: 扩展 validator，校验通知草稿和群推送门禁。
   - [x] SubTask 3.4: 运行验证，更新计划文档，提交并推送。
 
-- [ ] Task 4: 实现本地人工处理状态记录。
-  - [ ] SubTask 4.1: 新增 Resolution Skill 脚本或 stage 2 runner，生成 `manual_tracking.json`。
-  - [ ] SubTask 4.2: 确保状态符合 `state_machine.md`，并记录 `evidence_refs`、`operator_note`、`next_action`、`continue_observation`。
-  - [ ] SubTask 4.3: 新增 validator，确保不写线上状态。
-  - [ ] SubTask 4.4: 运行验证，更新计划文档，提交并推送。
+- [x] Task 4: 实现本地人工处理状态记录。
+  - [x] SubTask 4.1: 新增 Resolution Skill 脚本或 stage 2 runner，生成 `manual_tracking.json`。
+  - [x] SubTask 4.2: 确保状态符合 `state_machine.md`，并记录 `evidence_refs`、`operator_note`、`next_action`、`continue_observation`。
+  - [x] SubTask 4.3: 新增 validator，确保不写线上状态。
+  - [x] SubTask 4.4: 运行验证，更新计划文档，提交并推送。
 
 - [ ] Task 5: 实现局部调度回归。
   - [ ] SubTask 5.1: 新增 stage 2 局部调度结果，覆盖 `owner_lookup_only`、`notification_only`、`resolution_only`。

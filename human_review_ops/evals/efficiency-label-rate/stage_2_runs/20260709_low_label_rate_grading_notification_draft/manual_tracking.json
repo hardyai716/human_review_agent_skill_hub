@@ -1,0 +1,263 @@
+{
+  "schema_version": "stage_2_manual_tracking.v1",
+  "scenario_key": "efficiency-label-rate",
+  "report_type": "low_efficiency_grading",
+  "tracking_mode": "local_debug_only",
+  "state_machine": {
+    "state_machine_ref": "human_review_ops/references/scenarios/efficiency-label-rate/state_machine.md",
+    "previous_state": "NOTIFICATION_DRAFTED",
+    "current_state": "MANUAL_TRACKING_RECORDED",
+    "next_state": "DEBUG_CLOSED_AFTER_MANUAL_REVIEW"
+  },
+  "source_refs": {
+    "notification_draft": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_notification_draft/notification_draft.json",
+    "send_plan": "send_plan.json",
+    "poc_routing_plan": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_notification_draft/poc_routing_plan.json",
+    "card_json": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_notification_draft/publish/low_efficiency_grading.card.json",
+    "sheet_url": "https://bytedance.larkoffice.com/sheets/HyPHsQn31hXTzOtoq8Rc1Akhnru"
+  },
+  "overall_status": "pending_manual_confirmation",
+  "operator_note": "开发验证阶段仅记录本地人工处理状态；真实 POC 映射、群推送和线上状态写入均未启用。",
+  "next_action": "补充真实 reason/strategy -> POC 映射后，由人工确认是否执行群推送或继续观察。",
+  "continue_observation": true,
+  "evidence_refs": [
+    {
+      "source": "notification_draft",
+      "field": "level_counts",
+      "value": {
+        "notice": 410,
+        "P2": 7,
+        "P1": 6,
+        "P0": 4
+      }
+    },
+    {
+      "source": "notification_draft",
+      "field": "data_link.sheet_url",
+      "value": "https://bytedance.larkoffice.com/sheets/HyPHsQn31hXTzOtoq8Rc1Akhnru"
+    },
+    {
+      "source": "manual_tracking_records",
+      "field": "covered_levels",
+      "value": [
+        "notice",
+        "P2",
+        "P1",
+        "P0"
+      ]
+    }
+  ],
+  "tracking_records": [
+    {
+      "severity_level": "notice",
+      "status": "pending_manual_follow_up",
+      "reason_count": 410,
+      "target_roles": [
+        "群内同步策略明细和数据链接"
+      ],
+      "action_required": "周知明细，纳入观察。",
+      "recipient_resolution": {
+        "mode": "placeholder",
+        "recipients": [
+          "self"
+        ],
+        "real_poc_count": 0,
+        "fallback_reason": "real reason/strategy -> POC mapping is not available"
+      },
+      "operator_note": "当前 POC 解析为占位逻辑，默认仅本人预览。",
+      "next_action": "等待真实 POC 映射和人工确认。",
+      "continue_observation": true,
+      "evidence_refs": [
+        {
+          "source": "poc_routing_rule",
+          "severity_level": "notice",
+          "field": "target_roles",
+          "value": [
+            "群内同步策略明细和数据链接"
+          ]
+        },
+        {
+          "source": "poc_routing_rule",
+          "severity_level": "notice",
+          "field": "action_required",
+          "value": "周知明细，纳入观察。"
+        },
+        {
+          "source": "poc_routing_rule",
+          "severity_level": "notice",
+          "field": "reason_count",
+          "value": 410
+        }
+      ]
+    },
+    {
+      "severity_level": "P2",
+      "status": "pending_manual_follow_up",
+      "reason_count": 7,
+      "target_roles": [
+        "治理 BP",
+        "审核 VOC POC",
+        "人审运营"
+      ],
+      "action_required": "请相关 POC 说明低打标原因和后续处理计划。",
+      "recipient_resolution": {
+        "mode": "placeholder",
+        "recipients": [
+          "self"
+        ],
+        "real_poc_count": 0,
+        "fallback_reason": "real reason/strategy -> POC mapping is not available"
+      },
+      "operator_note": "当前 POC 解析为占位逻辑，默认仅本人预览。",
+      "next_action": "等待真实 POC 映射和人工确认。",
+      "continue_observation": true,
+      "evidence_refs": [
+        {
+          "source": "poc_routing_rule",
+          "severity_level": "P2",
+          "field": "target_roles",
+          "value": [
+            "治理 BP",
+            "审核 VOC POC",
+            "人审运营"
+          ]
+        },
+        {
+          "source": "poc_routing_rule",
+          "severity_level": "P2",
+          "field": "action_required",
+          "value": "请相关 POC 说明低打标原因和后续处理计划。"
+        },
+        {
+          "source": "poc_routing_rule",
+          "severity_level": "P2",
+          "field": "reason_count",
+          "value": 7
+        }
+      ]
+    },
+    {
+      "severity_level": "P1",
+      "status": "pending_manual_follow_up",
+      "reason_count": 6,
+      "target_roles": [
+        "治理 BP",
+        "审核 VOC POC",
+        "人审运营",
+        "治理 BP +1",
+        "VOC 负责人",
+        "人审运营负责人"
+      ],
+      "action_required": "要求负责人关注，并推动原因说明和处理计划。",
+      "recipient_resolution": {
+        "mode": "placeholder",
+        "recipients": [
+          "self"
+        ],
+        "real_poc_count": 0,
+        "fallback_reason": "real reason/strategy -> POC mapping is not available"
+      },
+      "operator_note": "当前 POC 解析为占位逻辑，默认仅本人预览。",
+      "next_action": "等待真实 POC 映射和人工确认。",
+      "continue_observation": true,
+      "evidence_refs": [
+        {
+          "source": "poc_routing_rule",
+          "severity_level": "P1",
+          "field": "target_roles",
+          "value": [
+            "治理 BP",
+            "审核 VOC POC",
+            "人审运营",
+            "治理 BP +1",
+            "VOC 负责人",
+            "人审运营负责人"
+          ]
+        },
+        {
+          "source": "poc_routing_rule",
+          "severity_level": "P1",
+          "field": "action_required",
+          "value": "要求负责人关注，并推动原因说明和处理计划。"
+        },
+        {
+          "source": "poc_routing_rule",
+          "severity_level": "P1",
+          "field": "reason_count",
+          "value": 6
+        }
+      ]
+    },
+    {
+      "severity_level": "P0",
+      "status": "pending_manual_follow_up",
+      "reason_count": 4,
+      "target_roles": [
+        "治理 BP",
+        "审核 VOC POC",
+        "人审运营",
+        "治理 BP +1",
+        "VOC 负责人",
+        "人审运营负责人",
+        "治理负责人"
+      ],
+      "action_required": "高优先级周知，要求重点关注和处理。",
+      "recipient_resolution": {
+        "mode": "placeholder",
+        "recipients": [
+          "self"
+        ],
+        "real_poc_count": 0,
+        "fallback_reason": "real reason/strategy -> POC mapping is not available"
+      },
+      "operator_note": "当前 POC 解析为占位逻辑，默认仅本人预览。",
+      "next_action": "等待真实 POC 映射和人工确认。",
+      "continue_observation": true,
+      "evidence_refs": [
+        {
+          "source": "poc_routing_rule",
+          "severity_level": "P0",
+          "field": "target_roles",
+          "value": [
+            "治理 BP",
+            "审核 VOC POC",
+            "人审运营",
+            "治理 BP +1",
+            "VOC 负责人",
+            "人审运营负责人",
+            "治理负责人"
+          ]
+        },
+        {
+          "source": "poc_routing_rule",
+          "severity_level": "P0",
+          "field": "action_required",
+          "value": "高优先级周知，要求重点关注和处理。"
+        },
+        {
+          "source": "poc_routing_rule",
+          "severity_level": "P0",
+          "field": "reason_count",
+          "value": 4
+        }
+      ]
+    }
+  ],
+  "closure_check": {
+    "can_close": false,
+    "reason": "Stage 2 uses placeholder routing and still requires manual confirmation.",
+    "missing_before_close": [
+      "real_poc_mapping",
+      "human_confirmation",
+      "manual_response_or_resolution_note"
+    ]
+  },
+  "safety": {
+    "requires_confirmation": true,
+    "group_send_blocked": true,
+    "group_send_sent": false,
+    "real_group_send_executed": false,
+    "online_write_executed": false,
+    "online_state_write_allowed": false
+  }
+}
