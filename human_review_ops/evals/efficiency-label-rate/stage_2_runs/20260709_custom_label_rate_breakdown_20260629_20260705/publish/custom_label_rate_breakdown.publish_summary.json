@@ -1,0 +1,26 @@
+{
+  "report_type": "custom_label_rate_breakdown",
+  "scenario_key": "efficiency-label-rate",
+  "output_dir": "evals/efficiency-label-rate/stage_2_runs/20260709_custom_label_rate_breakdown_20260629_20260705",
+  "summary_json": "evals/efficiency-label-rate/stage_2_runs/20260709_custom_label_rate_breakdown_20260629_20260705/summary.json",
+  "result_jsonl": "evals/efficiency-label-rate/stage_2_runs/20260709_custom_label_rate_breakdown_20260629_20260705/custom_label_rate_breakdown_results.jsonl",
+  "csv": "evals/efficiency-label-rate/stage_2_runs/20260709_custom_label_rate_breakdown_20260629_20260705/custom_label_rate_breakdown.csv",
+  "workbook": "evals/efficiency-label-rate/stage_2_runs/20260709_custom_label_rate_breakdown_20260629_20260705/custom_label_rate_breakdown_2026-06-29_2026-07-05.xlsx",
+  "sheet_url": "https://bytedance.larkoffice.com/sheets/T6pjsq17yhbq1VtH3zycu9isnmd",
+  "card_json": "evals/efficiency-label-rate/stage_2_runs/20260709_custom_label_rate_breakdown_20260629_20260705/publish/custom_label_rate_breakdown.card.json",
+  "card_json_with_meta": "evals/efficiency-label-rate/stage_2_runs/20260709_custom_label_rate_breakdown_20260629_20260705/publish/custom_label_rate_breakdown.card.with_meta.json",
+  "card_hash_check": "evals/efficiency-label-rate/stage_2_runs/20260709_custom_label_rate_breakdown_20260629_20260705/publish/card_hash_check.json",
+  "send_channel": "interactive_card",
+  "card_send_error": null,
+  "sent": true,
+  "send_identity": "bot",
+  "target_chat_id": "oc_9c691aa76c22a16207c6f443eac25816",
+  "message_id": "om_x100b6bc5cf1cf880c37c944278ec3b6",
+  "send_result": {
+    "ok": true,
+    "identity": "bot",
+    "chat_id": "oc_9c691aa76c22a16207c6f443eac25816",
+    "message_id": "om_x100b6bc5cf1cf880c37c944278ec3b6",
+    "create_time": "2026-07-09 11:40:13"
+  }
+}

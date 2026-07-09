@@ -1,0 +1,39 @@
+{
+  "schema_version": "custom_label_rate_group_send_validation.v1",
+  "scenario_key": "efficiency-label-rate",
+  "report_type": "custom_label_rate_breakdown",
+  "validation_mode": "explicit_user_requested_validation_group",
+  "chat": {
+    "chat_id": "oc_9c691aa76c22a16207c6f443eac25816",
+    "send_identity": "bot"
+  },
+  "content_source": {
+    "card_json": "evals/efficiency-label-rate/stage_2_runs/20260709_custom_label_rate_breakdown_20260629_20260705/publish/custom_label_rate_breakdown.card.json",
+    "summary_json": "evals/efficiency-label-rate/stage_2_runs/20260709_custom_label_rate_breakdown_20260629_20260705/summary.json",
+    "sheet_url": "https://bytedance.larkoffice.com/sheets/T6pjsq17yhbq1VtH3zycu9isnmd"
+  },
+  "send_result": {
+    "sent": true,
+    "send_channel": "interactive_card",
+    "message_id": "om_x100b6bc5cf1cf880c37c944278ec3b6",
+    "send_result": {
+      "ok": true,
+      "identity": "bot",
+      "chat_id": "oc_9c691aa76c22a16207c6f443eac25816",
+      "message_id": "om_x100b6bc5cf1cf880c37c944278ec3b6",
+      "create_time": "2026-07-09 11:40:13"
+    },
+    "card_send_error": null
+  },
+  "safety": {
+    "user_explicitly_requested_group_validation": true,
+    "online_state_store_write_executed": false,
+    "dimensions": [
+      "mach_root_label_name",
+      "strategy_id",
+      "strategy_name",
+      "reason"
+    ],
+    "row_count": 10293
+  }
+}

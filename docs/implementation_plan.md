@@ -817,6 +817,7 @@ human_review_ops/evals/efficiency-label-rate/eval_samples.jsonl
 | 阶段 2 | P2 | 新增局部调度回归。 | 生成 `owner_lookup_only_results.jsonl`、`notification_only_results.jsonl`、`resolution_only_results.jsonl` 和 `partial_dispatch_results.jsonl`。 | 已完成 |
 | 阶段 2 | P2 | 完成阶段 2 全量安全验收。 | `validate_stage_2_label_rate_poc_routing.py`、`validate_stage_2_label_rate_notification_draft.py`、`validate_stage_2_label_rate_manual_tracking.py`、`validate_stage_2_label_rate_partial_dispatch.py` 均通过。 | 已完成 |
 | 阶段 2 | P2 | 完成私有验证群群发验证。 | 用户明确授权后，新建私有验证群 `人审阶段2群发验证-20260709`，仅包含用户本人和机器人，发送今日数据版 Card 2.0 通知，并记录 `group_send_validation.json`。 | 已完成 |
+| 阶段 2 | P2 | 完成自定义多维低打标率泛化验证。 | 查询 `2026-06-29` 至 `2026-07-05` 期间 `机审一级标签 × strategy_id × strategy_name × reason` 维度下打标率 `<0.1` 的明细，输出日均进审 / 完审 / 打标量、打标率、CSV、XLSX、Card 2.0 和群发验证记录。 | 已完成 |
 
 ### 12.3 阶段 3 / 后续实施计划
 
