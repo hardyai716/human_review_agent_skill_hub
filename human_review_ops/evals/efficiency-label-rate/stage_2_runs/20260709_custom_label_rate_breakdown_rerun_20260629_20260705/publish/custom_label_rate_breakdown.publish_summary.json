@@ -1,0 +1,21 @@
+{
+  "report_type": "custom_label_rate_breakdown",
+  "scenario_key": "efficiency-label-rate",
+  "output_dir": "evals/efficiency-label-rate/stage_2_runs/20260709_custom_label_rate_breakdown_rerun_20260629_20260705",
+  "summary_json": "evals/efficiency-label-rate/stage_2_runs/20260709_custom_label_rate_breakdown_rerun_20260629_20260705/summary.json",
+  "analysis_summary_md": "evals/efficiency-label-rate/stage_2_runs/20260709_custom_label_rate_breakdown_rerun_20260629_20260705/analysis_summary.md",
+  "result_jsonl": "evals/efficiency-label-rate/stage_2_runs/20260709_custom_label_rate_breakdown_rerun_20260629_20260705/custom_label_rate_breakdown_results.jsonl",
+  "csv": "evals/efficiency-label-rate/stage_2_runs/20260709_custom_label_rate_breakdown_rerun_20260629_20260705/custom_label_rate_breakdown.csv",
+  "workbook": "evals/efficiency-label-rate/stage_2_runs/20260709_custom_label_rate_breakdown_rerun_20260629_20260705/custom_label_rate_breakdown_2026-06-29_2026-07-05.xlsx",
+  "sheet_url": "https://bytedance.larkoffice.com/sheets/TpxwsA8zohUZkVtJ4J9cDcXUnbg",
+  "card_json": null,
+  "card_json_with_meta": null,
+  "card_hash_check": null,
+  "send_channel": null,
+  "card_send_error": null,
+  "sent": false,
+  "send_identity": null,
+  "target_chat_id": null,
+  "message_id": null,
+  "send_result": null
+}

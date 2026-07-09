@@ -1,0 +1,79 @@
+{
+  "schema_version": "custom_label_rate_breakdown.v1",
+  "scenario_key": "efficiency-label-rate",
+  "report_type": "custom_label_rate_breakdown",
+  "analysis_mode": "custom_dimension_breakdown",
+  "source_tier": "governed_dataset",
+  "dataset_id": "3888816",
+  "app_id": "1128",
+  "region": "cn",
+  "period": {
+    "start_date": "2026-06-29",
+    "end_date": "2026-07-05",
+    "calendar_days": 7,
+    "checked_at": "2026-07-09T12:10:55.413+08:00"
+  },
+  "dimensions": [
+    "mach_root_label_name",
+    "strategy_id",
+    "strategy_name",
+    "reason"
+  ],
+  "dimension_display_names": {
+    "mach_root_label_name": "机审一级标签",
+    "strategy_id": "strategy_id",
+    "strategy_name": "strategy_name",
+    "reason": "reason"
+  },
+  "metric_formula": "label_rate = SUM(打标量__reviewid) / SUM(完审量_reviewid)",
+  "filters": [
+    "p_date between start_date and end_date inclusive",
+    "standard project_title blacklist",
+    "scene allowlist",
+    "reason exclusion",
+    "mach_root_label_name allowlist with null preserved",
+    "label_rate < 0.1",
+    "review_done_cnt > 0"
+  ],
+  "row_count": 10293,
+  "query_row_count": 10293,
+  "truncated": false,
+  "weighted_label_rate": 0.05022246614683111,
+  "outputs": {
+    "output_dir": "evals/efficiency-label-rate/stage_2_runs/20260709_custom_label_rate_breakdown_rerun_20260629_20260705",
+    "result_jsonl": "evals/efficiency-label-rate/stage_2_runs/20260709_custom_label_rate_breakdown_rerun_20260629_20260705/custom_label_rate_breakdown_results.jsonl",
+    "csv": "evals/efficiency-label-rate/stage_2_runs/20260709_custom_label_rate_breakdown_rerun_20260629_20260705/custom_label_rate_breakdown.csv",
+    "workbook": "evals/efficiency-label-rate/stage_2_runs/20260709_custom_label_rate_breakdown_rerun_20260629_20260705/custom_label_rate_breakdown_2026-06-29_2026-07-05.xlsx",
+    "sheet_url": "https://bytedance.larkoffice.com/sheets/TpxwsA8zohUZkVtJ4J9cDcXUnbg",
+    "analysis_summary_md": "evals/efficiency-label-rate/stage_2_runs/20260709_custom_label_rate_breakdown_rerun_20260629_20260705/analysis_summary.md"
+  },
+  "sql": "SELECT\n  mach_root_label_name, strategy_id, strategy_name, reason,\n  COUNT(DISTINCT dt) AS data_days,\n  7 AS calendar_days,\n  SUM(review_in_cnt) AS total_review_in_cnt,\n  SUM(review_done_cnt) AS total_review_done_cnt,\n  SUM(label_cnt) AS total_label_cnt,\n  SUM(review_in_cnt) / COUNT(DISTINCT dt) AS avg_review_in_cnt,\n  SUM(review_done_cnt) / COUNT(DISTINCT dt) AS avg_review_done_cnt,\n  SUM(label_cnt) / COUNT(DISTINCT dt) AS avg_label_cnt,\n  if(SUM(review_done_cnt) = 0, 0, SUM(label_cnt) / SUM(review_done_cnt)) AS label_rate\nFROM (\n  SELECT\n    ifNull(`[机审一级标签]`, '（空/机审一级标签）') AS mach_root_label_name,\n    ifNull(`[strategy_id]`, '（空/strategy_id）') AS strategy_id,\n    ifNull(`[strategy_name]`, '（空/strategy_name）') AS strategy_name,\n    ifNull(`[reason]`, '（空/reason）') AS reason,\n    `[p_date]` AS dt,\n    `[进审量_reviewid]` AS review_in_cnt,\n    `[完审量_reviewid]` AS review_done_cnt,\n    `[打标量__reviewid]` AS label_cnt\n  FROM olap_content_security_community.dws_sft_tcs_review_task_detail_di\n  WHERE `[p_date]` >= '2026-06-29'\n    AND `[p_date]` < '2026-07-06'\n    AND `[project_title]` NOT LIKE '%虚假%'\n    AND `[project_title]` NOT LIKE '%标注%'\n    AND `[project_title]` NOT LIKE '%虚假不实%'\n    AND `[project_title]` NOT LIKE '%封面%'\n    AND `[project_title]` NOT LIKE '%自动处置%'\n    AND `[project_title]` NOT LIKE '%演绎%'\n    AND `[project_title]` NOT LIKE '%模型%'\n    AND `[project_title]` NOT LIKE '%run%'\n    AND `[project_title]` NOT LIKE '%质检%'\n    AND `[project_title]` NOT LIKE '%QA%'\n    AND `[project_title]` NOT LIKE '%测试%'\n    AND `[project_title]` NOT LIKE '%大模型%'\n    AND `[project_title]` NOT LIKE '%离线%'\n    AND `[scene]` IN ('community_audit_safe', 'community_audit_style', 'community_audit_moderate')\n    AND `[reason]` NOT IN ('recall_skip_L6', 'fatal_output')\n    AND (`[机审一级标签]` IS NULL OR `[机审一级标签]` IN (\n      '不良行为或争议价值观',\n      '侵犯未成年权益',\n      '偏激社会情绪和涉外言论',\n      '党和国家形象负面',\n      '危险行为',\n      '国家安全',\n      '引人不适',\n      '指令舆情相关',\n      '短期策略迁移',\n      '色情性化',\n      '违法违规',\n      '领导人'\n    ))\n  GROUP BY mach_root_label_name, strategy_id, strategy_name, reason, dt\n) daily\nGROUP BY mach_root_label_name, strategy_id, strategy_name, reason\nHAVING SUM(review_done_cnt) > 0\n   AND if(SUM(review_done_cnt) = 0, 0, SUM(label_cnt) / SUM(review_done_cnt)) < 0.1\nORDER BY avg_review_done_cnt DESC\nLIMIT 50000",
+  "source_footer": {
+    "source_tier": "governed_dataset",
+    "confidence_tier": "high",
+    "freshness": "p_date >= 2026-06-29 AND p_date <= 2026-07-05; checked_at=2026-07-09T12:10:55.413+08:00",
+    "owner": "人审效率域数据 Owner",
+    "review_status": "real_readonly_query_executed"
+  },
+  "publish": {
+    "report_type": "custom_label_rate_breakdown",
+    "scenario_key": "efficiency-label-rate",
+    "output_dir": "evals/efficiency-label-rate/stage_2_runs/20260709_custom_label_rate_breakdown_rerun_20260629_20260705",
+    "summary_json": "evals/efficiency-label-rate/stage_2_runs/20260709_custom_label_rate_breakdown_rerun_20260629_20260705/summary.json",
+    "analysis_summary_md": "evals/efficiency-label-rate/stage_2_runs/20260709_custom_label_rate_breakdown_rerun_20260629_20260705/analysis_summary.md",
+    "result_jsonl": "evals/efficiency-label-rate/stage_2_runs/20260709_custom_label_rate_breakdown_rerun_20260629_20260705/custom_label_rate_breakdown_results.jsonl",
+    "csv": "evals/efficiency-label-rate/stage_2_runs/20260709_custom_label_rate_breakdown_rerun_20260629_20260705/custom_label_rate_breakdown.csv",
+    "workbook": "evals/efficiency-label-rate/stage_2_runs/20260709_custom_label_rate_breakdown_rerun_20260629_20260705/custom_label_rate_breakdown_2026-06-29_2026-07-05.xlsx",
+    "sheet_url": "https://bytedance.larkoffice.com/sheets/TpxwsA8zohUZkVtJ4J9cDcXUnbg",
+    "card_json": null,
+    "card_json_with_meta": null,
+    "card_hash_check": null,
+    "send_channel": null,
+    "card_send_error": null,
+    "sent": false,
+    "send_identity": null,
+    "target_chat_id": null,
+    "message_id": null,
+    "send_result": null
+  }
+}
