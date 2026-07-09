@@ -1,0 +1,89 @@
+{
+  "schema_version": "stage_2_notification_draft.v1",
+  "report_type": "low_efficiency_grading",
+  "scenario_key": "efficiency-label-rate",
+  "run_mode": "debug_only_with_explicit_self_send",
+  "source_stage_1_result": "evals/efficiency-label-rate/stage_1_runs/20260709_real_readonly_label_rate_grading_sheet_columns_results.jsonl",
+  "output_dir": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_sheet_columns_group_send",
+  "dataset_id": "3888816",
+  "region": "cn",
+  "period": {
+    "current_start": "2026-07-02",
+    "current_end": "2026-07-08",
+    "history_start": "2026-06-11",
+    "checked_at": "2026-07-09T17:17:13.810000+08:00"
+  },
+  "level_counts": {
+    "notice": 9357,
+    "P2": 7,
+    "P1": 4,
+    "P0": 3
+  },
+  "comprehensive_reason_count": 9357,
+  "comprehensive_strategy_group_count": 9357,
+  "fallback_reason": "complex_grading_rule_not_covered_by_semantic_layer",
+  "metric_formula": "`label_rate` = SUM(`[打标量__reviewid]`) / SUM(`[完审量_reviewid]`)",
+  "top_n": 10,
+  "sheet_url": "https://bytedance.larkoffice.com/sheets/VHXvsTaVOh4TjHtfVzqchIffnqb",
+  "outputs": {
+    "summary_json": "summary.json",
+    "notice_csv": "notice.csv",
+    "P2_csv": "P2.csv",
+    "P1_csv": "P1.csv",
+    "P0_csv": "P0.csv",
+    "comprehensive_csv": "综合.csv",
+    "workbook": "low_label_rate_grading_2026-07-02_2026-07-08.xlsx",
+    "poc_routing_plan": "poc_routing_plan.json",
+    "notification_draft": "notification_draft.json",
+    "send_plan": "send_plan.json",
+    "summary_by_label_poc_csv": "汇总统计.csv"
+  },
+  "source_footer": {
+    "source_tier": "governed_dataset",
+    "metric_definition_version": "draft",
+    "data_freshness": "p_date >= today() - 28 AND p_date < today(); checked_at=2026-07-09T17:17:13.810+08:00",
+    "owner": "人审效率域数据 Owner",
+    "confidence_tier": "high",
+    "review_status": "real_readonly_query_executed",
+    "scenario_key": "efficiency-label-rate",
+    "metric_id": "label_rate",
+    "quality_checks": [
+      "freshness_gate",
+      "denominator_not_zero",
+      "field_mapping_check",
+      "grain_check_four_dimension_strategy",
+      "forbidden_source_check",
+      "truncation_check",
+      "grading_rule_check"
+    ]
+  },
+  "label_poc_summary_count": 12,
+  "publish": {
+    "report_type": "low_efficiency_grading",
+    "scenario_key": "efficiency-label-rate",
+    "source_stage_1_result": "evals/efficiency-label-rate/stage_1_runs/20260709_real_readonly_label_rate_grading_sheet_columns_results.jsonl",
+    "output_dir": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_sheet_columns_group_send",
+    "summary_json": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_sheet_columns_group_send/summary.json",
+    "workbook": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_sheet_columns_group_send/low_label_rate_grading_2026-07-02_2026-07-08.xlsx",
+    "summary_by_label_poc_csv": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_sheet_columns_group_send/汇总统计.csv",
+    "sheet_url": "https://bytedance.larkoffice.com/sheets/VHXvsTaVOh4TjHtfVzqchIffnqb",
+    "card_json": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_sheet_columns_group_send/publish/low_efficiency_grading.card.json",
+    "card_json_with_meta": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_sheet_columns_group_send/publish/low_efficiency_grading.card.with_meta.json",
+    "card_hash_check": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_sheet_columns_group_send/publish/card_hash_check.json",
+    "sent": true,
+    "send_identity": "bot",
+    "target_type": "chat",
+    "target_user": null,
+    "target_user_open_id_prefix": null,
+    "target_chat_id": "oc_9c691aa76c22a16207c6f443eac25816",
+    "message_id": "om_x100b6bc23a8124acb26cc9fbe4c4ba6",
+    "send_result": {
+      "ok": true,
+      "identity": "bot",
+      "message_id": "om_x100b6bc23a8124acb26cc9fbe4c4ba6",
+      "create_time": "2026-07-09 17:17:57"
+    },
+    "notification_draft": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_sheet_columns_group_send/notification_draft.json",
+    "send_plan": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_sheet_columns_group_send/send_plan.json"
+  }
+}

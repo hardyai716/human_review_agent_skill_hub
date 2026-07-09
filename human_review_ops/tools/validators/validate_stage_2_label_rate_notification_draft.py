@@ -246,30 +246,28 @@ def assert_csvs(output_dir: Path, summary: dict[str, Any]) -> None:
             raise AssertionError(f"{filename} row count mismatch.")
         if filename == "汇总统计.csv":
             for field in (
-                "mach_root_label_name",
+                "机审一级标签",
                 "POC",
-                "low_efficiency_strategy_count",
-                "avg_review_in_cnt",
-                "avg_review_done_cnt",
-                "avg_label_cnt",
-                "label_rate",
+                "低效策略数",
+                "低效策略日均进审量",
+                "低效策略日均完审量",
+                "低效策略日均打标量",
+                "低效策略打标率",
             ):
                 if rows and field not in rows[0]:
                     raise AssertionError(f"{filename} missing field: {field}")
             continue
         for field in (
-            "severity_level",
-            "mach_root_label_name",
-            "strategy_id",
-            "strategy_name",
-            "reason",
+            "机审一级标签",
+            "策略ID",
+            "策略名称",
+            "送审原因",
             "POC",
-            "avg_review_in_cnt",
-            "avg_review_done_cnt",
-            "avg_label_cnt",
-            "label_rate",
-            "hit_rule_ids",
-            "hit_conditions",
+            "日均进审量",
+            "日均完审量",
+            "日均打标量",
+            "打标率",
+            "命中原因",
         ):
             if rows and field not in rows[0]:
                 raise AssertionError(f"{filename} missing field: {field}")

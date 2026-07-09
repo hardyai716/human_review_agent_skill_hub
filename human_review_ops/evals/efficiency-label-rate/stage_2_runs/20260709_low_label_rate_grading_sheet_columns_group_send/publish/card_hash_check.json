@@ -1,0 +1,23 @@
+{
+  "ok": true,
+  "data_hash": "cd6a10f263e53e378b0767ef97338e05b947f8f94db43222e81a62e015afe454",
+  "top_rows_count": 36,
+  "level_top_rows_count": {
+    "P0": 3,
+    "P1": 4,
+    "P2": 7,
+    "notice": 10
+  },
+  "internal_meta_removed": true,
+  "design_check": {
+    "schema_2_0": true,
+    "has_header": true,
+    "has_metrics": true,
+    "has_chart": false,
+    "has_table": true,
+    "table_count": 5,
+    "has_methodology": true,
+    "top_level_blocks": 13,
+    "passes_p0_p3_basic_gate": true
+  }
+}

@@ -48,37 +48,26 @@ DEFAULT_OUTPUT_DIR = (
 )
 REPORT_TYPE = "low_efficiency_grading"
 LEVELS = ["P0", "P1", "P2", "notice"]
-CSV_COLUMNS = [
-    "severity_level",
-    "severity_priority",
-    "mach_root_label_name",
-    "strategy_id",
-    "strategy_name",
-    "reason",
-    "POC",
-    "data_days",
-    "total_review_in_cnt",
-    "total_review_done_cnt",
-    "total_label_cnt",
-    "avg_review_in_cnt",
-    "avg_review_done_cnt",
-    "avg_label_cnt",
-    "label_rate",
-    "prev_avg_review_in_cnt",
-    "prev_label_rate",
-    "growth_rate",
-    "daily_delta",
-    "hit_rule_ids",
-    "hit_conditions",
+LEVEL_COLUMN_SPECS = [
+    ("mach_root_label_name", "机审一级标签"),
+    ("strategy_id", "策略ID"),
+    ("strategy_name", "策略名称"),
+    ("reason", "送审原因"),
+    ("POC", "POC"),
+    ("avg_review_in_cnt", "日均进审量"),
+    ("avg_review_done_cnt", "日均完审量"),
+    ("avg_label_cnt", "日均打标量"),
+    ("label_rate", "打标率"),
+    ("hit_conditions", "命中原因"),
 ]
-SUMMARY_COLUMNS = [
-    "mach_root_label_name",
-    "POC",
-    "low_efficiency_strategy_count",
-    "avg_review_in_cnt",
-    "avg_review_done_cnt",
-    "avg_label_cnt",
-    "label_rate",
+SUMMARY_COLUMN_SPECS = [
+    ("mach_root_label_name", "机审一级标签"),
+    ("POC", "POC"),
+    ("low_efficiency_strategy_count", "低效策略数"),
+    ("avg_review_in_cnt", "低效策略日均进审量"),
+    ("avg_review_done_cnt", "低效策略日均完审量"),
+    ("avg_label_cnt", "低效策略日均打标量"),
+    ("label_rate", "低效策略打标率"),
 ]
 
 
@@ -303,20 +292,32 @@ def write_level_csvs(output_dir: Path, execution: dict[str, Any]) -> None:
 def write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8-sig", newline="") as file:
-        writer = csv.DictWriter(file, fieldnames=CSV_COLUMNS)
+        writer = csv.DictWriter(
+            file, fieldnames=[header for _, header in LEVEL_COLUMN_SPECS]
+        )
         writer.writeheader()
         for row in rows:
-            writer.writerow({column: csv_value(csv_column_value(row, column)) for column in CSV_COLUMNS})
+            writer.writerow(
+                {
+                    header: csv_value(csv_column_value(row, field))
+                    for field, header in LEVEL_COLUMN_SPECS
+                }
+            )
 
 
 def write_summary_csv(path: Path, rows: list[dict[str, Any]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8-sig", newline="") as file:
-        writer = csv.DictWriter(file, fieldnames=SUMMARY_COLUMNS)
+        writer = csv.DictWriter(
+            file, fieldnames=[header for _, header in SUMMARY_COLUMN_SPECS]
+        )
         writer.writeheader()
         for row in rows:
             writer.writerow(
-                {column: csv_value(row.get(column)) for column in SUMMARY_COLUMNS}
+                {
+                    header: csv_value(row.get(field))
+                    for field, header in SUMMARY_COLUMN_SPECS
+                }
             )
 
 
@@ -354,14 +355,21 @@ def write_workbook(
         ("综合", execution["comprehensive_results"]),
     ]:
         sheet = workbook.create_sheet(sheet_name)
-        sheet.append(CSV_COLUMNS)
+        sheet.append([header for _, header in LEVEL_COLUMN_SPECS])
         for row in rows:
-            sheet.append([csv_value(csv_column_value(row, column)) for column in CSV_COLUMNS])
+            sheet.append(
+                [
+                    csv_value(csv_column_value(row, field))
+                    for field, _ in LEVEL_COLUMN_SPECS
+                ]
+            )
         style_sheet_header(sheet)
     summary_sheet = workbook.create_sheet("汇总统计")
-    summary_sheet.append(SUMMARY_COLUMNS)
+    summary_sheet.append([header for _, header in SUMMARY_COLUMN_SPECS])
     for row in summary_rows:
-        summary_sheet.append([csv_value(row.get(column)) for column in SUMMARY_COLUMNS])
+        summary_sheet.append(
+            [csv_value(row.get(field)) for field, _ in SUMMARY_COLUMN_SPECS]
+        )
     style_sheet_header(summary_sheet)
     workbook.save(workbook_path)
     return workbook_path

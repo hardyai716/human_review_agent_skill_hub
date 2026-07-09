@@ -377,7 +377,6 @@ def render_grading_card(
     elements.extend(
         [
             metrics_block(summary.get("level_counts", {})),
-            chart_block(summary.get("level_counts", {})),
         ]
     )
     elements.append(summary_title_block(len(summary_rows)))
@@ -426,10 +425,9 @@ def card_design_check(card: dict[str, Any]) -> dict[str, Any]:
             card.get("schema") == "2.0"
             and isinstance(card.get("header"), dict)
             and "column_set" in tags
-            and "chart" in tags
             and "table" in tags
             and "collapsible_panel" in tags
             and tags.count("table") == 5
-            and 10 <= len(body_elements) <= 16
+            and 9 <= len(body_elements) <= 15
         ),
     }

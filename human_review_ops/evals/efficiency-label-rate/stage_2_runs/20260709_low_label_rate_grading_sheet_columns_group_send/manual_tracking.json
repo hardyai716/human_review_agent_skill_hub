@@ -1,0 +1,295 @@
+{
+  "schema_version": "stage_2_manual_tracking.v1",
+  "scenario_key": "efficiency-label-rate",
+  "report_type": "low_efficiency_grading",
+  "tracking_mode": "local_debug_only",
+  "state_machine": {
+    "state_machine_ref": "human_review_ops/references/scenarios/efficiency-label-rate/state_machine.md",
+    "previous_state": "NOTIFICATION_DRAFTED",
+    "current_state": "MANUAL_TRACKING_RECORDED",
+    "next_state": "DEBUG_CLOSED_AFTER_MANUAL_REVIEW"
+  },
+  "source_refs": {
+    "notification_draft": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_sheet_columns_group_send/notification_draft.json",
+    "send_plan": "send_plan.json",
+    "poc_routing_plan": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_sheet_columns_group_send/poc_routing_plan.json",
+    "card_json": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_sheet_columns_group_send/publish/low_efficiency_grading.card.json",
+    "sheet_url": "https://bytedance.larkoffice.com/sheets/VHXvsTaVOh4TjHtfVzqchIffnqb"
+  },
+  "overall_status": "pending_manual_confirmation",
+  "operator_note": "开发验证阶段仅记录本地人工处理状态；姓名级 POC 映射已可用，但 open_id 确认、群推送和线上状态写入均未启用。",
+  "next_action": "确认 POC open_id、目标群和发送内容后，由人工决定是否执行群推送或继续观察。",
+  "continue_observation": true,
+  "evidence_refs": [
+    {
+      "source": "notification_draft",
+      "field": "level_counts",
+      "value": {
+        "notice": 9357,
+        "P2": 7,
+        "P1": 4,
+        "P0": 3
+      }
+    },
+    {
+      "source": "notification_draft",
+      "field": "data_link.sheet_url",
+      "value": "https://bytedance.larkoffice.com/sheets/VHXvsTaVOh4TjHtfVzqchIffnqb"
+    },
+    {
+      "source": "manual_tracking_records",
+      "field": "covered_levels",
+      "value": [
+        "notice",
+        "P2",
+        "P1",
+        "P0"
+      ]
+    }
+  ],
+  "tracking_records": [
+    {
+      "severity_level": "notice",
+      "status": "pending_manual_follow_up",
+      "reason_count": 9357,
+      "target_roles": [
+        "群内同步策略明细和数据链接"
+      ],
+      "action_required": "周知明细，纳入观察。",
+      "recipient_resolution": {
+        "mode": "mach_root_label_mapping",
+        "routing_key": "mach_root_label_name",
+        "recipients": [
+          "刘小楷",
+          "叶健",
+          "宋诗慧",
+          "张发奇",
+          "张宇轩",
+          "李中涛",
+          "杜衡",
+          "陈思乔",
+          "陈雅静"
+        ],
+        "contact_resolution_status": "name_only",
+        "real_poc_count": 9,
+        "mapped_row_count": 9357,
+        "unmapped_row_count": 0,
+        "missing_route_dimension_count": 0,
+        "fallback_recipient": null
+      },
+      "operator_note": "当前 POC 解析到姓名级，真实触达前仍需确认 open_id 和目标群。",
+      "next_action": "等待 POC 身份确认和人工发送确认。",
+      "continue_observation": true,
+      "evidence_refs": [
+        {
+          "source": "poc_routing_rule",
+          "severity_level": "notice",
+          "field": "target_roles",
+          "value": [
+            "群内同步策略明细和数据链接"
+          ]
+        },
+        {
+          "source": "poc_routing_rule",
+          "severity_level": "notice",
+          "field": "action_required",
+          "value": "周知明细，纳入观察。"
+        },
+        {
+          "source": "poc_routing_rule",
+          "severity_level": "notice",
+          "field": "reason_count",
+          "value": 9357
+        }
+      ]
+    },
+    {
+      "severity_level": "P2",
+      "status": "pending_manual_follow_up",
+      "reason_count": 7,
+      "target_roles": [
+        "治理 BP",
+        "审核 VOC POC",
+        "人审运营"
+      ],
+      "action_required": "请相关 POC 说明低打标原因和后续处理计划。",
+      "recipient_resolution": {
+        "mode": "mach_root_label_mapping",
+        "routing_key": "mach_root_label_name",
+        "recipients": [
+          "宋诗慧",
+          "张发奇",
+          "杜衡"
+        ],
+        "contact_resolution_status": "name_only",
+        "real_poc_count": 3,
+        "mapped_row_count": 7,
+        "unmapped_row_count": 0,
+        "missing_route_dimension_count": 0,
+        "fallback_recipient": null
+      },
+      "operator_note": "当前 POC 解析到姓名级，真实触达前仍需确认 open_id 和目标群。",
+      "next_action": "等待 POC 身份确认和人工发送确认。",
+      "continue_observation": true,
+      "evidence_refs": [
+        {
+          "source": "poc_routing_rule",
+          "severity_level": "P2",
+          "field": "target_roles",
+          "value": [
+            "治理 BP",
+            "审核 VOC POC",
+            "人审运营"
+          ]
+        },
+        {
+          "source": "poc_routing_rule",
+          "severity_level": "P2",
+          "field": "action_required",
+          "value": "请相关 POC 说明低打标原因和后续处理计划。"
+        },
+        {
+          "source": "poc_routing_rule",
+          "severity_level": "P2",
+          "field": "reason_count",
+          "value": 7
+        }
+      ]
+    },
+    {
+      "severity_level": "P1",
+      "status": "pending_manual_follow_up",
+      "reason_count": 4,
+      "target_roles": [
+        "治理 BP",
+        "审核 VOC POC",
+        "人审运营",
+        "治理 BP +1",
+        "VOC 负责人",
+        "人审运营负责人"
+      ],
+      "action_required": "要求负责人关注，并推动原因说明和处理计划。",
+      "recipient_resolution": {
+        "mode": "mach_root_label_mapping",
+        "routing_key": "mach_root_label_name",
+        "recipients": [
+          "宋诗慧",
+          "杜衡"
+        ],
+        "contact_resolution_status": "name_only",
+        "real_poc_count": 2,
+        "mapped_row_count": 4,
+        "unmapped_row_count": 0,
+        "missing_route_dimension_count": 0,
+        "fallback_recipient": null
+      },
+      "operator_note": "当前 POC 解析到姓名级，真实触达前仍需确认 open_id 和目标群。",
+      "next_action": "等待 POC 身份确认和人工发送确认。",
+      "continue_observation": true,
+      "evidence_refs": [
+        {
+          "source": "poc_routing_rule",
+          "severity_level": "P1",
+          "field": "target_roles",
+          "value": [
+            "治理 BP",
+            "审核 VOC POC",
+            "人审运营",
+            "治理 BP +1",
+            "VOC 负责人",
+            "人审运营负责人"
+          ]
+        },
+        {
+          "source": "poc_routing_rule",
+          "severity_level": "P1",
+          "field": "action_required",
+          "value": "要求负责人关注，并推动原因说明和处理计划。"
+        },
+        {
+          "source": "poc_routing_rule",
+          "severity_level": "P1",
+          "field": "reason_count",
+          "value": 4
+        }
+      ]
+    },
+    {
+      "severity_level": "P0",
+      "status": "pending_manual_follow_up",
+      "reason_count": 3,
+      "target_roles": [
+        "治理 BP",
+        "审核 VOC POC",
+        "人审运营",
+        "治理 BP +1",
+        "VOC 负责人",
+        "人审运营负责人",
+        "治理负责人"
+      ],
+      "action_required": "高优先级周知，要求重点关注和处理。",
+      "recipient_resolution": {
+        "mode": "mach_root_label_mapping",
+        "routing_key": "mach_root_label_name",
+        "recipients": [
+          "宋诗慧",
+          "杜衡"
+        ],
+        "contact_resolution_status": "name_only",
+        "real_poc_count": 2,
+        "mapped_row_count": 3,
+        "unmapped_row_count": 0,
+        "missing_route_dimension_count": 0,
+        "fallback_recipient": null
+      },
+      "operator_note": "当前 POC 解析到姓名级，真实触达前仍需确认 open_id 和目标群。",
+      "next_action": "等待 POC 身份确认和人工发送确认。",
+      "continue_observation": true,
+      "evidence_refs": [
+        {
+          "source": "poc_routing_rule",
+          "severity_level": "P0",
+          "field": "target_roles",
+          "value": [
+            "治理 BP",
+            "审核 VOC POC",
+            "人审运营",
+            "治理 BP +1",
+            "VOC 负责人",
+            "人审运营负责人",
+            "治理负责人"
+          ]
+        },
+        {
+          "source": "poc_routing_rule",
+          "severity_level": "P0",
+          "field": "action_required",
+          "value": "高优先级周知，要求重点关注和处理。"
+        },
+        {
+          "source": "poc_routing_rule",
+          "severity_level": "P0",
+          "field": "reason_count",
+          "value": 3
+        }
+      ]
+    }
+  ],
+  "closure_check": {
+    "can_close": false,
+    "reason": "Stage 2 uses name-level POC routing and still requires manual confirmation.",
+    "missing_before_close": [
+      "poc_open_id_confirmation",
+      "human_confirmation",
+      "manual_response_or_resolution_note"
+    ]
+  },
+  "safety": {
+    "requires_confirmation": true,
+    "group_send_blocked": true,
+    "group_send_sent": false,
+    "real_group_send_executed": false,
+    "online_write_executed": false,
+    "online_state_write_allowed": false
+  }
+}
