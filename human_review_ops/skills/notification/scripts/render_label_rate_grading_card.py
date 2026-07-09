@@ -172,21 +172,21 @@ def table_columns() -> list[dict[str, Any]]:
         {"name": "reason", "display_name": "送审原因", "data_type": "text", "width": "220px"},
         {
             "name": "avg_in",
-            "display_name": "日均进审",
+            "display_name": "日均进审量",
             "data_type": "number",
             "width": "110px",
             "format": {"precision": 0, "separator": True},
         },
         {
             "name": "avg_done",
-            "display_name": "日均完审",
+            "display_name": "日均完审量",
             "data_type": "number",
             "width": "110px",
             "format": {"precision": 0, "separator": True},
         },
         {
             "name": "avg_labeled",
-            "display_name": "日均打标",
+            "display_name": "日均打标量",
             "data_type": "number",
             "width": "110px",
             "format": {"precision": 0, "separator": True},
@@ -194,9 +194,60 @@ def table_columns() -> list[dict[str, Any]]:
         {
             "name": "label_rate",
             "display_name": "打标率",
-            "data_type": "number",
+            "data_type": "text",
             "width": "90px",
-            "format": {"precision": 4},
+        },
+        {
+            "name": "hit_reason",
+            "display_name": "命中原因",
+            "data_type": "text",
+            "width": "260px",
+        },
+    ]
+
+
+def summary_table_columns() -> list[dict[str, Any]]:
+    return [
+        {
+            "name": "mach_root_label_name",
+            "display_name": "机审一级标签",
+            "data_type": "text",
+            "width": "150px",
+        },
+        {"name": "POC", "display_name": "POC", "data_type": "text", "width": "100px"},
+        {
+            "name": "low_efficiency_strategy_count",
+            "display_name": "低效策略数",
+            "data_type": "number",
+            "width": "110px",
+            "format": {"precision": 0, "separator": True},
+        },
+        {
+            "name": "avg_review_in_cnt",
+            "display_name": "日均进审量",
+            "data_type": "number",
+            "width": "120px",
+            "format": {"precision": 0, "separator": True},
+        },
+        {
+            "name": "avg_review_done_cnt",
+            "display_name": "日均完审量",
+            "data_type": "number",
+            "width": "120px",
+            "format": {"precision": 0, "separator": True},
+        },
+        {
+            "name": "avg_label_cnt",
+            "display_name": "日均打标量",
+            "data_type": "number",
+            "width": "120px",
+            "format": {"precision": 0, "separator": True},
+        },
+        {
+            "name": "label_rate",
+            "display_name": "打标率",
+            "data_type": "text",
+            "width": "90px",
         },
     ]
 
@@ -215,6 +266,30 @@ def table_block(top_rows: list[dict[str, Any]]) -> dict[str, Any]:
         },
         "columns": table_columns(),
         "rows": top_rows,
+    }
+
+
+def summary_table_block(summary_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    return {
+        "tag": "table",
+        "page_size": min(20, max(1, len(summary_rows))),
+        "row_height": "auto",
+        "freeze_first_column": True,
+        "header_style": {
+            "background_style": "grey",
+            "bold": True,
+            "text_size": "notation",
+            "lines": 1,
+        },
+        "columns": summary_table_columns(),
+        "rows": summary_rows,
+    }
+
+
+def summary_title_block(row_count: int) -> dict[str, Any]:
+    return {
+        "tag": "markdown",
+        "content": f"### 汇总统计（机审一级标签 × POC，共 {row_count} 行）",
     }
 
 
@@ -287,6 +362,7 @@ def methodology_panel(summary: dict[str, Any]) -> dict[str, Any]:
 def render_grading_card(
     *,
     summary: dict[str, Any],
+    summary_rows: list[dict[str, Any]],
     level_top_rows: dict[str, list[dict[str, Any]]],
     sheet_url: str | None,
     title: str | None = None,
@@ -304,13 +380,15 @@ def render_grading_card(
             chart_block(summary.get("level_counts", {})),
         ]
     )
+    elements.append(summary_title_block(len(summary_rows)))
+    elements.append(summary_table_block(summary_rows))
     elements.extend(level_table_blocks(level_top_rows))
     button = sheet_button(sheet_url)
     if button:
         elements.append(button)
     elements.append(methodology_panel(summary))
 
-    flattened_rows = [
+    flattened_rows = list(summary_rows) + [
         row
         for level in LEVELS
         for row in level_top_rows.get(level, [])
@@ -323,6 +401,7 @@ def render_grading_card(
             "report_type": "low_efficiency_grading",
             "scenario_key": "efficiency-label-rate",
             "top_rows_count": len(flattened_rows),
+            "summary_rows_count": len(summary_rows),
             "level_top_rows_count": {
                 level: len(level_top_rows.get(level, [])) for level in LEVELS
             },
@@ -350,7 +429,7 @@ def card_design_check(card: dict[str, Any]) -> dict[str, Any]:
             and "chart" in tags
             and "table" in tags
             and "collapsible_panel" in tags
-            and tags.count("table") == 4
-            and 8 <= len(body_elements) <= 14
+            and tags.count("table") == 5
+            and 10 <= len(body_elements) <= 16
         ),
     }

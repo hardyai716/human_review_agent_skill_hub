@@ -1,0 +1,28 @@
+{
+  "report_type": "low_efficiency_grading",
+  "scenario_key": "efficiency-label-rate",
+  "source_stage_1_result": "evals/efficiency-label-rate/stage_1_runs/20260709_real_readonly_label_rate_grading_card_format_results.jsonl",
+  "output_dir": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_card_format_group_send",
+  "summary_json": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_card_format_group_send/summary.json",
+  "workbook": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_card_format_group_send/low_label_rate_grading_2026-07-02_2026-07-08.xlsx",
+  "summary_by_label_poc_csv": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_card_format_group_send/汇总统计.csv",
+  "sheet_url": "https://bytedance.larkoffice.com/sheets/QcAAswcl9hYVeNtz2U5cvWqDnCc",
+  "card_json": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_card_format_group_send/publish/low_efficiency_grading.card.json",
+  "card_json_with_meta": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_card_format_group_send/publish/low_efficiency_grading.card.with_meta.json",
+  "card_hash_check": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_card_format_group_send/publish/card_hash_check.json",
+  "sent": true,
+  "send_identity": "bot",
+  "target_type": "chat",
+  "target_user": null,
+  "target_user_open_id_prefix": null,
+  "target_chat_id": "oc_9c691aa76c22a16207c6f443eac25816",
+  "message_id": "om_x100b6bc276ef8884c3912488b04a4d8",
+  "send_result": {
+    "ok": true,
+    "identity": "bot",
+    "message_id": "om_x100b6bc276ef8884c3912488b04a4d8",
+    "create_time": "2026-07-09 17:01:54"
+  },
+  "notification_draft": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_card_format_group_send/notification_draft.json",
+  "send_plan": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_card_format_group_send/send_plan.json"
+}

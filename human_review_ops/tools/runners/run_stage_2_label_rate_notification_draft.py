@@ -134,9 +134,11 @@ def main() -> None:
     )
     summary["label_poc_summary_count"] = len(summary_rows)
     level_top_rows = build_level_top_rows(execution["level_results"], args.top_n)
-    hash_rows = flatten_level_top_rows(level_top_rows)
+    summary_card_rows = build_card_summary_rows(summary_rows)
+    hash_rows = summary_card_rows + flatten_level_top_rows(level_top_rows)
     card_with_meta = render_grading_card(
         summary=summary,
+        summary_rows=summary_card_rows,
         level_top_rows=level_top_rows,
         sheet_url=sheet_url,
         title=args.title,
@@ -176,7 +178,9 @@ def main() -> None:
             user_id=args.send_user_id,
             chat_id=None,
             identity=args.identity,
-            idempotency_key=safe_idempotency_key(f"{REPORT_TYPE}-{OUTPUT_DATE}-{args.send_user_id}"),
+            idempotency_key=safe_idempotency_key(
+                f"{REPORT_TYPE}-{OUTPUT_DATE}-{output_dir.name}-{args.send_user_id}"
+            ),
         )
     elif args.send_chat_id:
         sent_payload = send_card(
@@ -184,7 +188,9 @@ def main() -> None:
             user_id=None,
             chat_id=args.send_chat_id,
             identity=args.identity,
-            idempotency_key=safe_idempotency_key(f"{REPORT_TYPE}-{OUTPUT_DATE}-{args.send_chat_id}"),
+            idempotency_key=safe_idempotency_key(
+                f"{REPORT_TYPE}-{OUTPUT_DATE}-{output_dir.name}-{args.send_chat_id}"
+            ),
         )
 
     publish_summary = {
@@ -650,6 +656,25 @@ def flatten_level_top_rows(
     return flattened
 
 
+def build_card_summary_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [
+        {
+            "mach_root_label_name": row.get("mach_root_label_name", ""),
+            "POC": row.get("POC", ""),
+            "low_efficiency_strategy_count": int(
+                row.get("low_efficiency_strategy_count", 0) or 0
+            ),
+            "avg_review_in_cnt": int(round(float(row.get("avg_review_in_cnt", 0) or 0))),
+            "avg_review_done_cnt": int(
+                round(float(row.get("avg_review_done_cnt", 0) or 0))
+            ),
+            "avg_label_cnt": int(round(float(row.get("avg_label_cnt", 0) or 0))),
+            "label_rate": pct_value(row.get("label_rate")),
+        }
+        for row in rows
+    ]
+
+
 def build_top_rows(rows: list[dict[str, Any]], top_n: int) -> list[dict[str, Any]]:
     top_rows: list[dict[str, Any]] = []
     for index, row in enumerate(rows[:top_n], 1):
@@ -666,10 +691,18 @@ def build_top_rows(rows: list[dict[str, Any]], top_n: int) -> list[dict[str, Any
                 "avg_in": round(float(row["avg_review_in_cnt"])),
                 "avg_done": round(float(row["avg_review_done_cnt"])),
                 "avg_labeled": round(float(row["avg_label_cnt"])),
-                "label_rate": float(row["label_rate"]),
+                "label_rate": pct_value(row.get("label_rate")),
+                "hit_reason": csv_value(row.get("hit_conditions")),
             }
         )
     return top_rows
+
+
+def pct_value(value: Any) -> str:
+    try:
+        return f"{float(value) * 100:.2f}%"
+    except (TypeError, ValueError):
+        return str(value)
 
 
 def import_workbook(workbook_path: Path, name: str) -> str:

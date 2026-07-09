@@ -736,7 +736,8 @@ def render_card(
     }
     return render_grading_card(
         summary=grading_summary,
-        top_rows=top_rows,
+        summary_rows=[],
+        level_top_rows={"P0": [], "P1": [], "P2": [], "notice": top_rows},
         sheet_url=sheet_url,
         title=title,
     )

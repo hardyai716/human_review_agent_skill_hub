@@ -291,6 +291,24 @@ def assert_card(
     if hash_check.get("internal_meta_removed") is not True:
         raise AssertionError("hash_check must confirm _meta removal.")
 
+    summary_table_rows = extract_summary_table_rows(card_with_meta)
+    if not summary_table_rows:
+        raise AssertionError("Card summary table rows not found.")
+    for row in summary_table_rows:
+        for field in (
+            "mach_root_label_name",
+            "POC",
+            "low_efficiency_strategy_count",
+            "avg_review_in_cnt",
+            "avg_review_done_cnt",
+            "avg_label_cnt",
+            "label_rate",
+        ):
+            if field not in row:
+                raise AssertionError(f"Card summary row missing field: {field}")
+        if not str(row.get("label_rate", "")).endswith("%"):
+            raise AssertionError("Card summary label_rate must be rendered as percent.")
+
     table_rows_by_level = extract_table_rows_by_level(card_with_meta)
     if set(table_rows_by_level) != {"P0", "P1", "P2", "notice"}:
         raise AssertionError("Card must contain P0/P1/P2/notice table sections.")
@@ -306,15 +324,35 @@ def assert_card(
             "strategy_id",
             "strategy_name",
             "reason",
+            "hit_reason",
         ):
             if field not in row:
                 raise AssertionError(f"Card table row missing field: {field}")
-    verify_card_hash(card_with_meta, top_rows)
+        if not str(row.get("label_rate", "")).endswith("%"):
+            raise AssertionError("Card table label_rate must be rendered as percent.")
+    verify_card_hash(card_with_meta, summary_table_rows + top_rows)
     design_check = card_design_check(card_with_meta)
     if design_check != hash_check.get("design_check"):
         raise AssertionError("design_check mismatch.")
     if design_check.get("passes_p0_p3_basic_gate") is not True:
         raise AssertionError("card design gate failed.")
+
+
+def extract_summary_table_rows(card: dict[str, Any]) -> list[dict[str, Any]]:
+    found_summary_title = False
+    for element in card.get("body", {}).get("elements", []):
+        if not isinstance(element, dict):
+            continue
+        if element.get("tag") == "markdown" and "### 汇总统计" in str(
+            element.get("content", "")
+        ):
+            found_summary_title = True
+            continue
+        if found_summary_title and element.get("tag") == "table":
+            rows = element.get("rows")
+            if isinstance(rows, list):
+                return rows
+    return []
 
 
 def extract_table_rows_by_level(card: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
