@@ -1,0 +1,53 @@
+{
+  "schema_version": "agentbuddy_republish_summary.v1",
+  "published_at": "2026-07-09T19:38:11+08:00",
+  "group": "skills.byted.org/lizhongtao/hunman_review_ops",
+  "access": "restricted",
+  "reason": "Publish productized label-rate Skills after script downshift, standalone smoke gate, and Stage 2 default validator target refresh.",
+  "git_commit": "f0bf5f0",
+  "skills": [
+    {
+      "skill_name": "perceiving-ops-events",
+      "source": "./human_review_ops/skills/perception",
+      "command": "NPM_CONFIG_REGISTRY=http://bnpm.byted.org npx -y agentbuddy@latest skill publish ./human_review_ops/skills/perception --group skills.byted.org/lizhongtao/hunman_review_ops --access restricted --region cn -y",
+      "status": "published",
+      "id": "skills:skills.byted.org/lizhongtao/hunman_review_ops/perceiving-ops-events:1.0.2",
+      "verification_command": "NPM_CONFIG_REGISTRY=http://bnpm.byted.org npx -y agentbuddy@latest skill find perceiving-ops-events",
+      "verification_result": "skills.byted.org/lizhongtao/hunman_review_ops@perceiving-ops-events"
+    },
+    {
+      "skill_name": "analyzing-ops-metrics",
+      "source": "./human_review_ops/skills/analysis",
+      "command": "NPM_CONFIG_REGISTRY=http://bnpm.byted.org npx -y agentbuddy@latest skill publish ./human_review_ops/skills/analysis --group skills.byted.org/lizhongtao/hunman_review_ops --access restricted --region cn -y",
+      "status": "published",
+      "id": "skills:skills.byted.org/lizhongtao/hunman_review_ops/analyzing-ops-metrics:1.0.3",
+      "verification_command": "NPM_CONFIG_REGISTRY=http://bnpm.byted.org npx -y agentbuddy@latest skill find analyzing-ops-metrics",
+      "verification_result": "skills.byted.org/lizhongtao/hunman_review_ops@analyzing-ops-metrics"
+    },
+    {
+      "skill_name": "routing-ops-notifications",
+      "source": "./human_review_ops/skills/notification",
+      "command": "NPM_CONFIG_REGISTRY=http://bnpm.byted.org npx -y agentbuddy@latest skill publish ./human_review_ops/skills/notification --group skills.byted.org/lizhongtao/hunman_review_ops --access restricted --region cn -y",
+      "status": "published",
+      "id": "skills:skills.byted.org/lizhongtao/hunman_review_ops/routing-ops-notifications:1.0.7",
+      "verification_command": "NPM_CONFIG_REGISTRY=http://bnpm.byted.org npx -y agentbuddy@latest skill find routing-ops-notifications",
+      "verification_result": "skills.byted.org/lizhongtao/hunman_review_ops@routing-ops-notifications"
+    },
+    {
+      "skill_name": "tracking-ops-resolution",
+      "source": "./human_review_ops/skills/resolution",
+      "command": "NPM_CONFIG_REGISTRY=http://bnpm.byted.org npx -y agentbuddy@latest skill publish ./human_review_ops/skills/resolution --group skills.byted.org/lizhongtao/hunman_review_ops --access restricted --region cn -y",
+      "status": "published",
+      "id": "skills:skills.byted.org/lizhongtao/hunman_review_ops/tracking-ops-resolution:1.0.4",
+      "verification_command": "NPM_CONFIG_REGISTRY=http://bnpm.byted.org npx -y agentbuddy@latest skill find tracking-ops-resolution",
+      "verification_result": "skills.byted.org/lizhongtao/hunman_review_ops@tracking-ops-resolution"
+    }
+  ],
+  "local_validation": {
+    "validate_skill_productization_strict": "passed",
+    "validate_skill_standalone_smoke": "passed",
+    "validate_agentbuddy_publish": "passed",
+    "stage_2_default_validators": "passed",
+    "git_diff_check": "passed"
+  }
+}
