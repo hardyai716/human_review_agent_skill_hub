@@ -824,7 +824,7 @@ human_review_ops/evals/efficiency-label-rate/eval_samples.jsonl
 | 阶段 2 | P1 | 接入打标率场景 POC 姓名级映射。 | 按 `mach_root_label_name` 映射 POC 姓名，映射来源为飞书表格 `HKdm9w`；自定义多维低打标率查询默认生成 `poc_routing_plan.json`，10293 行历史明细均命中 POC，真实触达前仍需 open_id 解析和人工确认。 | 已完成 |
 | 阶段 2 | P1 | 完成低打标率分级四维粒度升级。 | notice/P2/P1/P0 分级粒度升级为 `机审一级标签 × strategy_id × strategy_name × reason`，输出日均进审、日均完审、日均打标、打标率和 `POC` 列；真实查询结果 `notice=9357, P2=7, P1=4, P0=3`，未截断。 | 已完成 |
 | 阶段 2 | P1 | 完成分级结果姓名级 POC 路由与通知草稿联动。 | 新产物目录 `20260709_low_label_rate_grading_four_dim_notification_draft`；`poc_routing_plan.json` 覆盖 9357/9357 行，未映射 0；飞书表格链接 `https://bytedance.larkoffice.com/sheets/C8obsw600hiWbJtIpGicwVpYnNg`。 | 已完成 |
-| 阶段 2 | P1 | 完成 POC open_id 可获取性验证。 | 从飞书表格 `HKdm9w` 的富文本 @ 读取 mention token；15 行均可读取，14 行与姓名映射一致，`党和国家形象负面` 存在“齐思蕾 vs 李中涛”冲突；仅记录脱敏前缀，不写完整 open_id。 | 已完成 |
+| 阶段 2 | P1 | 完成 POC open_id 可获取性验证。 | 从飞书表格 `HKdm9w` 的富文本 @ 读取 mention token；15 行均可读取；`党和国家形象负面` 已按用户确认设置为 `李中涛`；仅记录脱敏前缀，不写完整 open_id。 | 已完成 |
 | 阶段 2 | P1 | 完成群内 bot @ 用户验证。 | 在私有验证群 `人审阶段2群发验证-20260709` 中使用 bot 身份发送文本 @ 用户本人，返回 `ok=true`，记录 `group_at_mention_validation.json`。 | 已完成 |
 | 阶段 2 | P1 | 完成分等级通知展示与汇总统计表。 | 飞书工作簿在 `P0/P1/P2/Notice/综合` 五张结果表基础上新增 `汇总统计`，按 `机审一级标签 × POC` 聚合低效策略数、日均进审、日均完审、日均打标和打标率；Card 默认按 P0、P1、P2、Notice 四个等级分表展示 Top10。 | 已完成 |
 | 阶段 2 | P1 | 完成测试群通知与 POC @ 验证。 | 重新跑打标率全流程并发送到私有测试群；Card 消息 `om_x100b6bc1944bcca8b4c70a9909b9931`，POC @ 消息 `om_x100b6bc1928550bcb3f9ac03b8ceefe`，P2/P1/P0 涉及 POC `宋诗慧`、`杜衡`、`张发奇` 均解析并 @ 成功；未拉人进群。 | 已完成 |
@@ -835,7 +835,7 @@ human_review_ops/evals/efficiency-label-rate/eval_samples.jsonl
 
 | 事项 | 当前结论 | 后续解锁条件 |
 | --- | --- | --- |
-| POC 映射 | 已接入 `mach_root_label_name -> POC 姓名` 映射；分级结果可生成姓名级 POC 列。表格富文本 @ 可读取 mention token，但 `党和国家形象负面` 存在“齐思蕾 vs 李中涛”冲突。 | 确认冲突项、定义 open_id 安全存储策略，并决定是否申请 `contact:user:search` 做姓名补全。 |
+| POC 映射 | 已接入 `mach_root_label_name -> POC 姓名` 映射；分级结果可生成姓名级 POC 列。表格富文本 @ 可读取 mention token；`党和国家形象负面` 已按用户确认设置为 `李中涛`。 | 定义 open_id 安全存储策略，并决定是否申请 `contact:user:search` 做姓名补全。 |
 | 分析粒度 | notice/P2/P1/P0 已升级为 `机审一级标签 × strategy_id × strategy_name × reason` 四维粒度，指标包含日均进审、日均完审、日均打标和打标率。 | 后续如需更细拆解，再按场景新增维度，不回退到单 reason 粒度。 |
 | 触达身份 | 开发验证阶段仍默认本人预览；姓名级 POC 已可审计，完整 open_id 暂不落 Git。 | 真实 POC 身份字段、open_id 解析方式和权限边界确认。 |
 | 群推送 | 已生成 `send_plan.json` 门禁，默认阻断正式群发；用户明确授权下已完成私有验证群 Card 发送、bot 群内 @ 用户验证，以及 P2/P1/P0 对应 POC @ 验证；未拉人进群。 | 真实 POC 群推送仍需人工确认目标群 / POC 收件人、发送身份和卡片内容。 |
@@ -847,7 +847,7 @@ human_review_ops/evals/efficiency-label-rate/eval_samples.jsonl
 
 | 优先级 | 任务 | 要做什么 | 预期产物 | 验收标准 | 状态 |
 | --- | --- | --- | --- | --- | --- |
-| P1 | 接入 POC 联系人身份解析 | 基于当前 `mach_root_label_name -> POC 姓名` 映射，确认 `党和国家形象负面` 冲突项，决定 open_id 安全存储方式，并保留姓名级 fallback。 | POC open_id 映射配置、联系人解析 runner、validator、脱敏样例。 | 能输出可触达 POC 或明确 fallback 原因；不泄露敏感身份；映射缺失可解释。 | 待开始 |
+| P1 | 接入 POC 联系人身份解析 | 基于当前 `mach_root_label_name -> POC 姓名` 映射，决定 open_id 安全存储方式，并保留姓名级 fallback。 | POC open_id 映射配置、联系人解析 runner、validator、脱敏样例。 | 能输出可触达 POC 或明确 fallback 原因；不泄露敏感身份；映射缺失可解释。 | 待开始 |
 | P1 | 固化触达对象解析 | 将角色范围、POC 身份、open_id 解析和置信度写入路由计划。 | 增强版 `poc_routing_plan.json`。 | notice/P2/P1/P0 均有可审计收件人来源、置信度、升级关系和人工确认状态。 | 待开始 |
 | P1 | 建立群推送确认链路 | 在 `send_plan.json` 基础上增加人工确认状态和真实发送前检查。 | 确认记录、发送前 validator、群推送 dry-run 结果。 | 未确认不发送；确认后仅向指定群 / POC 发送；发送结果可追踪。 | 待开始 |
 | P2 | 设计回收闭环 | 设计联系人说明、处理计划、继续观察和关闭条件。 | 状态表 schema、卡片交互方案或本地回收样例。 | 可记录回复、处理结论、下一次观察时间；支持不写线上表的回退模式。 | 待开始 |
