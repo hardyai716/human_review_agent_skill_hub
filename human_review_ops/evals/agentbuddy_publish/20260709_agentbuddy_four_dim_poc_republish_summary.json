@@ -1,0 +1,40 @@
+{
+  "schema_version": "agentbuddy_republish_summary.v1",
+  "published_at": "2026-07-09T16:20:00+08:00",
+  "group": "skills.byted.org/lizhongtao/hunman_review_ops",
+  "access": "restricted",
+  "reason": "Stage 2 four-dimension label-rate grading, name-level POC routing, Card table, and manual tracking updates.",
+  "registry_note": {
+    "failed_attempt": "npx -y agentbuddy@latest used public registry and returned npm E404.",
+    "working_entrypoint": "NPM_CONFIG_REGISTRY=http://bnpm.byted.org npx -y agentbuddy@latest"
+  },
+  "skills": [
+    {
+      "skill_name": "routing-ops-notifications",
+      "source": "./human_review_ops/skills/notification",
+      "command": "NPM_CONFIG_REGISTRY=http://bnpm.byted.org npx -y agentbuddy@latest skill publish ./human_review_ops/skills/notification --group skills.byted.org/lizhongtao/hunman_review_ops --access restricted --region cn -y",
+      "status": "published",
+      "id": "skills:skills.byted.org/lizhongtao/hunman_review_ops/routing-ops-notifications:1.0.2",
+      "verification_command": "NPM_CONFIG_REGISTRY=http://bnpm.byted.org npx -y agentbuddy@latest skill find routing-ops-notifications",
+      "verification_result": "skills.byted.org/lizhongtao/hunman_review_ops@routing-ops-notifications"
+    },
+    {
+      "skill_name": "tracking-ops-resolution",
+      "source": "./human_review_ops/skills/resolution",
+      "command": "NPM_CONFIG_REGISTRY=http://bnpm.byted.org npx -y agentbuddy@latest skill publish ./human_review_ops/skills/resolution --group skills.byted.org/lizhongtao/hunman_review_ops --access restricted --region cn -y",
+      "status": "published",
+      "id": "skills:skills.byted.org/lizhongtao/hunman_review_ops/tracking-ops-resolution:1.0.2",
+      "verification_command": "NPM_CONFIG_REGISTRY=http://bnpm.byted.org npx -y agentbuddy@latest skill find tracking-ops",
+      "verification_result": "skills.byted.org/lizhongtao/hunman_review_ops@tracking-ops-resolution"
+    }
+  ],
+  "validation": {
+    "validate_agentbuddy_publish": "passed",
+    "validate_scenario_package_efficiency_label_rate": "passed",
+    "stage_1_four_dim_grading": "passed",
+    "stage_2_poc_routing": "passed",
+    "stage_2_notification_draft": "passed",
+    "stage_2_manual_tracking": "passed",
+    "stage_2_partial_dispatch": "passed"
+  }
+}
