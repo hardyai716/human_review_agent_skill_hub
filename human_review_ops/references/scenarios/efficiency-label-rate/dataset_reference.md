@@ -52,6 +52,8 @@
 | 概念 | 逻辑字段 | 默认 Name | 说明 |
 | --- | --- | --- | --- |
 | 送审 reason / 策略 | `reason` | `reason` | 打标率分析主实体。 |
+| 策略 ID | `strategy_id` | `strategy_id` | 规则 ID；2026-07-09 通过 `bytedcli -j aeolus dataset-fields -r cn 3888816` 确认。 |
+| 策略名称 | `strategy_name` | `strategy_name` | 策略名称；2026-07-09 通过 `bytedcli -j aeolus dataset-fields -r cn 3888816` 确认。 |
 | 日期分区 | `date` | `p_date` | 用于时间窗口和分区就绪检查。 |
 | 项目标题 | `project_title` | `project_title` | 用于排除测试、质检、离线等项目。 |
 | 审核场景 | `scene` | `scene` | 默认保留社区审核三类场景。 |
@@ -71,6 +73,25 @@
 4. 通过确认后才能加入 QueryPlan 的 `dimensions`。
 5. 无法确认时输出澄清问题或人工确认请求，不得猜字段。
 
+## 字段发现回填机制
+
+当一次查询使用了原数据集说明中未登记、但已经通过字段发现和真实只读查询验证的字段，必须在本文件和 Skill 快照中回填，避免后续重复探测或误判为未知字段。
+
+回填条件：
+
+1. 字段必须来自受控来源，例如 `bytedcli -j aeolus dataset-fields -r cn 3888816` 或已保存的治理数据集字段说明。
+2. 字段必须在小样本查询或真实只读查询中成功使用。
+3. 回填内容至少包含：逻辑字段、默认 Name、业务含义、字段来源命令、确认日期。
+4. 若字段用于 runner / validator，必须同步更新对应 `DIMENSION_SPECS`、validator 断言和 eval 产物。
+5. 若字段属于场景常用维度，必须同步更新根场景包与 Skill 内 `*.dataset_reference.md` 快照。
+
+本轮已回填字段：
+
+| 逻辑字段 | 默认 Name | Aeolus 字段 ID | 字段说明 | expr | dataType | 确认方式 |
+| --- | --- | --- | --- | --- | --- | --- |
+| `strategy_id` | `strategy_id` | `1700075931415` | 规则ID | `` `strategy_id` `` | `string` | `dataset-fields` + `2026-06-29~2026-07-05` 多维低打标率查询验证 |
+| `strategy_name` | `strategy_name` | `1700075931446` | 策略名称 | `` `strategy_name` `` | `string` | `dataset-fields` + `2026-06-29~2026-07-05` 多维低打标率查询验证 |
+
 ## SQL 写法约束
 
 - ClickHouse 语义字段使用反引号包方括号：`` `[Name]` ``。
@@ -84,7 +105,7 @@
 ## 查询模板参数化
 
 - `reason` 是默认维度，不是固定唯一维度；Agent 必须从用户问题中解析 `dimensions`。
-- 已确认维度可直接进入 SQL：`reason`、`p_date`、`scene`、`project_title`、`mach_root_label_name`。
+- 已确认维度可直接进入 SQL：`reason`、`p_date`、`scene`、`project_title`、`mach_root_label_name`、`strategy_id`、`strategy_name`。
 - 多维度问题按 `dimensions` 生成 `SELECT` 和 `GROUP BY`，例如 `reason, scene`。
 - “有哪些 / 排名 / 明细”类问题使用 `query_mode=ranking`，返回维度明细、完审量、打标量和打标率。
 - “有多少 / 个数 / 数量”类问题使用 `query_mode=group_count`，先用子查询或 CTE 生成低打标率维度分组，再在外层 `count()` 统计分组数。

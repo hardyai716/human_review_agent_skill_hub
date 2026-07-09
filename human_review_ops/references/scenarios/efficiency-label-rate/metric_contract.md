@@ -90,6 +90,8 @@
 - `reason`：送审原因 / 送审策略。
 - `p_date`：日期分区。
 - `mach_root_label_name`：机审一级标签。
+- `strategy_id`：策略 / 规则 ID，2026-07-09 经 `dataset-fields` 与真实只读查询确认。
+- `strategy_name`：策略名称，2026-07-09 经 `dataset-fields` 与真实只读查询确认。
 - `scene`：审核场景。
 - `project_title`：项目标题。
 - `time_window`：时间窗口。
