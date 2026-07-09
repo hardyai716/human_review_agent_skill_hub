@@ -5,7 +5,7 @@
 - `metric_id`：`label_rate`
 - 中文名：打标率
 - 模块：效率模块
-- 场景：策略 / reason 在不同维度下的打标率查询、对比、趋势和分级分析
+- 场景：送审原因 / reason 在不同维度下的打标率查询、对比、趋势和分级分析
 - 状态：active
 
 ## 相关指标
@@ -31,59 +31,48 @@
 
 ## 默认样本池
 
-默认样本池圈定“社区人工审核”有效样本：
+默认样本池圈定“社区人工审核”有效样本，所有打标率 SQL 必须直接复用以下过滤片段：
 
-### A. `project_title` 黑名单
+```sql
+AND `[project_title]` NOT LIKE '%虚假%'
+AND `[project_title]` NOT LIKE '%标注%'
+AND `[project_title]` NOT LIKE '%虚假不实%'
+AND `[project_title]` NOT LIKE '%封面%'
+AND `[project_title]` NOT LIKE '%自动处置%'
+AND `[project_title]` NOT LIKE '%演绎%'
+AND `[project_title]` NOT LIKE '%模型%'
+AND `[project_title]` NOT LIKE '%run%'
+AND `[project_title]` NOT LIKE '%质检%'
+AND `[project_title]` NOT LIKE '%QA%'
+AND `[project_title]` NOT LIKE '%测试%'
+AND `[project_title]` NOT LIKE '%大模型%'
+AND `[project_title]` NOT LIKE '%离线%'
+AND `[scene]` IN (
+  'community_audit_safe',
+  'community_audit_style',
+  'community_audit_moderate'
+)
+AND `[reason]` NOT IN ('recall_skip_L6', 'fatal_output')
+AND (
+  `[机审一级标签]` IS NULL
+  OR `[机审一级标签]` IN (
+    '不良行为或争议价值观',
+    '侵犯未成年权益',
+    '偏激社会情绪和涉外言论',
+    '党和国家形象负面',
+    '危险行为',
+    '国家安全',
+    '引人不适',
+    '指令舆情相关',
+    '短期策略迁移',
+    '色情性化',
+    '违法违规',
+    '领导人'
+  )
+)
+```
 
-以下项目标题关键词必须排除，逻辑为 `project_title NOT LIKE '%关键词%'`：
-
-- `虚假`
-- `标注`
-- `虚假不实`
-- `封面`
-- `自动处置`
-- `演绎`
-- `模型`
-- `run`
-- `质检`
-- `QA`
-- `测试`
-- `大模型`
-- `离线`
-
-### B. `scene` 白名单
-
-仅保留以下社区审核场景，逻辑为 `scene IN (...)`：
-
-- `community_audit_safe`
-- `community_audit_style`
-- `community_audit_moderate`
-
-### C. `reason` 排除项
-
-以下 reason 必须排除，逻辑为 `reason NOT IN (...)`：
-
-- `recall_skip_L6`
-- `fatal_output`
-
-### D. `mach_root_label_name` 空值保留 + 白名单
-
-机审一级标签必须显式保留空值，并只允许以下白名单，逻辑为 `mach_root_label_name IS NULL OR mach_root_label_name IN (...)`：
-
-- `不良行为或争议价值观`
-- `侵犯未成年权益`
-- `偏激社会情绪和涉外言论`
-- `党和国家形象负面`
-- `危险行为`
-- `国家安全`
-- `引人不适`
-- `指令舆情相关`
-- `短期策略迁移`
-- `色情性化`
-- `违法违规`
-- `领导人`
-
-默认情况下，打标率查询、排序、低打标率分级和维度拆解都必须使用以上 A/B/C/D 基础过滤。若用户明确要求覆盖样本池，必须在 QueryPlan 的 `filters` 和 source_footer 中标明覆盖原因，并要求人工确认。
+默认情况下，打标率查询、排序、低打标率分级和维度拆解都必须使用以上默认样本池 SQL 片段。若用户明确要求覆盖样本池，必须在 QueryPlan 的 `filters` 和 source_footer 中标明覆盖原因，并要求人工确认。
 
 ## 支持维度
 
