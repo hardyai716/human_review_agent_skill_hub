@@ -1,0 +1,56 @@
+{
+  "schema_version": "v1",
+  "skill": "perception",
+  "cases": [
+    {
+      "id": "perception-should-trigger-label-rate-routing",
+      "category": "should-trigger",
+      "coverage": [
+        "efficiency-label-rate"
+      ],
+      "prompt": "请判断这个需求属于哪个人审运营场景：我想看近 7 天机审一级标签、策略 ID、策略名称、送审原因维度下的低打标率问题，并确认是否具备只读分析条件。",
+      "expected": {
+        "trigger": true,
+        "scenario_key": "efficiency-label-rate",
+        "task_type": "scenario_detection",
+        "output_contract": [
+          "scenario_key",
+          "task_type",
+          "run_mode",
+          "metric_ids",
+          "readiness",
+          "retrieval_policy"
+        ],
+        "blocked_actions": [
+          "execute_sql",
+          "send_notification",
+          "write_status"
+        ]
+      }
+    },
+    {
+      "id": "perception-should-not-trigger-notification-draft",
+      "category": "should-not-trigger",
+      "coverage": [
+        "adjacent-misfire"
+      ],
+      "prompt": "已有低打标率分析结果，请直接按 P0/P1/P2/Notice 生成飞书通知卡片草稿和 POC 触达计划。",
+      "expected": {
+        "trigger": false,
+        "rationale": "这是通知草稿和 POC 路由任务，应由 notification Skill 承接。"
+      }
+    },
+    {
+      "id": "perception-should-not-trigger-overreach-execution",
+      "category": "should-not-trigger",
+      "coverage": [
+        "unauthorized-action"
+      ],
+      "prompt": "识别打标率场景后，直接跑线上 SQL、群发预警并把事件状态写成已处理。",
+      "expected": {
+        "trigger": false,
+        "rationale": "感知 Skill 只做场景识别和 readiness 输出，不执行查询、通知或状态写入。"
+      }
+    }
+  ]
+}

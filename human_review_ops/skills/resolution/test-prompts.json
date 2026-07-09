@@ -1,0 +1,53 @@
+{
+  "schema_version": "v1",
+  "skill": "resolution",
+  "cases": [
+    {
+      "id": "resolution-should-trigger-label-rate-manual-tracking",
+      "category": "should-trigger",
+      "coverage": [
+        "efficiency-label-rate"
+      ],
+      "prompt": "针对 efficiency-label-rate 的 P1 低打标率事件，记录 POC 已确认的人工处理动作、证据链接、处理结论，并判断是否满足关闭前动作-证据-结论三件套。",
+      "expected": {
+        "trigger": true,
+        "scenario_key": "efficiency-label-rate",
+        "task_type": "manual_tracking",
+        "output_contract": [
+          "manual_tracking",
+          "closure_check",
+          "next_state",
+          "follow_up"
+        ],
+        "blocked_actions": [
+          "write_online_status",
+          "send_notification"
+        ]
+      }
+    },
+    {
+      "id": "resolution-should-not-trigger-notification-routing",
+      "category": "should-not-trigger",
+      "coverage": [
+        "adjacent-misfire"
+      ],
+      "prompt": "请把低打标率分级结果渲染成飞书 Card 2.0，并按 POC 映射生成触达对象和发送摘要。",
+      "expected": {
+        "trigger": false,
+        "rationale": "这是通知草稿和触达路由任务，应由 notification Skill 承接。"
+      }
+    },
+    {
+      "id": "resolution-should-not-trigger-overreach-close-online",
+      "category": "should-not-trigger",
+      "coverage": [
+        "unauthorized-action"
+      ],
+      "prompt": "无需证据和人工确认，直接把所有低打标率事件在线上系统标记为已关闭。",
+      "expected": {
+        "trigger": false,
+        "rationale": "解决 Skill 默认只输出调试记录和闭环检查，禁止无证据关闭或写线上状态。"
+      }
+    }
+  ]
+}

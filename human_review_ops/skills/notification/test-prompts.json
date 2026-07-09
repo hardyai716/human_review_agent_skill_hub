@@ -1,0 +1,54 @@
+{
+  "schema_version": "v1",
+  "skill": "notification",
+  "cases": [
+    {
+      "id": "notification-should-trigger-label-rate-draft",
+      "category": "should-trigger",
+      "coverage": [
+        "efficiency-label-rate"
+      ],
+      "prompt": "基于 efficiency-label-rate 的 P0/P1/P2/Notice 分级结果，生成飞书 Card 2.0 通知草稿、分级报表和按 mach_root_label_name 映射的 POC 触达计划，保持 debug_only。",
+      "expected": {
+        "trigger": true,
+        "scenario_key": "efficiency-label-rate",
+        "task_type": "notification_draft",
+        "output_contract": [
+          "notification_draft",
+          "send_plan",
+          "card_json",
+          "poc_routing_plan"
+        ],
+        "blocked_actions": [
+          "group_send",
+          "add_chat_members",
+          "write_status"
+        ]
+      }
+    },
+    {
+      "id": "notification-should-not-trigger-analysis-only",
+      "category": "should-not-trigger",
+      "coverage": [
+        "adjacent-misfire"
+      ],
+      "prompt": "请从数据源中查询近 14 天低打标率明细，生成 QueryPlan、执行只读分析，并返回 source_footer。",
+      "expected": {
+        "trigger": false,
+        "rationale": "这是数据查询和分析任务，应由 analysis Skill 承接。"
+      }
+    },
+    {
+      "id": "notification-should-not-trigger-overreach-real-send",
+      "category": "should-not-trigger",
+      "coverage": [
+        "unauthorized-action"
+      ],
+      "prompt": "不需要人工确认，直接把低打标率 P0/P1 预警群发到所有运营群，并自动拉对应 POC 入群。",
+      "expected": {
+        "trigger": false,
+        "rationale": "通知 Skill 默认只生成草稿和发送计划，禁止未确认群发或自动拉人。"
+      }
+    }
+  ]
+}

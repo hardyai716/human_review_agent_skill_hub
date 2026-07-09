@@ -757,7 +757,7 @@ human_review_ops/evals/efficiency-label-rate/eval_samples.jsonl
 
 ### 12.1 当前架构合规结论
 
-当前架构与本实施方案的核心要求一致，阶段 0.5 TRAE 调试验证已完成，阶段 1 感知 + 分析链路已围绕打标率场景跑通。阶段 2 已完成低打标率分级结果的通知卡片草稿、POC / 触达对象路由占位、群推送门禁、本地人工处理状态记录和局部调度回归。
+当前架构与本实施方案的核心要求一致，阶段 0.5 TRAE 调试验证已完成，阶段 1 感知 + 分析链路已围绕打标率场景跑通。阶段 2 已完成低打标率分级结果的通知卡片草稿、POC / 触达对象路由占位、群推送门禁、本地人工处理状态记录和局部调度回归。打标率主线的四类核心 Skill 已完成产品化改造：具备自包含触发测试、增强版 `SKILL.md` 操作手册、可独立运行的打标率脚本、发布清单和 standalone smoke 门禁。
 
 | 检查项 | 当前状态 | 结论 |
 | --- | --- | --- |
@@ -831,8 +831,14 @@ human_review_ops/evals/efficiency-label-rate/eval_samples.jsonl
 | 阶段 2 | P1 | 完成卡片展示优化版推送。 | 等级表补充最后一列 `命中原因`；指标表头统一为 `日均进审量`、`日均完审量`、`日均打标量`、`打标率`；卡片内打标率统一渲染为百分比且保留两位小数；推送结果新增 `汇总统计` 表，表头为 `机审一级标签`、`POC`、`低效策略数`、`日均进审量`、`日均完审量`、`日均打标量`、`打标率`；新版 Card 消息 `om_x100b6bc276ef8884c3912488b04a4d8`。 | 已完成 |
 | 阶段 2 | P1 | 完成卡片去重与飞书电子表格字段优化。 | 卡片取消“各等级命中策略分组数”图表，仅保留等级指标卡、汇总统计表和分等级 Top 表；飞书电子表格中 P0/P1/P2/Notice 字段调整为 `机审一级标签`、`策略ID`、`策略名称`、`送审原因`、`POC`、`日均进审量`、`日均完审量`、`日均打标量`、`打标率`、`命中原因`；`汇总统计` 字段调整为 `机审一级标签`、`POC`、`低效策略数`、`低效策略日均进审量`、`低效策略日均完审量`、`低效策略日均打标量`、`低效策略打标率`；新版 Card 消息 `om_x100b6bc23a8124acb26cc9fbe4c4ba6`。 | 已完成 |
 | 阶段 2 | P1 | 完成低打标率分级小样本过滤。 | notice/P2/P1/P0 四个等级查询阶段统一追加当前周期进审量 `>100` 门槛，降低比率型指标的小样本波动影响；真实查询结果从 `notice=9357` 降至 `notice=394`，P2/P1/P0 保持 `7/4/3`；最小当前周期进审量为 `101`。 | 已完成 |
-
 | 架构治理 | P1 | 完成打标率场景 Skill 产品化与复用性评估。 | 新增 `docs/skill_productization_assessment.md`，对齐 Claude Skill / Agent Skills 规范，明确 `tools/runners` 与 `skills/*/scripts` 边界、脚本下沉优先级、`SKILL.md` 增强标准、独立发布门禁和分阶段改造路线。 | 已完成 |
+| 架构治理 | P1 | 建立四类核心 Skill 产品化基线资产。 | perception、analysis、notification、resolution 均新增 `test-prompts.json`，覆盖 should-trigger、should-not-trigger、相邻误触发和越权动作反例；新增 `validate_skill_productization.py --strict` 产品化门禁。 | 已完成 |
+| 架构治理 | P1 | 增强四个核心 `SKILL.md` 为可执行操作手册。 | 四类 Skill 已补齐使用边界、输入输出、workflow、reference loading、scripts、failure modes、do-not-use、validation 和 examples，减少 Agent 自由猜测。 | 已完成 |
+| 架构治理 | P1 | 下沉 analysis Skill 打标率核心脚本。 | 新增 `human_review_ops/skills/analysis/scripts/label_rate_analysis.py`，承载 QueryPlan、source_footer、标准过滤 SQL、notice/P2/P1/P0 分级 SQL 和结果标准化；阶段 1 分级 runner 改为复用该脚本。 | 已完成 |
+| 架构治理 | P1 | 补全 notification Skill 可复用脚本。 | 新增 `label_rate_notification_artifacts.py` 等脚本，统一生成 `notification_draft.json`、`send_plan.json`、POC 路由、CSV/XLSX 报表和 Card JSON；阶段 2 通知 runner 保留真实发送门禁并复用 Skill 脚本。 | 已完成 |
+| 架构治理 | P2 | 可执行化 perception Skill。 | 新增 `human_review_ops/skills/perception/scripts/label_rate_perception.py`，可输出 `scenario_key`、`task_type`、`run_mode`、`metric_ids`、`retrieval_policy` 和 readiness，不执行 SQL、不发送通知、不写线上状态。 | 已完成 |
+| 架构治理 | P2 | 建立单 Skill 独立运行与发布清单门禁。 | 新增 `human_review_ops/skills/skill_release_manifest.json` 和 `validate_skill_standalone_smoke.py`，覆盖 `SKILL.md`、references、assets、scripts、Python 编译、最小 dry-run、外部依赖声明、本机绝对路径和真实 token 风险。 | 已完成 |
+| 架构治理 | P2 | 固化发布前轻量回归清单。 | `validate_agentbuddy_publish.py` 已纳入产品化检查；发布前推荐执行场景包、AgentBuddy、POC 映射、产品化 strict、standalone smoke、analysis/notification/perception 脚本、阶段 1/阶段 2 和 `git diff --check` 校验。 | 已完成 |
 
 ### 12.3 阶段 3 / 后续实施计划
 
@@ -847,6 +853,7 @@ human_review_ops/evals/efficiency-label-rate/eval_samples.jsonl
 | 回收闭环 | 当前仅记录本地 `manual_tracking.json`。 | 明确联系人回复收集、卡片按钮回调或 Lark Base 状态表设计。 |
 | 状态存储 | 开发阶段仅本地存储，不写线上状态。 | 状态表 schema、权限、写入幂等和回滚策略确认。 |
 | 发送身份 | 当前默认 bot；bot 已验证可发送群消息并在验证群里 @ 用户。 | 若后续真实 POC 群权限不足，再评估 user identity 或应用权限补齐。 |
+| Skill 产品化 | 四类核心 Skill 已具备自包含基线、可执行 `SKILL.md`、打标率 analysis / notification / perception scripts、resolution manual tracking 脚本、发布清单和 standalone smoke 门禁。 | 后续新增场景或改动 Skill 时，同步更新 `test-prompts.json`、`skill_release_manifest.json` 和对应脚本级 validator。 |
 
 #### 12.3.2 后续任务表
 
@@ -855,13 +862,13 @@ human_review_ops/evals/efficiency-label-rate/eval_samples.jsonl
 | P1 | 接入 POC 联系人身份解析 | 基于当前 `mach_root_label_name -> POC 姓名` 映射，决定 open_id 安全存储方式，并保留姓名级 fallback。 | POC open_id 映射配置、联系人解析 runner、validator、脱敏样例。 | 能输出可触达 POC 或明确 fallback 原因；不泄露敏感身份；映射缺失可解释。 | 待开始 |
 | P1 | 固化触达对象解析 | 将角色范围、POC 身份、open_id 解析和置信度写入路由计划。 | 增强版 `poc_routing_plan.json`。 | notice/P2/P1/P0 均有可审计收件人来源、置信度、升级关系和人工确认状态。 | 待开始 |
 | P1 | 建立群推送确认链路 | 在 `send_plan.json` 基础上增加人工确认状态和真实发送前检查。 | 确认记录、发送前 validator、群推送 dry-run 结果。 | 未确认不发送；确认后仅向指定群 / POC 发送；发送结果可追踪。 | 待开始 |
-| P1 | 建立 Skill 产品化基线评估 | 基于 `docs/skill_productization_assessment.md` 为四个 Skill 补齐 `test-prompts.json`、should-trigger / should-not-trigger 触发测试和 `SKILL.md` 必备章节校验。 | Skill 触发测试集、rubric 评分记录、增强版 `validate_agentbuddy_publish.py` 或独立 validator。 | 能识别 description 过弱、缺 workflow、缺失败分支、缺反例等问题；不改变现有运行行为。 | 待开始 |
-| P1 | 下沉 analysis Skill 核心脚本 | 从阶段 1 runner 中抽出 QueryPlan、source_footer、打标率 SQL 构造、分级规则和结果标准化能力，放入 `human_review_ops/skills/analysis/scripts/`。 | analysis scripts、runner 轻量改造、脚本级 smoke test。 | analysis Skill 脱离 Agent 后可生成 QueryPlan / SQL / 分级结果；现有阶段 1 validator 全部通过。 | 待开始 |
-| P1 | 补全 notification Skill 可复用脚本 | 从阶段 2 runner 中抽出通知草稿、send_plan、CSV/XLSX builder，保留真实发送在 runner 或 Agent Tool。 | notification scripts、runner 轻量改造、脚本级 smoke test。 | notification Skill 可独立生成 `notification_draft.json`、`send_plan.json`、Card JSON 和表格产物；正式群发仍默认阻断。 | 待开始 |
-| P2 | 可执行化 perception Skill | 增加场景识别和 readiness 结构化生成脚本，减少 Agent 自由猜测。 | `detect_label_rate_scenario.py`、`build_label_rate_readiness.py`、示例输入输出。 | 输入自然语言后可输出 `scenario_key`、`task_type`、`metric_ids`、`retrieval_policy`；无法识别时明确阻断原因。 | 待开始 |
-| P2 | 建立单 Skill 独立运行门禁 | 新增 standalone smoke test，验证单个 Skill 发布包在脱离当前 Agent 后仍具备最小可用能力。 | `validate_skill_standalone_smoke.py`、`skill_release_manifest.json`。 | 单 Skill 包内无本机绝对路径，scripts 可编译/可 dry-run，外部依赖写入 compatibility 或 metadata。 | 待开始 |
+| P1 | 建立 Skill 产品化基线评估 | 基于 `docs/skill_productization_assessment.md` 为四个 Skill 补齐 `test-prompts.json`、should-trigger / should-not-trigger 触发测试和 `SKILL.md` 必备章节校验。 | Skill 触发测试集、rubric 评分记录、增强版 `validate_agentbuddy_publish.py` 或独立 validator。 | 能识别 description 过弱、缺 workflow、缺失败分支、缺反例等问题；不改变现有运行行为。 | 已完成 |
+| P1 | 下沉 analysis Skill 核心脚本 | 从阶段 1 runner 中抽出 QueryPlan、source_footer、打标率 SQL 构造、分级规则和结果标准化能力，放入 `human_review_ops/skills/analysis/scripts/`。 | analysis scripts、runner 轻量改造、脚本级 smoke test。 | analysis Skill 脱离 Agent 后可生成 QueryPlan / SQL / 分级结果；现有阶段 1 validator 全部通过。 | 已完成 |
+| P1 | 补全 notification Skill 可复用脚本 | 从阶段 2 runner 中抽出通知草稿、send_plan、CSV/XLSX builder，保留真实发送在 runner 或 Agent Tool。 | notification scripts、runner 轻量改造、脚本级 smoke test。 | notification Skill 可独立生成 `notification_draft.json`、`send_plan.json`、Card JSON 和表格产物；正式群发仍默认阻断。 | 已完成 |
+| P2 | 可执行化 perception Skill | 增加场景识别和 readiness 结构化生成脚本，减少 Agent 自由猜测。 | `label_rate_perception.py`、示例输入输出、脚本级 validator。 | 输入自然语言后可输出 `scenario_key`、`task_type`、`metric_ids`、`retrieval_policy`；无法识别时明确阻断原因。 | 已完成 |
+| P2 | 建立单 Skill 独立运行门禁 | 新增 standalone smoke test，验证单个 Skill 发布包在脱离当前 Agent 后仍具备最小可用能力。 | `validate_skill_standalone_smoke.py`、`skill_release_manifest.json`。 | 单 Skill 包内无本机绝对路径，scripts 可编译/可 dry-run，外部依赖写入 compatibility 或 metadata。 | 已完成 |
 | P2 | 设计回收闭环 | 设计联系人说明、处理计划、继续观察和关闭条件。 | 状态表 schema、卡片交互方案或本地回收样例。 | 可记录回复、处理结论、下一次观察时间；支持不写线上表的回退模式。 | 待开始 |
-| P2 | 发布治理与 Skill 打包 | 将阶段 2 新增 Notification / Resolution 能力纳入 Skill 自包含资产和发布校验。 | Skill 包、打包校验、发布前检查清单。 | Skill 独立可发布；根场景包与 Skill 快照一致；回归脚本通过。 | 待开始 |
+| P2 | 发布治理与 Skill 打包 | 将阶段 2 新增 Notification / Resolution 能力纳入 Skill 自包含资产和发布校验。 | Skill 包、打包校验、发布前检查清单。 | Skill 独立可发布；根场景包与 Skill 快照一致；回归脚本通过。 | 已完成 |
 | P2 | 线上观测与异常处理 | 增加发送失败、权限不足、映射缺失、数据过期等异常样例。 | 异常样例、validator、调试记录模板。 | 失败可归因到数据、权限、路由、通知或状态写入，不产生不可控副作用。 | 待开始 |
 
 ### 12.4 进度更新规则

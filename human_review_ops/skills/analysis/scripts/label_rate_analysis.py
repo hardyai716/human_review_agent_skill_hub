@@ -1,50 +1,21 @@
 #!/usr/bin/env python3
-"""Run real readonly low-label-rate grading for stage 1.
+"""Reusable label-rate analysis helpers for the analysis Skill.
 
-This runner is intentionally scenario-specific. It executes the current
-efficiency-label-rate grading rules for notice/P2/P1/P0 and keeps all actions
-readonly.
+The module is intentionally side-effect free. It constructs QueryPlan, SQL,
+source footer, and normalized grading outputs; host runners own real readonly
+tool execution and file persistence.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
-import subprocess
-import sys
-from pathlib import Path
+from collections.abc import Callable
 from typing import Any
 
 
-ROOT = Path(__file__).resolve().parents[2]
-ANALYSIS_SCRIPTS = ROOT / "skills" / "analysis" / "scripts"
-NOTIFICATION_SCRIPTS = ROOT / "skills" / "notification" / "scripts"
-sys.path.insert(0, str(ANALYSIS_SCRIPTS))
-sys.path.insert(0, str(NOTIFICATION_SCRIPTS))
-
-import label_rate_analysis  # noqa: E402
-from resolve_label_rate_poc_routing import (  # noqa: E402
-    load_poc_mapping,
-    poc_mapping_index,
-    resolve_row_poc,
-)
-
-
-def build_poc_row_enrichment(
-    row: dict[str, Any],
-    mapping_index: dict[str, dict[str, Any]],
-) -> dict[str, Any]:
-    poc = resolve_row_poc(row, mapping_index)
-    poc_name = poc.get("poc_name") or "未映射"
-    return {
-        "poc_name": poc_name,
-        "POC": poc_name,
-        "poc_open_id": poc.get("poc_open_id"),
-        "poc_mapping_status": poc.get("mapping_status"),
-    }
-
+SCHEMA_VERSION = "label_rate_analysis.v1"
 SCENARIO_KEY = "efficiency-label-rate"
-EVAL_DIR = ROOT / "evals" / SCENARIO_KEY
 OUTPUT_DATE = "20260708"
 CURRENT_DAYS = 7
 HISTORY_DAYS = 28
@@ -88,14 +59,63 @@ FLOAT_FIELDS = {
     "daily_delta",
 }
 INT_FIELDS = {"severity_priority", "data_days"}
+GRADING_COLUMNS = [
+    "severity_level",
+    "severity_priority",
+    "mach_root_label_name",
+    "strategy_id",
+    "strategy_name",
+    "reason",
+    "data_days",
+    "total_review_in_cnt",
+    "total_review_done_cnt",
+    "total_label_cnt",
+    "avg_review_in_cnt",
+    "avg_review_done_cnt",
+    "avg_label_cnt",
+    "label_rate",
+    "prev_avg_review_in_cnt",
+    "prev_label_rate",
+    "growth_rate",
+    "daily_delta",
+    "hit_rule_id",
+    "hit_condition",
+]
+RowEnricher = Callable[[dict[str, Any]], dict[str, Any]]
 
 
-def default_output_path() -> Path:
-    return (
-        EVAL_DIR
-        / "stage_1_runs"
-        / f"{OUTPUT_DATE}_real_readonly_label_rate_grading_results.jsonl"
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Dry-run reusable label-rate QueryPlan, SQL, and grading output."
     )
+    parser.add_argument("--levels", default=",".join(DEFAULT_LEVELS))
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Emit deterministic smoke output. This script never executes SQL.",
+    )
+    args = parser.parse_args()
+
+    levels = parse_levels(args.levels)
+    sql_map = sql_by_level()
+    payloads = build_smoke_payloads(levels)
+    records = build_records(payloads, levels, sql_map)
+    sample = records[1]
+    payload = {
+        "schema_version": SCHEMA_VERSION,
+        "dry_run": bool(args.dry_run),
+        "QueryPlan": sample["QueryPlan"],
+        "source_footer": sample["source_footer"],
+        "readonly_execution": sample["readonly_execution"],
+        "analysis_result": sample["analysis_result"],
+        "provenance": sample["provenance"],
+        "safety": {
+            "sql_executed": False,
+            "notification_sent": False,
+            "online_write_executed": False,
+        },
+    }
+    print(json.dumps(payload, ensure_ascii=False, indent=2))
 
 
 def query_plan_id() -> str:
@@ -109,14 +129,15 @@ def event_id() -> str:
 def parse_levels(raw_levels: str) -> list[str]:
     levels = [level.strip() for level in raw_levels.split(",") if level.strip()]
     if not levels:
-        raise SystemExit("--levels must include at least one level.")
+        raise ValueError("levels must include at least one level.")
     invalid = [level for level in levels if level not in DEFAULT_LEVELS]
     if invalid:
-        raise SystemExit(f"Unsupported levels: {invalid}. Supported: {DEFAULT_LEVELS}.")
+        raise ValueError(f"Unsupported levels: {invalid}. Supported: {DEFAULT_LEVELS}.")
     return levels
 
 
 def base_filter_sql(indent: str = "    ") -> str:
+    """Return the standard sample-pool filter from the metric contract."""
     filters = [
         "`[project_title]` NOT LIKE '%虚假%'",
         "`[project_title]` NOT LIKE '%标注%'",
@@ -436,79 +457,16 @@ def sql_by_level() -> dict[str, str]:
     }
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--levels", default=",".join(DEFAULT_LEVELS))
-    parser.add_argument("--output")
-    args = parser.parse_args()
-
-    try:
-        levels = label_rate_analysis.parse_levels(args.levels)
-    except ValueError as exc:
-        raise SystemExit(str(exc)) from exc
-    sql_map = label_rate_analysis.sql_by_level()
-    mapping_index = poc_mapping_index(load_poc_mapping())
-    payloads = {level: run_query(sql_map[level]) for level in levels}
-    records = label_rate_analysis.build_records(
-        payloads,
-        levels,
-        sql_map,
-        row_enricher=lambda row: build_poc_row_enrichment(row, mapping_index),
-    )
-    output_path = Path(args.output) if args.output else default_output_path()
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(
-        "\n".join(
-            json.dumps(record, ensure_ascii=False, separators=(",", ":"))
-            for record in records
-        )
-        + "\n",
-        encoding="utf-8",
-    )
-    sample = records[1]
-    counts = sample["readonly_execution"]["level_counts"]
-    print(f"Stage 1 real readonly label-rate grading wrote {counts}: {output_path}")
-
-
-def run_query(sql: str) -> dict[str, Any]:
-    command = [
-        "bytedcli",
-        "-j",
-        "aeolus",
-        "query",
-        "-r",
-        REGION,
-        DATASET_ID,
-        sql,
-        "--limit",
-        QUERY_LIMIT,
-    ]
-    completed = subprocess.run(
-        command,
-        check=False,
-        capture_output=True,
-        text=True,
-    )
-    if completed.returncode != 0:
-        raise RuntimeError(
-            "Aeolus grading query failed:\n"
-            f"stdout={completed.stdout}\n"
-            f"stderr={completed.stderr}"
-        )
-    payload = json.loads(completed.stdout)
-    if payload.get("status") != "success":
-        raise RuntimeError(f"Aeolus grading query returned non-success: {payload}")
-    return payload
-
-
 def build_records(
     payloads: dict[str, dict[str, Any]],
     levels: list[str],
     sql_map: dict[str, str],
+    *,
+    row_enricher: RowEnricher | None = None,
 ) -> list[dict[str, Any]]:
     query_plan = build_query_plan(levels, sql_map)
     level_results = {
-        level: build_level_result(level, payloads[level])
+        level: build_level_result(level, payloads[level], row_enricher=row_enricher)
         for level in levels
     }
     tool_call_records = [
@@ -668,8 +626,13 @@ def build_tool_call_record(
     }
 
 
-def build_level_result(level: str, payload: dict[str, Any]) -> dict[str, Any]:
-    rows = dedupe_level_rows(normalize_rows(payload), level)
+def build_level_result(
+    level: str,
+    payload: dict[str, Any],
+    *,
+    row_enricher: RowEnricher | None = None,
+) -> dict[str, Any]:
+    rows = dedupe_level_rows(normalize_rows(payload, row_enricher=row_enricher), level)
     return {
         "severity_level": level,
         "severity_priority": LEVEL_PRIORITY[level],
@@ -681,9 +644,12 @@ def build_level_result(level: str, payload: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def normalize_rows(payload: dict[str, Any]) -> list[dict[str, Any]]:
+def normalize_rows(
+    payload: dict[str, Any],
+    *,
+    row_enricher: RowEnricher | None = None,
+) -> list[dict[str, Any]]:
     columns = payload["data"]["columns"]
-    mapping_index = poc_mapping_index(load_poc_mapping())
     rows: list[dict[str, Any]] = []
     for raw_row in payload["data"]["rows"]:
         row = dict(zip(columns, raw_row))
@@ -695,14 +661,19 @@ def normalize_rows(payload: dict[str, Any]) -> list[dict[str, Any]]:
                 normalized[column] = int(value)
             else:
                 normalized[column] = value
-        poc = resolve_row_poc(normalized, mapping_index)
-        poc_name = poc.get("poc_name") or "未映射"
-        normalized["poc_name"] = poc_name
-        normalized["POC"] = poc_name
-        normalized["poc_open_id"] = poc.get("poc_open_id")
-        normalized["poc_mapping_status"] = poc.get("mapping_status")
+        if row_enricher:
+            normalized.update(row_enricher(dict(normalized)))
+        ensure_poc_fields(normalized)
         rows.append(normalized)
     return rows
+
+
+def ensure_poc_fields(row: dict[str, Any]) -> None:
+    poc_name = row.get("poc_name") or row.get("POC") or "未映射"
+    row["poc_name"] = poc_name
+    row["POC"] = poc_name
+    row.setdefault("poc_open_id", None)
+    row.setdefault("poc_mapping_status", "not_resolved_by_analysis_script")
 
 
 def dimension_key(row: dict[str, Any]) -> tuple[str, str, str, str]:
@@ -772,6 +743,21 @@ def build_source_footer(
         "scenario_key": SCENARIO_KEY,
         "metric_id": "label_rate",
         "quality_checks": query_plan["quality_checks"],
+        "metric_contract_ref": METRIC_CONTRACT_PATH,
+        "dataset_reference_ref": DATASET_REFERENCE_PATH,
+        "analysis_ref": ANALYSIS_RULE_PATH,
+        "query_plan_id": query_plan["query_plan_id"],
+        "time_window": query_plan["time_range"],
+        "data_lag": "uses closed p_date partitions where p_date < today()",
+        "source_priority": query_plan["source_priority"],
+        "actual_source": f"aeolus_dataset:{DATASET_ID}",
+        "filters": query_plan["filters"],
+        "dimensions": query_plan["dimensions"],
+        "limitations": [
+            "POC contact open_id resolution is outside the analysis Skill.",
+            "Low-label-rate grading uses governed SQL fallback for multi-condition rules.",
+        ],
+        "run_mode": "debug_only",
     }
 
 
@@ -949,6 +935,48 @@ def compact_query_plan(query_plan: dict[str, Any]) -> dict[str, Any]:
         "forbidden_sources": query_plan["forbidden_sources"],
         "fallback_reason": query_plan["fallback_reason"],
         "quality_checks": query_plan["quality_checks"],
+    }
+
+
+def build_smoke_payloads(levels: list[str]) -> dict[str, dict[str, Any]]:
+    return {level: build_smoke_payload(level, index) for index, level in enumerate(levels)}
+
+
+def build_smoke_payload(level: str, index: int = 0) -> dict[str, Any]:
+    row = [
+        level,
+        LEVEL_PRIORITY[level],
+        "不良行为或争议价值观",
+        f"strategy_{level.lower()}_{index}",
+        f"{level}低打标率策略",
+        f"{level.lower()}_low_label_reason",
+        7,
+        21000.0 + index,
+        20000.0 + index,
+        400.0,
+        3000.0 + index,
+        2857.14 + index,
+        57.14,
+        0.02,
+        1000.0,
+        0.05,
+        0.25,
+        2000.0,
+        f"smoke_{level.lower()}_rule",
+        f"{level} smoke hit condition",
+    ]
+    return {
+        "status": "success",
+        "context": {
+            "timestamp": "2026-07-09T00:00:00+08:00",
+            "execution_time_ms": 1,
+        },
+        "data": {
+            "columns": list(GRADING_COLUMNS),
+            "rows": [row],
+            "rowCount": 1,
+            "truncated": False,
+        },
     }
 
 

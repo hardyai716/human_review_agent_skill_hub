@@ -1,0 +1,206 @@
+{
+  "schema_version": "human_review_ops_skill_release_manifest.v1",
+  "package_root": "human_review_ops/skills",
+  "runtime": ["python>=3.9"],
+  "release_policy": {
+    "standalone_smoke_validator": "human_review_ops/tools/validators/validate_skill_standalone_smoke.py",
+    "side_effects": "dry-run only; no SQL execution, no notification send, no online state write",
+    "forbid_absolute_paths": true,
+    "forbid_real_tokens": true
+  },
+  "skills": {
+    "perception": {
+      "skill_md": "perception/SKILL.md",
+      "test_prompts": "perception/test-prompts.json",
+      "references": [
+        "perception/references/common.md",
+        "perception/references/scenario-index.md",
+        "perception/references/scenarios/efficiency-label-rate.manifest.md",
+        "perception/references/scenarios/efficiency-label-rate.metric_contract.md",
+        "perception/references/scenarios/efficiency-label-rate.dataset_reference.md",
+        "perception/references/scenarios/efficiency-label-rate.examples.md"
+      ],
+      "assets": [
+        "perception/assets/README.md"
+      ],
+      "scripts": [
+        {
+          "path": "perception/scripts/label_rate_perception.py",
+          "entrypoint": "python3 scripts/label_rate_perception.py --dry-run --request <request>",
+          "smoke_command": "python3 human_review_ops/tools/validators/validate_label_rate_perception_scripts.py",
+          "side_effects": ["none"],
+          "outputs": [
+            "scenario_key",
+            "task_type",
+            "run_mode",
+            "metric_ids",
+            "retrieval_policy",
+            "readiness"
+          ]
+        }
+      ],
+      "external_dependencies": [],
+      "release_assets": [
+        "perception/SKILL.md",
+        "perception/test-prompts.json",
+        "perception/references/common.md",
+        "perception/references/scenario-index.md",
+        "perception/references/scenarios/efficiency-label-rate.manifest.md",
+        "perception/references/scenarios/efficiency-label-rate.metric_contract.md",
+        "perception/references/scenarios/efficiency-label-rate.dataset_reference.md",
+        "perception/references/scenarios/efficiency-label-rate.examples.md",
+        "perception/assets/README.md",
+        "perception/scripts/label_rate_perception.py"
+      ]
+    },
+    "analysis": {
+      "skill_md": "analysis/SKILL.md",
+      "test_prompts": "analysis/test-prompts.json",
+      "references": [
+        "analysis/references/common.md",
+        "analysis/references/scenario-index.md",
+        "analysis/references/scenarios/efficiency-label-rate.analysis.md",
+        "analysis/references/scenarios/efficiency-label-rate.metric_contract.md",
+        "analysis/references/scenarios/efficiency-label-rate.dataset_reference.md",
+        "analysis/references/scenarios/efficiency-label-rate.examples.md"
+      ],
+      "assets": [
+        "analysis/assets/README.md"
+      ],
+      "scripts": [
+        {
+          "path": "analysis/scripts/label_rate_analysis.py",
+          "entrypoint": "python3 scripts/label_rate_analysis.py --dry-run --levels notice,P2,P1,P0",
+          "smoke_command": "python3 human_review_ops/tools/validators/validate_label_rate_analysis_scripts.py",
+          "side_effects": ["none"],
+          "outputs": [
+            "QueryPlan",
+            "source_footer",
+            "readonly_execution",
+            "analysis_result",
+            "provenance"
+          ]
+        }
+      ],
+      "external_dependencies": [],
+      "release_assets": [
+        "analysis/SKILL.md",
+        "analysis/test-prompts.json",
+        "analysis/references/common.md",
+        "analysis/references/scenario-index.md",
+        "analysis/references/scenarios/efficiency-label-rate.analysis.md",
+        "analysis/references/scenarios/efficiency-label-rate.metric_contract.md",
+        "analysis/references/scenarios/efficiency-label-rate.dataset_reference.md",
+        "analysis/references/scenarios/efficiency-label-rate.examples.md",
+        "analysis/assets/README.md",
+        "analysis/scripts/label_rate_analysis.py"
+      ]
+    },
+    "notification": {
+      "skill_md": "notification/SKILL.md",
+      "test_prompts": "notification/test-prompts.json",
+      "references": [
+        "notification/references/common.md",
+        "notification/references/scenario-index.md",
+        "notification/references/scenarios/efficiency-label-rate.notification_templates.md",
+        "notification/references/scenarios/efficiency-label-rate.owner_routing.md",
+        "notification/references/scenarios/efficiency-label-rate.sla.md"
+      ],
+      "assets": [
+        "notification/assets/efficiency-label-rate/card_schema_notes.md",
+        "notification/assets/efficiency-label-rate/low_efficiency_grading_card_template.json",
+        "notification/assets/efficiency-label-rate/mach_root_label_poc_mapping.json"
+      ],
+      "scripts": [
+        {
+          "path": "notification/scripts/label_rate_notification_artifacts.py",
+          "entrypoint": "python3 scripts/label_rate_notification_artifacts.py --source <stage1.jsonl> --output-dir <output>",
+          "smoke_command": "python3 human_review_ops/tools/validators/validate_label_rate_notification_scripts.py",
+          "side_effects": ["none"],
+          "outputs": [
+            "notification_draft.json",
+            "send_plan.json",
+            "poc_routing_plan.json",
+            "CSV/XLSX report",
+            "Card JSON"
+          ]
+        },
+        {
+          "path": "notification/scripts/render_label_rate_grading_card.py",
+          "entrypoint": "module:render_grading_card",
+          "smoke_command": "python3 human_review_ops/tools/validators/validate_label_rate_notification_scripts.py",
+          "side_effects": ["none"],
+          "outputs": ["Card JSON"]
+        },
+        {
+          "path": "notification/scripts/resolve_label_rate_poc_routing.py",
+          "entrypoint": "module:build_poc_routing_plan",
+          "smoke_command": "python3 human_review_ops/tools/validators/validate_label_rate_notification_scripts.py",
+          "side_effects": ["none"],
+          "outputs": ["poc_routing_plan.json"]
+        },
+        {
+          "path": "notification/scripts/card_hash.py",
+          "entrypoint": "module:verify_card_hash",
+          "smoke_command": "python3 human_review_ops/tools/validators/validate_label_rate_notification_scripts.py",
+          "side_effects": ["none"],
+          "outputs": ["card_hash_check.json"]
+        }
+      ],
+      "external_dependencies": ["openpyxl"],
+      "release_assets": [
+        "notification/SKILL.md",
+        "notification/test-prompts.json",
+        "notification/references/common.md",
+        "notification/references/scenario-index.md",
+        "notification/references/scenarios/efficiency-label-rate.notification_templates.md",
+        "notification/references/scenarios/efficiency-label-rate.owner_routing.md",
+        "notification/references/scenarios/efficiency-label-rate.sla.md",
+        "notification/assets/efficiency-label-rate/card_schema_notes.md",
+        "notification/assets/efficiency-label-rate/low_efficiency_grading_card_template.json",
+        "notification/assets/efficiency-label-rate/mach_root_label_poc_mapping.json",
+        "notification/scripts/label_rate_notification_artifacts.py",
+        "notification/scripts/render_label_rate_grading_card.py",
+        "notification/scripts/resolve_label_rate_poc_routing.py",
+        "notification/scripts/card_hash.py"
+      ]
+    },
+    "resolution": {
+      "skill_md": "resolution/SKILL.md",
+      "test_prompts": "resolution/test-prompts.json",
+      "references": [
+        "resolution/references/common.md",
+        "resolution/references/scenario-index.md",
+        "resolution/references/scenarios/efficiency-label-rate.owner_routing.md",
+        "resolution/references/scenarios/efficiency-label-rate.sla.md",
+        "resolution/references/scenarios/efficiency-label-rate.state_machine.md",
+        "resolution/references/scenarios/efficiency-label-rate.examples.md"
+      ],
+      "assets": [
+        "resolution/assets/README.md"
+      ],
+      "scripts": [
+        {
+          "path": "resolution/scripts/build_label_rate_manual_tracking.py",
+          "entrypoint": "python3 scripts/build_label_rate_manual_tracking.py --notification-draft <draft.json> --send-plan <send_plan.json> --output <tracking.json>",
+          "smoke_command": "python3 human_review_ops/tools/validators/validate_skill_standalone_smoke.py --skills resolution",
+          "side_effects": ["none"],
+          "outputs": ["manual_tracking.json"]
+        }
+      ],
+      "external_dependencies": [],
+      "release_assets": [
+        "resolution/SKILL.md",
+        "resolution/test-prompts.json",
+        "resolution/references/common.md",
+        "resolution/references/scenario-index.md",
+        "resolution/references/scenarios/efficiency-label-rate.owner_routing.md",
+        "resolution/references/scenarios/efficiency-label-rate.sla.md",
+        "resolution/references/scenarios/efficiency-label-rate.state_machine.md",
+        "resolution/references/scenarios/efficiency-label-rate.examples.md",
+        "resolution/assets/README.md",
+        "resolution/scripts/build_label_rate_manual_tracking.py"
+      ]
+    }
+  }
+}

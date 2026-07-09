@@ -7,6 +7,8 @@
 - `validate_scenario_package.py`：校验指定场景流程包是否包含最小必需文件。
 - `validate_skill_package.py`：校验四类 Skill 是否具备 `SKILL.md`、`common.md`、`scenario-index.md` 和调试快照目录。
 - `validate_agentbuddy_publish.py`：校验 `.agentbuddy/publish.yaml` 是否符合 AgentBuddy Git 仓库上传协议，并检查已声明 Skill 的 `SKILL.md` frontmatter、调试快照、脚本编译和本机绝对路径。
+- `validate_skill_productization.py`：校验四类核心 Skill 的产品化基线资产。默认模式检查 `SKILL.md` 基础 frontmatter、`test-prompts.json` 结构、现有脚本编译和本机路径风险；`--strict` 额外检查 Task 2 需要补齐的 `SKILL.md` 必备章节。
+- `validate_skill_standalone_smoke.py`：校验四类核心 Skill 的独立发布包门禁，覆盖 `SKILL.md`、`references/`、`assets/`、`scripts/`、`skill_release_manifest.json`、Python 编译、外部依赖声明和最小 dry-run；perception、analysis、notification 会复用对应脚本级 smoke validator。
 - `validate_query_plan.py`：校验 QueryPlan JSON 是否包含治理字段。
 - `validate_source_footer.py`：校验 source_footer JSON 是否包含来源说明字段。
 - `validate_trae_stage_0_5.py`：校验阶段 0.5 TRAE 调试记录是否覆盖环境、样例、权限和读取策略。
@@ -25,3 +27,13 @@
 - 校验脚本只检查结构和调试记录，不连接真实线上数据源。
 - 阶段 0.5 默认 `debug_only`，不得发送真实通知，不得写入线上状态。
 - 每次修改场景包、Skill 调试快照或调试记录后，应重新运行相关校验脚本。
+
+## Skill 产品化基线命令
+
+- Task 1 验收默认命令：`python3 human_review_ops/tools/validators/validate_skill_productization.py`
+- Task 2 前置缺口识别：`python3 human_review_ops/tools/validators/validate_skill_productization.py --strict`
+- Task 6 独立运行门禁：`python3 human_review_ops/tools/validators/validate_skill_standalone_smoke.py`
+- 发布前推荐命令：
+  - `python3 human_review_ops/tools/validators/validate_skill_productization.py --strict`
+  - `python3 human_review_ops/tools/validators/validate_skill_standalone_smoke.py`
+  - `git diff --check`
