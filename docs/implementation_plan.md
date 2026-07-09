@@ -837,7 +837,7 @@ human_review_ops/evals/efficiency-label-rate/eval_samples.jsonl
 | P2 | 通知草稿增强 | 将当前 Card 草稿与 POC 路由占位合并，说明当前为默认本人验证，后续接真实 POC 映射。 | `stage_2_runs/.../notification_draft.json`、`publish/*.card.json` | 草稿包含等级统计、数据链接、POC 占位策略、口径说明；发送前 `_meta` 已剥离；未确认时不群发。 | 已完成 |
 | P2 | 群推送门禁计划 | 生成真实群推送前的 `send_plan.json`，记录目标类型、目标来源、发送身份、发送内容和人工确认要求。 | `stage_2_runs/.../send_plan.json` | 默认 `requires_confirmation=true`、`group_send_blocked=true`；未确认时 validator 要求 `sent=false`。 | 已完成 |
 | P2 | 人工处理状态本地记录 | 针对进入处置 / 跟进的任务，生成本地 `manual_tracking` 记录，包含状态、证据、人工备注、下一步和是否继续观察。 | `stage_2_runs/.../manual_tracking.json` | 状态符合 `state_machine.md`；包含 `evidence_refs`、`operator_note`、`next_action`；不写线上状态。 | 已完成 |
-| P2 | 局部调度回归 | 验证 `owner_lookup_only`、`notification_only`、`resolution_only` 可基于已有阶段 1 / 阶段 2 产物独立运行，不重复查数。 | `stage_2_runs/.../*_results.jsonl`、新增 validator | 每种 task_type 都有样例和校验；`notification_only` 可生成卡片；`resolution_only` 可生成 tracking；不触发真实群推送。 | 待开始 |
+| P2 | 局部调度回归 | 验证 `owner_lookup_only`、`notification_only`、`resolution_only` 可基于已有阶段 1 / 阶段 2 产物独立运行，不重复查数。 | `stage_2_runs/.../*_results.jsonl`、新增 validator | 每种 task_type 都有样例和校验；`notification_only` 可生成卡片；`resolution_only` 可生成 tracking；不触发真实群推送。 | 已完成 |
 
 ### 12.4 进度更新规则
 

@@ -24,11 +24,11 @@
   - [x] SubTask 4.3: 新增 validator，确保不写线上状态。
   - [x] SubTask 4.4: 运行验证，更新计划文档，提交并推送。
 
-- [ ] Task 5: 实现局部调度回归。
-  - [ ] SubTask 5.1: 新增 stage 2 局部调度结果，覆盖 `owner_lookup_only`、`notification_only`、`resolution_only`。
-  - [ ] SubTask 5.2: 新增 validator，确保局部调度不重复查数、不群发、不写线上状态。
-  - [ ] SubTask 5.3: 运行阶段 2 全量验证。
-  - [ ] SubTask 5.4: 更新计划文档，提交并推送。
+- [x] Task 5: 实现局部调度回归。
+  - [x] SubTask 5.1: 新增 stage 2 局部调度结果，覆盖 `owner_lookup_only`、`notification_only`、`resolution_only`。
+  - [x] SubTask 5.2: 新增 validator，确保局部调度不重复查数、不群发、不写线上状态。
+  - [x] SubTask 5.3: 运行阶段 2 全量验证。
+  - [x] SubTask 5.4: 更新计划文档，提交并推送。
 
 - [ ] Task 6: 阶段 2 收尾与后续规划。
   - [ ] SubTask 6.1: 将阶段 2 已完成任务移动到 `12.2 已完成任务看板`。
