@@ -1,0 +1,26 @@
+{
+  "schema_version": "agentbuddy_republish_summary.v1",
+  "published_at": "2026-07-09T15:43:27+08:00",
+  "group": "skills.byted.org/lizhongtao/hunman_review_ops",
+  "access": "restricted",
+  "reason": "add mach_root_label_name to POC name routing for label-rate scenario",
+  "ok": true,
+  "results": [
+    {
+      "item": "notification",
+      "path": "./human_review_ops/skills/notification",
+      "command": "npx -y agentbuddy@latest skill publish ./human_review_ops/skills/notification --group skills.byted.org/lizhongtao/hunman_review_ops --access restricted --region cn -y",
+      "returncode": 0,
+      "stdout": "agentbuddy skill publish\n\nResolving skill spec: ./human_review_ops/skills/notification\nSource: ./human_review_ops/skills/notification\nValidating skill package...\nSkill: routing-ops-notifications\nPreparing upload package...\nPackage size: 0.02 MB\n\nPublish Summary:\n  Skill: routing-ops-notifications\n  Source: ./human_review_ops/skills/notification\n  Size: 0.02 MB\n  Group: skills.byted.org/lizhongtao/hunman_review_ops\n\nUploading...\n\n  Upload progress: 100%\n[OK] Successfully published skill: routing-ops-notifications\n  Skill: routing-ops-notifications\n  ID: skills:skills.byted.org/lizhongtao/hunman_review_ops/routing-ops-notifications:1.0.1\n",
+      "stderr": ""
+    },
+    {
+      "item": "resolution",
+      "path": "./human_review_ops/skills/resolution",
+      "command": "npx -y agentbuddy@latest skill publish ./human_review_ops/skills/resolution --group skills.byted.org/lizhongtao/hunman_review_ops --access restricted --region cn -y",
+      "returncode": 0,
+      "stdout": "agentbuddy skill publish\n\nResolving skill spec: ./human_review_ops/skills/resolution\nSource: ./human_review_ops/skills/resolution\nValidating skill package...\nSkill: tracking-ops-resolution\nPreparing upload package...\nPackage size: 0.01 MB\n\nPublish Summary:\n  Skill: tracking-ops-resolution\n  Source: ./human_review_ops/skills/resolution\n  Size: 0.01 MB\n  Group: skills.byted.org/lizhongtao/hunman_review_ops\n\nUploading...\n\n  Upload progress: 100%\n[OK] Successfully published skill: tracking-ops-resolution\n  Skill: tracking-ops-resolution\n  ID: skills:skills.byted.org/lizhongtao/hunman_review_ops/tracking-ops-resolution:1.0.1\n",
+      "stderr": ""
+    }
+  ]
+}
