@@ -1,0 +1,33 @@
+{
+  "schema_version": "agentbuddy_republish_summary.v1",
+  "published_at": "2026-07-09T16:55:00+08:00",
+  "group": "skills.byted.org/lizhongtao/hunman_review_ops",
+  "access": "restricted",
+  "reason": "Update label-rate POC mapping: 党和国家形象负面 -> 李中涛.",
+  "skills": [
+    {
+      "skill_name": "routing-ops-notifications",
+      "source": "./human_review_ops/skills/notification",
+      "command": "NPM_CONFIG_REGISTRY=http://bnpm.byted.org npx -y agentbuddy@latest skill publish ./human_review_ops/skills/notification --group skills.byted.org/lizhongtao/hunman_review_ops --access restricted --region cn -y",
+      "status": "published",
+      "id": "skills:skills.byted.org/lizhongtao/hunman_review_ops/routing-ops-notifications:1.0.4",
+      "verification_command": "NPM_CONFIG_REGISTRY=http://bnpm.byted.org npx -y agentbuddy@latest skill find notifications",
+      "verification_result": "skills.byted.org/lizhongtao/hunman_review_ops@routing-ops-notifications"
+    },
+    {
+      "skill_name": "tracking-ops-resolution",
+      "source": "/tmp/tracking_ops_resolution_20260709_poc_mapping.zip",
+      "command": "NPM_CONFIG_REGISTRY=http://bnpm.byted.org npx -y agentbuddy@latest skill publish /tmp/tracking_ops_resolution_20260709_poc_mapping.zip --group skills.byted.org/lizhongtao/hunman_review_ops --access restricted --region cn -y",
+      "status": "published",
+      "id": "skills:skills.byted.org/lizhongtao/hunman_review_ops/tracking-ops-resolution:1.0.3",
+      "verification_command": "NPM_CONFIG_REGISTRY=http://bnpm.byted.org npx -y agentbuddy@latest skill find tracking-ops",
+      "verification_result": "skills.byted.org/lizhongtao/hunman_review_ops@tracking-ops-resolution",
+      "retry_note": "Directory publish failed twice with upload network errors; ZIP publish succeeded."
+    }
+  ],
+  "validation": {
+    "validate_label_rate_poc_mapping_skip_routing_plan": "passed",
+    "validate_scenario_package_efficiency_label_rate": "passed",
+    "validate_agentbuddy_publish": "passed"
+  }
+}
