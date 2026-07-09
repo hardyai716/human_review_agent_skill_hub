@@ -126,12 +126,12 @@ def assert_owner_lookup(
     if record.get("result_artifacts") != ["poc_routing_plan.json"]:
         raise AssertionError("owner_lookup_only artifacts mismatch.")
     summary = record.get("summary", {})
-    if summary.get("routing_mode") != "placeholder":
+    if summary.get("routing_mode") != "mach_root_label_mapping":
         raise AssertionError("owner_lookup_only routing_mode mismatch.")
     if summary.get("default_recipient") != "self":
         raise AssertionError("owner_lookup_only default_recipient mismatch.")
-    if poc_routing.get("real_poc_mapping_used") is not False:
-        raise AssertionError("POC routing must remain placeholder.")
+    if poc_routing.get("real_poc_mapping_used") is not True:
+        raise AssertionError("POC routing must use name-level mapping.")
 
 
 def assert_notification(

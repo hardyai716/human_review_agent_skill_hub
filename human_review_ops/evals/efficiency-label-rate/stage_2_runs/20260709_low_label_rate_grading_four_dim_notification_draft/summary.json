@@ -1,0 +1,83 @@
+{
+  "schema_version": "stage_2_notification_draft.v1",
+  "report_type": "low_efficiency_grading",
+  "scenario_key": "efficiency-label-rate",
+  "run_mode": "draft_only_with_name_level_poc_routing",
+  "source_stage_1_result": "evals/efficiency-label-rate/stage_1_runs/20260709_real_readonly_label_rate_grading_four_dim_results.jsonl",
+  "output_dir": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_four_dim_notification_draft",
+  "dataset_id": "3888816",
+  "region": "cn",
+  "period": {
+    "current_start": "2026-07-02",
+    "current_end": "2026-07-08",
+    "history_start": "2026-06-11",
+    "checked_at": "2026-07-09T16:12:25.875000+08:00"
+  },
+  "level_counts": {
+    "notice": 9357,
+    "P2": 7,
+    "P1": 4,
+    "P0": 3
+  },
+  "comprehensive_reason_count": 9357,
+  "comprehensive_strategy_group_count": 9357,
+  "fallback_reason": "complex_grading_rule_not_covered_by_semantic_layer",
+  "metric_formula": "`label_rate` = SUM(`[打标量__reviewid]`) / SUM(`[完审量_reviewid]`)",
+  "top_n": 10,
+  "sheet_url": "https://bytedance.larkoffice.com/sheets/C8obsw600hiWbJtIpGicwVpYnNg",
+  "outputs": {
+    "summary_json": "summary.json",
+    "notice_csv": "notice.csv",
+    "P2_csv": "P2.csv",
+    "P1_csv": "P1.csv",
+    "P0_csv": "P0.csv",
+    "comprehensive_csv": "综合.csv",
+    "workbook": "low_label_rate_grading_2026-07-02_2026-07-08.xlsx",
+    "poc_routing_plan": "poc_routing_plan.json",
+    "notification_draft": "notification_draft.json",
+    "send_plan": "send_plan.json",
+    "poc_open_id_resolution_probe": "poc_open_id_resolution_probe.json",
+    "group_at_mention_validation": "group_at_mention_validation.json"
+  },
+  "source_footer": {
+    "source_tier": "governed_dataset",
+    "metric_definition_version": "draft",
+    "data_freshness": "p_date >= today() - 28 AND p_date < today(); checked_at=2026-07-09T16:12:25.875+08:00",
+    "owner": "人审效率域数据 Owner",
+    "confidence_tier": "high",
+    "review_status": "real_readonly_query_executed",
+    "scenario_key": "efficiency-label-rate",
+    "metric_id": "label_rate",
+    "quality_checks": [
+      "freshness_gate",
+      "denominator_not_zero",
+      "field_mapping_check",
+      "grain_check_four_dimension_strategy",
+      "forbidden_source_check",
+      "truncation_check",
+      "grading_rule_check"
+    ]
+  },
+  "publish": {
+    "report_type": "low_efficiency_grading",
+    "scenario_key": "efficiency-label-rate",
+    "source_stage_1_result": "evals/efficiency-label-rate/stage_1_runs/20260709_real_readonly_label_rate_grading_four_dim_results.jsonl",
+    "output_dir": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_four_dim_notification_draft",
+    "summary_json": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_four_dim_notification_draft/summary.json",
+    "workbook": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_four_dim_notification_draft/low_label_rate_grading_2026-07-02_2026-07-08.xlsx",
+    "sheet_url": "https://bytedance.larkoffice.com/sheets/C8obsw600hiWbJtIpGicwVpYnNg",
+    "card_json": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_four_dim_notification_draft/publish/low_efficiency_grading.card.json",
+    "card_json_with_meta": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_four_dim_notification_draft/publish/low_efficiency_grading.card.with_meta.json",
+    "card_hash_check": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_four_dim_notification_draft/publish/card_hash_check.json",
+    "sent": false,
+    "send_identity": null,
+    "target_user": null,
+    "target_user_open_id_prefix": null,
+    "message_id": null,
+    "send_result": null,
+    "notification_draft": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_four_dim_notification_draft/notification_draft.json",
+    "send_plan": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_four_dim_notification_draft/send_plan.json",
+    "poc_open_id_resolution_probe": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_four_dim_notification_draft/poc_open_id_resolution_probe.json",
+    "group_at_mention_validation": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_four_dim_notification_draft/group_at_mention_validation.json"
+  }
+}

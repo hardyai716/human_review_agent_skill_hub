@@ -51,7 +51,11 @@ LEVELS = ["notice", "P2", "P1", "P0"]
 CSV_COLUMNS = [
     "severity_level",
     "severity_priority",
+    "mach_root_label_name",
+    "strategy_id",
+    "strategy_name",
     "reason",
+    "POC",
     "data_days",
     "total_review_in_cnt",
     "total_review_done_cnt",
@@ -264,13 +268,19 @@ def write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
         writer = csv.DictWriter(file, fieldnames=CSV_COLUMNS)
         writer.writeheader()
         for row in rows:
-            writer.writerow({column: csv_value(row.get(column)) for column in CSV_COLUMNS})
+            writer.writerow({column: csv_value(csv_column_value(row, column)) for column in CSV_COLUMNS})
 
 
 def csv_value(value: Any) -> Any:
     if isinstance(value, list):
         return "；".join(str(item) for item in value)
     return value
+
+
+def csv_column_value(row: dict[str, Any], column: str) -> Any:
+    if column == "POC":
+        return row.get("POC") or row.get("poc_name")
+    return row.get(column)
 
 
 def write_workbook(output_dir: Path, execution: dict[str, Any], period: dict[str, str]) -> Path:
@@ -292,7 +302,7 @@ def write_workbook(output_dir: Path, execution: dict[str, Any], period: dict[str
         sheet = workbook.create_sheet(sheet_name)
         sheet.append(CSV_COLUMNS)
         for row in rows:
-            sheet.append([csv_value(row.get(column)) for column in CSV_COLUMNS])
+            sheet.append([csv_value(csv_column_value(row, column)) for column in CSV_COLUMNS])
         style_sheet_header(sheet)
     workbook.save(workbook_path)
     return workbook_path
@@ -326,7 +336,7 @@ def build_summary(
         "scenario_key": SCENARIO_KEY,
         "run_mode": "debug_only_with_explicit_self_send"
         if self_send_requested
-        else "draft_only_with_placeholder_poc_routing",
+        else "draft_only_with_name_level_poc_routing",
         "source_stage_1_result": relative_to_root(source_path),
         "output_dir": relative_to_root(output_dir),
         "dataset_id": provenance["dataset_id"],
@@ -334,6 +344,7 @@ def build_summary(
         "period": period,
         "level_counts": execution["level_counts"],
         "comprehensive_reason_count": execution["row_count"],
+        "comprehensive_strategy_group_count": execution["row_count"],
         "fallback_reason": sample["QueryPlan"]["fallback_reason"],
         "metric_formula": execution["metric_formula"],
         "top_n": top_n,
@@ -370,12 +381,15 @@ def build_notification_draft(
         "schema_version": "stage_2_notification_draft_detail.v1",
         "scenario_key": SCENARIO_KEY,
         "report_type": REPORT_TYPE,
-        "draft_mode": "self_preview_with_placeholder_poc_routing",
+        "draft_mode": "self_preview_with_name_level_poc_routing",
         "default_self_validation": True,
         "real_poc_mapping_used": poc_routing.get("real_poc_mapping_used", False),
         "source_stage_1_result": summary["source_stage_1_result"],
         "level_counts": summary["level_counts"],
         "comprehensive_reason_count": summary["comprehensive_reason_count"],
+        "comprehensive_strategy_group_count": summary[
+            "comprehensive_strategy_group_count"
+        ],
         "data_link": {
             "sheet_url": summary.get("sheet_url"),
             "workbook": summary["outputs"].get("workbook"),
@@ -398,6 +412,14 @@ def build_notification_draft(
             "routing_mode": poc_routing.get("routing_mode"),
             "fallback_to_default_user": poc_routing.get("fallback_to_default_user"),
             "default_recipient": poc_routing.get("default_recipient"),
+            "routing_key": poc_routing.get("routing_key"),
+            "contact_resolution_status": poc_routing.get("contact_resolution_status"),
+            "mapped_row_count": poc_routing.get("mapped_row_count"),
+            "unmapped_row_count": poc_routing.get("unmapped_row_count"),
+            "missing_route_dimension_count": poc_routing.get(
+                "missing_route_dimension_count"
+            ),
+            "poc_summary": poc_routing.get("poc_summary", []),
             "routing_rules": summarize_routing_rules(poc_routing),
             "routing_constraints": constraints,
         },
@@ -441,6 +463,9 @@ def summarize_routing_rules(poc_routing: dict[str, Any]) -> dict[str, Any]:
             ),
             "group_send_blocked": rule.get("group_send_blocked"),
             "reason_count": rule.get("reason_count"),
+            "strategy_group_count": rule.get("strategy_group_count"),
+            "poc_names": rule.get("poc_names", []),
+            "unmapped_labels": rule.get("unmapped_labels", []),
         }
         for level, rule in rules.items()
     }
@@ -459,7 +484,7 @@ def build_send_plan(
         "scenario_key": SCENARIO_KEY,
         "report_type": REPORT_TYPE,
         "plan_mode": "manual_confirmation_required",
-        "target_type": "future_group_or_poc_after_confirmation",
+        "target_type": "future_group_or_name_level_poc_after_confirmation",
         "target_source": relative_to_root(poc_routing_path),
         "content_source": {
             "card_json": relative_to_root(card_path),
@@ -475,8 +500,9 @@ def build_send_plan(
         "real_group_send_executed": False,
         "online_write_executed": False,
         "blocked_reason": (
-            "Stage 2 only has placeholder POC routing. Real group/P0-P2 recipient "
-            "resolution and explicit confirmation are required before group sending."
+            "Stage 2 has name-level POC routing only. Feishu open_id resolution, "
+            "target chat confirmation, and explicit confirmation are required before "
+            "real POC/group sending."
         ),
         "self_preview": {
             "default_recipient": "self",
@@ -484,7 +510,7 @@ def build_send_plan(
             "message_id": publish_summary.get("message_id"),
         },
         "required_before_real_send": [
-            "resolve real reason/strategy -> POC mapping",
+            "resolve POC names to confirmed Feishu open_id",
             "confirm target chat or POC recipients",
             "confirm send identity and content",
             "run validator with group-send gate enabled",
@@ -500,6 +526,10 @@ def build_top_rows(rows: list[dict[str, Any]], top_n: int) -> list[dict[str, Any
             {
                 "rank": index,
                 "level": [{"text": level, "color": LEVEL_COLORS.get(level, "blue")}],
+                "poc_name": row.get("POC") or row.get("poc_name", "未映射"),
+                "mach_root_label_name": row.get("mach_root_label_name", ""),
+                "strategy_id": row.get("strategy_id", ""),
+                "strategy_name": row.get("strategy_name", ""),
                 "reason": row["reason"],
                 "avg_in": round(float(row["avg_review_in_cnt"])),
                 "avg_done": round(float(row["avg_review_done_cnt"])),

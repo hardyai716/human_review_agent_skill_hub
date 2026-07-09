@@ -11,7 +11,7 @@
 - `run_stage_1_real_readonly_label_rate.py`：使用 `bytedcli -j aeolus query -r cn 3888816` 执行真实只读打标率查询，支持 `--days`、`--dimensions` 和 `--query-mode` 参数。
 - `run_stage_1_real_readonly_label_rate_grading.py`：使用真实只读 Aeolus 查询执行低打标率 notice/P2/P1/P0 分级，输出等级结果、综合去重结果和 provenance。
 - `run_stage_2_label_rate_notification_draft.py`：将阶段 1 低打标率分级结果转换为通知草稿产物、xlsx、飞书 Card 2.0，并可在用户明确要求时单人推送。
-- `run_stage_2_label_rate_poc_routing.py`：基于阶段 1 低打标率分级结果生成 POC / 触达对象路由占位产物，当前固定 `routing_mode=placeholder`、`default_recipient=self`，不做真实 POC 映射。
+- `run_stage_2_label_rate_poc_routing.py`：基于阶段 1 低打标率分级结果，按 `mach_root_label_name` 生成姓名级 POC / 触达对象路由产物；真实触达前仍需 open_id 确认、目标群确认和发送门禁。
 - `run_custom_label_rate_breakdown_e2e.py`：执行自定义多维低打标率查询，默认输出汇总、TopN、CSV/XLSX、飞书电子表格和按机审一级标签生成的 POC 路由计划；仅显式传入 `--send-chat-id` 时才发送群消息。
 
 ## 使用约束

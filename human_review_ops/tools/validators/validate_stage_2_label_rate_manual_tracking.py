@@ -111,10 +111,12 @@ def assert_tracking_records(manual_tracking: dict[str, Any]) -> None:
             if not record.get(field):
                 raise AssertionError(f"{level} {field} missing.")
         resolution = record.get("recipient_resolution", {})
-        if resolution.get("mode") != "placeholder":
-            raise AssertionError(f"{level} recipient resolution must be placeholder.")
-        if resolution.get("recipients") != ["self"]:
-            raise AssertionError(f"{level} recipients must be self only.")
+        if resolution.get("mode") != "mach_root_label_mapping":
+            raise AssertionError(f"{level} recipient resolution must be mach_root_label_mapping.")
+        if resolution.get("routing_key") != "mach_root_label_name":
+            raise AssertionError(f"{level} recipient routing_key mismatch.")
+        if record.get("reason_count", 0) > 0 and resolution.get("real_poc_count", 0) <= 0:
+            raise AssertionError(f"{level} must contain name-level POCs when rows exist.")
 
 
 def assert_safety(

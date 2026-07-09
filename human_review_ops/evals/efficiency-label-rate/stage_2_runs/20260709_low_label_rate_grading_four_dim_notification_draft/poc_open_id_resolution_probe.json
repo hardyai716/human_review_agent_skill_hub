@@ -1,0 +1,147 @@
+{
+  "schema_version": "label_rate_poc_open_id_resolution_probe.v1",
+  "scenario_key": "efficiency-label-rate",
+  "probe_mode": "read_only_lark_sheet_mentions",
+  "source": {
+    "type": "lark_sheet",
+    "url": "https://bytedance.larkoffice.com/sheets/TpxwsA8zohUZkVtJ4J9cDcXUnbg?sheet=HKdm9w",
+    "sheet_id": "HKdm9w",
+    "range": "A1:F40"
+  },
+  "resolution_method": "lark-cli sheets +cells-get --include value,formula,comment",
+  "summary": {
+    "expected_mapping_count": 15,
+    "sheet_mention_rows": 15,
+    "mention_token_found": 15,
+    "mapping_name_match_count": 14,
+    "conflict_count": 1,
+    "missing_mention_count": 0,
+    "full_open_id_persisted": false
+  },
+  "contact_search_probe": {
+    "query": "齐思蕾",
+    "status": "blocked_missing_scope",
+    "missing_scope": "contact:user:search"
+  },
+  "conflicts": [
+    {
+      "mach_root_label_name": "党和国家形象负面",
+      "configured_poc_name": "齐思蕾",
+      "sheet_mention_name": "李中涛",
+      "sheet_mention_token_prefix": "ou_7677e76...",
+      "status": "requires_human_confirmation"
+    }
+  ],
+  "rows": [
+    {
+      "mach_root_label_name": "领导人",
+      "configured_poc_name": "宋诗慧",
+      "sheet_mention_name": "宋诗慧",
+      "sheet_mention_token_prefix": "ou_d8744cb...",
+      "status": "matched"
+    },
+    {
+      "mach_root_label_name": "国家安全",
+      "configured_poc_name": "杜衡",
+      "sheet_mention_name": "杜衡",
+      "sheet_mention_token_prefix": "ou_6f1390b...",
+      "status": "matched"
+    },
+    {
+      "mach_root_label_name": "指令舆情相关",
+      "configured_poc_name": "张发奇",
+      "sheet_mention_name": "张发奇",
+      "sheet_mention_token_prefix": "ou_15705a5...",
+      "status": "matched"
+    },
+    {
+      "mach_root_label_name": "党和国家形象负面",
+      "configured_poc_name": "齐思蕾",
+      "sheet_mention_name": "李中涛",
+      "sheet_mention_token_prefix": "ou_7677e76...",
+      "status": "conflict_requires_confirmation"
+    },
+    {
+      "mach_root_label_name": "偏激社会情绪和涉外言论",
+      "configured_poc_name": "张发奇",
+      "sheet_mention_name": "张发奇",
+      "sheet_mention_token_prefix": "ou_15705a5...",
+      "status": "matched"
+    },
+    {
+      "mach_root_label_name": "色情性化",
+      "configured_poc_name": "刘小楷",
+      "sheet_mention_name": "刘小楷",
+      "sheet_mention_token_prefix": "ou_0a15199...",
+      "status": "matched"
+    },
+    {
+      "mach_root_label_name": "违法违规",
+      "configured_poc_name": "叶健",
+      "sheet_mention_name": "叶健",
+      "sheet_mention_token_prefix": "ou_af07786...",
+      "status": "matched"
+    },
+    {
+      "mach_root_label_name": "侵犯未成年权益",
+      "configured_poc_name": "张宇轩",
+      "sheet_mention_name": "张宇轩",
+      "sheet_mention_token_prefix": "ou_87c439c...",
+      "status": "matched"
+    },
+    {
+      "mach_root_label_name": "不良行为或争议价值观",
+      "configured_poc_name": "陈雅静",
+      "sheet_mention_name": "陈雅静",
+      "sheet_mention_token_prefix": "ou_9a90b5b...",
+      "status": "matched"
+    },
+    {
+      "mach_root_label_name": "短期策略迁移",
+      "configured_poc_name": "陈思乔",
+      "sheet_mention_name": "陈思乔",
+      "sheet_mention_token_prefix": "ou_7e0c6ca...",
+      "status": "matched"
+    },
+    {
+      "mach_root_label_name": "危险行为",
+      "configured_poc_name": "陈雅静",
+      "sheet_mention_name": "陈雅静",
+      "sheet_mention_token_prefix": "ou_9a90b5b...",
+      "status": "matched"
+    },
+    {
+      "mach_root_label_name": "引人不适",
+      "configured_poc_name": "陈思乔",
+      "sheet_mention_name": "陈思乔",
+      "sheet_mention_token_prefix": "ou_7e0c6ca...",
+      "status": "matched"
+    },
+    {
+      "mach_root_label_name": "举报",
+      "configured_poc_name": "韩晶晶",
+      "sheet_mention_name": "韩晶晶",
+      "sheet_mention_token_prefix": "ou_b0ca3ec...",
+      "status": "matched"
+    },
+    {
+      "mach_root_label_name": "高热",
+      "configured_poc_name": "闫秦河",
+      "sheet_mention_name": "闫秦河",
+      "sheet_mention_token_prefix": "ou_97ee22a...",
+      "status": "matched"
+    },
+    {
+      "mach_root_label_name": "政媒",
+      "configured_poc_name": "杜衡",
+      "sheet_mention_name": "杜衡",
+      "sheet_mention_token_prefix": "ou_6f1390b...",
+      "status": "matched"
+    }
+  ],
+  "decision": {
+    "write_open_id_to_mapping": false,
+    "reason": "Open IDs are readable from sheet mentions, but one label has a name conflict and full open_id values should not be committed before confirmation/storage policy.",
+    "next_step": "Confirm the POC for 党和国家形象负面 and define secure open_id storage before enabling real POC mention sending."
+  }
+}

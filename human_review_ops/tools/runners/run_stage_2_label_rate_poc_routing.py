@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate stage 2 placeholder POC routing from label-rate grading results."""
+"""Generate stage 2 POC routing from label-rate grading results."""
 
 from __future__ import annotations
 

@@ -100,8 +100,16 @@ def assert_mapping(mapping: dict[str, Any]) -> None:
 
 
 def assert_routing_plan(plan: dict[str, Any]) -> None:
-    if plan.get("schema_version") != "label_rate_mach_label_poc_routing_plan.v1":
+    schema_version = plan.get("schema_version")
+    if schema_version == "label_rate_mach_label_poc_routing_plan.v1":
+        assert_custom_routing_plan(plan)
+    elif schema_version == "stage_2_poc_routing_plan.v1":
+        assert_stage_2_routing_plan(plan)
+    else:
         raise AssertionError("routing plan schema_version mismatch.")
+
+
+def assert_common_routing_fields(plan: dict[str, Any]) -> None:
     if plan.get("routing_mode") != "mach_root_label_mapping":
         raise AssertionError("routing plan mode mismatch.")
     if plan.get("routing_key") != "mach_root_label_name":
@@ -110,6 +118,16 @@ def assert_routing_plan(plan: dict[str, Any]) -> None:
         raise AssertionError("routing plan must use real name-level POC mapping.")
     if plan.get("contact_resolution_status") != "name_only":
         raise AssertionError("routing plan contact_resolution_status mismatch.")
+    if not plan.get("poc_summary"):
+        raise AssertionError("poc_summary must be non-empty.")
+    poc_names = {item.get("poc_name") for item in plan.get("poc_summary", [])}
+    for name in ("杜衡", "宋诗慧", "张发奇", "陈雅静"):
+        if name not in poc_names:
+            raise AssertionError(f"Expected POC missing from summary: {name}")
+
+
+def assert_custom_routing_plan(plan: dict[str, Any]) -> None:
+    assert_common_routing_fields(plan)
     if plan.get("row_count", 0) <= 0:
         raise AssertionError("routing plan row_count must be positive.")
     if plan.get("mapped_row_count", 0) <= 0:
@@ -125,12 +143,24 @@ def assert_routing_plan(plan: dict[str, Any]) -> None:
         raise AssertionError("group_send_blocked must remain true.")
     if constraints.get("real_notification_executed") is not False:
         raise AssertionError("routing plan must not execute notification.")
-    if not plan.get("poc_summary"):
-        raise AssertionError("poc_summary must be non-empty.")
-    poc_names = {item.get("poc_name") for item in plan.get("poc_summary", [])}
-    for name in ("杜衡", "宋诗慧", "张发奇", "陈雅静"):
-        if name not in poc_names:
-            raise AssertionError(f"Expected POC missing from summary: {name}")
+
+
+def assert_stage_2_routing_plan(plan: dict[str, Any]) -> None:
+    assert_common_routing_fields(plan)
+    row_count = plan.get("comprehensive_strategy_group_count")
+    if not isinstance(row_count, int) or row_count <= 0:
+        raise AssertionError("stage 2 routing plan row_count must be positive.")
+    if plan.get("mapped_row_count", 0) <= 0:
+        raise AssertionError("stage 2 mapped_row_count must be positive.")
+    if plan.get("missing_route_dimension_count") != 0:
+        raise AssertionError("stage 2 rows must contain mach_root_label_name.")
+    if plan.get("mapped_row_count", 0) + plan.get("unmapped_row_count", 0) != row_count:
+        raise AssertionError("stage 2 mapping counts must equal row_count.")
+    constraints = plan.get("routing_constraints", {})
+    if constraints.get("group_send_blocked") is not True:
+        raise AssertionError("stage 2 group_send_blocked must remain true.")
+    if constraints.get("real_notification_executed") is not False:
+        raise AssertionError("stage 2 routing plan must not execute notification.")
 
 
 if __name__ == "__main__":

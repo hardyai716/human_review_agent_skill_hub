@@ -1,0 +1,30 @@
+{
+  "schema_version": "stage_2_group_at_mention_validation.v1",
+  "scenario_key": "efficiency-label-rate",
+  "report_type": "low_efficiency_grading",
+  "validation_mode": "explicit_user_requested_private_group_at_mention_validation",
+  "chat": {
+    "chat_id": "oc_9c691aa76c22a16207c6f443eac25816",
+    "chat_type": "private_validation_group",
+    "name": "人审阶段2群发验证-20260709"
+  },
+  "send_result": {
+    "sent": true,
+    "send_identity": "bot",
+    "message_type": "text_with_at_mention",
+    "message_id": "om_x100b6bc1c3767090c2ceb97c46b17e7",
+    "create_time": "2026-07-09 16:16:27"
+  },
+  "mention": {
+    "target_user_open_id_prefix": "ou_7677e76...",
+    "at_syntax": "<at user_id=\"ou_...\">李中涛</at>",
+    "full_open_id_persisted": false
+  },
+  "safety": {
+    "user_explicitly_requested_group_at_validation": true,
+    "group_scope_limited_to_validation": true,
+    "online_state_store_write_executed": false,
+    "real_poc_group_broadcast_executed": false
+  },
+  "result": "pass"
+}

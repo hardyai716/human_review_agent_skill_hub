@@ -1,0 +1,16 @@
+{
+  "ok": true,
+  "data_hash": "80cd6b670dc3d4e46456a8a7bfdf09b2d77649b2f06652b253d4499e9aeae0f9",
+  "top_rows_count": 10,
+  "internal_meta_removed": true,
+  "design_check": {
+    "schema_2_0": true,
+    "has_header": true,
+    "has_metrics": true,
+    "has_chart": true,
+    "has_table": true,
+    "has_methodology": true,
+    "top_level_blocks": 5,
+    "passes_p0_p3_basic_gate": true
+  }
+}

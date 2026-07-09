@@ -73,19 +73,20 @@ def build_manual_tracking(
         },
         "overall_status": "pending_manual_confirmation",
         "operator_note": (
-            "开发验证阶段仅记录本地人工处理状态；真实 POC 映射、群推送和线上状态写入均未启用。"
+            "开发验证阶段仅记录本地人工处理状态；姓名级 POC 映射已可用，"
+            "但 open_id 确认、群推送和线上状态写入均未启用。"
         ),
         "next_action": (
-            "补充真实 reason/strategy -> POC 映射后，由人工确认是否执行群推送或继续观察。"
+            "确认 POC open_id、目标群和发送内容后，由人工决定是否执行群推送或继续观察。"
         ),
         "continue_observation": True,
         "evidence_refs": build_evidence_refs(notification_draft, records),
         "tracking_records": records,
         "closure_check": {
             "can_close": False,
-            "reason": "Stage 2 uses placeholder routing and still requires manual confirmation.",
+            "reason": "Stage 2 uses name-level POC routing and still requires manual confirmation.",
             "missing_before_close": [
-                "real_poc_mapping",
+                "poc_open_id_confirmation",
                 "human_confirmation",
                 "manual_response_or_resolution_note",
             ],
@@ -111,8 +112,8 @@ def build_tracking_record(level: str, rule: dict[str, Any]) -> dict[str, Any]:
         "target_roles": rule.get("target_roles", []),
         "action_required": rule.get("action_required"),
         "recipient_resolution": rule.get("recipient_resolution", {}),
-        "operator_note": "当前 POC 解析为占位逻辑，默认仅本人预览。",
-        "next_action": "等待真实 POC 映射和人工确认。",
+        "operator_note": "当前 POC 解析到姓名级，真实触达前仍需确认 open_id 和目标群。",
+        "next_action": "等待 POC 身份确认和人工发送确认。",
         "continue_observation": True,
         "evidence_refs": [
             {

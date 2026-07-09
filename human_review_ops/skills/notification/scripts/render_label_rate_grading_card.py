@@ -123,7 +123,7 @@ def chart_block(level_counts: dict[str, int]) -> dict[str, Any]:
         "color_theme": "primary",
         "chart_spec": {
             "type": "bar",
-            "title": {"visible": True, "text": "各等级命中 reason 数"},
+            "title": {"visible": True, "text": "各等级命中策略分组数"},
             "data": {
                 "values": [
                     {"level": level, "count": int(level_counts.get(level, 0))}
@@ -150,7 +150,26 @@ def table_columns() -> list[dict[str, Any]]:
             "data_type": "options",
             "width": "100px",
         },
-        {"name": "reason", "display_name": "reason", "data_type": "text", "width": "340px"},
+        {"name": "poc_name", "display_name": "POC", "data_type": "text", "width": "100px"},
+        {
+            "name": "mach_root_label_name",
+            "display_name": "机审一级标签",
+            "data_type": "text",
+            "width": "140px",
+        },
+        {
+            "name": "strategy_id",
+            "display_name": "策略ID",
+            "data_type": "text",
+            "width": "120px",
+        },
+        {
+            "name": "strategy_name",
+            "display_name": "策略名称",
+            "data_type": "text",
+            "width": "200px",
+        },
+        {"name": "reason", "display_name": "送审原因", "data_type": "text", "width": "220px"},
         {
             "name": "avg_in",
             "display_name": "日均进审",
@@ -223,6 +242,7 @@ def methodology_panel(summary: dict[str, Any]) -> dict[str, Any]:
     lines = [
         f"- 数据集：`{summary.get('dataset_id')}` / `{summary.get('region')}`",
         f"- 当前窗口：`{summary.get('period', {}).get('current_start')}` ~ `{summary.get('period', {}).get('current_end')}`",
+        "- 分析粒度：`机审一级标签 × 策略ID × 策略名称 × 送审原因`",
         "- 打标率：`SUM(打标量) / SUM(完审量)`",
         f"- fallback_reason：`{summary.get('fallback_reason')}`",
         f"- source：`{summary.get('source_stage_1_result')}`",
@@ -253,7 +273,7 @@ def render_grading_card(
     report_title = title or "近7天低效打标策略全等级结果"
     period = summary.get("period", {})
     subtitle = (
-        f"reason 粒度 · {period.get('current_start')} ~ {period.get('current_end')}"
+        f"四维策略分组 · {period.get('current_start')} ~ {period.get('current_end')}"
     )
     card = card_base(report_title, subtitle)
     elements = card["body"]["elements"]

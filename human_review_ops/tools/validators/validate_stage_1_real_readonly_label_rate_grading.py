@@ -20,6 +20,7 @@ DEFAULT_RESULTS = (
 )
 LEVEL_ORDER = ["P0", "P1", "P2", "notice"]
 LEVEL_PRIORITY = {"P0": 0, "P1": 1, "P2": 2, "notice": 3}
+DIMENSIONS = ["mach_root_label_name", "strategy_id", "strategy_name", "reason"]
 REQUIRED_SQL_SNIPPETS = [
     "`[p_date]` >= today() - 7",
     "`[project_title]` NOT LIKE '%虚假%'",
@@ -38,6 +39,10 @@ REQUIRED_SQL_SNIPPETS = [
     "`[scene]` IN ('community_audit_safe', 'community_audit_style', 'community_audit_moderate')",
     "`[reason]` NOT IN ('recall_skip_L6', 'fatal_output')",
     "`[机审一级标签]` IS NULL OR `[机审一级标签]` IN",
+    "ifNull(`[机审一级标签]`, '（空/机审一级标签）') AS mach_root_label_name",
+    "ifNull(`[strategy_id]`, '（空/strategy_id）') AS strategy_id",
+    "ifNull(`[strategy_name]`, '（空/strategy_name）') AS strategy_name",
+    "GROUP BY mach_root_label_name, strategy_id, strategy_name, reason",
     "SUM(jin_shen) / COUNT(DISTINCT dt) AS avg_review_in_cnt",
     "if(SUM(wan_shen) = 0, 0, SUM(da_biao) / SUM(wan_shen)) AS label_rate",
 ]
@@ -120,8 +125,8 @@ def assert_query_plan(sample: dict[str, Any]) -> None:
         raise AssertionError("QueryPlan execution_mode mismatch.")
     if query_plan.get("fallback_reason") != "complex_grading_rule_not_covered_by_semantic_layer":
         raise AssertionError("QueryPlan fallback_reason mismatch.")
-    if query_plan.get("dimensions") != ["reason"]:
-        raise AssertionError("Grading dimensions must be reason.")
+    if query_plan.get("dimensions") != DIMENSIONS:
+        raise AssertionError("Grading dimensions must be mach label, strategy, reason.")
     if query_plan.get("levels") != ["notice", "P2", "P1", "P0"]:
         raise AssertionError("Grading must run notice/P2/P1/P0.")
     if query_plan.get("level_priority") != LEVEL_PRIORITY:
@@ -201,23 +206,25 @@ def assert_readonly_execution(sample: dict[str, Any]) -> None:
             raise AssertionError(f"Level result priority mismatch: {level}")
         if result.get("truncated") is not False:
             raise AssertionError(f"Level result truncated: {level}")
-        seen_reasons: set[str] = set()
+        seen_keys: set[tuple[str, str, str, str]] = set()
         for row in result.get("rows", []):
             assert_grading_row(row, level, priority)
-            if row["reason"] in seen_reasons:
-                raise AssertionError(f"Duplicate reason inside level {level}: {row['reason']}")
-            seen_reasons.add(row["reason"])
+            key = dimension_key(row)
+            if key in seen_keys:
+                raise AssertionError(f"Duplicate dimension key inside level {level}: {key}")
+            seen_keys.add(key)
 
     comprehensive = execution.get("comprehensive_results")
     if not isinstance(comprehensive, list):
         raise AssertionError("Missing comprehensive_results.")
-    seen_comprehensive: set[str] = set()
+    seen_comprehensive: set[tuple[str, str, str, str]] = set()
     for row in comprehensive:
         assert_grading_row(row, row["severity_level"], row["severity_priority"])
-        if row["reason"] in seen_comprehensive:
-            raise AssertionError(f"Duplicate reason in comprehensive: {row['reason']}")
-        seen_comprehensive.add(row["reason"])
-        highest = highest_level_for_reason(row["reason"], level_results)
+        key = dimension_key(row)
+        if key in seen_comprehensive:
+            raise AssertionError(f"Duplicate dimension key in comprehensive: {key}")
+        seen_comprehensive.add(key)
+        highest = highest_level_for_key(key, level_results)
         if row["severity_level"] != highest:
             raise AssertionError("Comprehensive result must keep highest severity.")
     if execution.get("row_count") != len(comprehensive):
@@ -225,7 +232,11 @@ def assert_readonly_execution(sample: dict[str, Any]) -> None:
 
     for field in (
         "severity_level",
+        "mach_root_label_name",
+        "strategy_id",
+        "strategy_name",
         "reason",
+        "POC",
         "avg_review_in_cnt",
         "avg_review_done_cnt",
         "avg_label_cnt",
@@ -242,8 +253,13 @@ def assert_grading_row(row: dict[str, Any], level: str, priority: int) -> None:
         raise AssertionError("Row severity_level mismatch.")
     if row.get("severity_priority") != priority:
         raise AssertionError("Row severity_priority mismatch.")
+    for field in DIMENSIONS:
+        if not row.get(field):
+            raise AssertionError(f"Row {field} is required.")
     if not row.get("reason"):
         raise AssertionError("Row reason is required.")
+    if not row.get("POC") and not row.get("poc_name"):
+        raise AssertionError("Row POC is required.")
     if row.get("avg_review_in_cnt", 0) < 0:
         raise AssertionError("avg_review_in_cnt must be non-negative.")
     if row.get("avg_review_done_cnt", 0) <= 0:
@@ -258,15 +274,19 @@ def assert_grading_row(row: dict[str, Any], level: str, priority: int) -> None:
         raise AssertionError("hit_conditions required.")
 
 
-def highest_level_for_reason(
-    reason: str,
+def dimension_key(row: dict[str, Any]) -> tuple[str, str, str, str]:
+    return tuple(str(row.get(field, "")) for field in DIMENSIONS)  # type: ignore[return-value]
+
+
+def highest_level_for_key(
+    key: tuple[str, str, str, str],
     level_results: dict[str, dict[str, Any]],
 ) -> str:
     for level in LEVEL_ORDER:
         for row in level_results[level]["rows"]:
-            if row["reason"] == reason:
+            if dimension_key(row) == key:
                 return level
-    raise AssertionError(f"Reason missing from level results: {reason}")
+    raise AssertionError(f"Dimension key missing from level results: {key}")
 
 
 def assert_analysis_result(sample: dict[str, Any]) -> None:

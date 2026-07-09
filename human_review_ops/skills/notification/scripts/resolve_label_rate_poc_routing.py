@@ -62,7 +62,7 @@ def main() -> None:
     sample = load_stage_1_sample(source_path)
     plan = build_poc_routing_plan(sample, source_stage_1_result=str(source_path))
     write_json(output_path, plan)
-    print(f"POC routing placeholder wrote {output_path}")
+    print(f"POC routing wrote {output_path}")
 
 
 def load_jsonl(path: Path) -> list[dict[str, Any]]:
@@ -266,8 +266,28 @@ def build_poc_routing_plan(
     execution = sample["readonly_execution"]
     level_results = execution.get("level_results", {})
     level_counts = execution.get("level_counts", {})
+    mapping = load_poc_mapping()
+    index = poc_mapping_index(mapping)
+    comprehensive_rows = execution.get("comprehensive_results", [])
+    assignments = [
+        resolve_row_poc(row, index)
+        | summarize_row(row)
+        | {
+            "severity_level": row.get("severity_level"),
+            "hit_rule_ids": row.get("hit_rule_ids"),
+            "hit_conditions": row.get("hit_conditions"),
+        }
+        for row in comprehensive_rows
+    ]
+    mapped = [item for item in assignments if item["mapping_status"].startswith("mapped_")]
+    unmapped = [item for item in assignments if item["mapping_status"] == "unmapped_label"]
+    missing = [
+        item
+        for item in assignments
+        if item["mapping_status"] == "missing_route_dimension"
+    ]
     routing_rules = {
-        level: build_level_rule(level, level_results.get(level, {}))
+        level: build_level_rule(level, level_results.get(level, {}), index)
         for level in LEVEL_ORDER
     }
     return {
@@ -275,13 +295,29 @@ def build_poc_routing_plan(
         "scenario_key": "efficiency-label-rate",
         "report_type": "low_efficiency_grading",
         "source_stage_1_result": source_stage_1_result,
-        "routing_mode": "placeholder",
-        "fallback_to_default_user": True,
+        "routing_mode": "mach_root_label_mapping",
+        "routing_key": "mach_root_label_name",
+        "fallback_to_default_user": bool(unmapped or missing),
         "default_recipient": "self",
-        "real_poc_mapping_used": False,
-        "real_poc_mapping_source": None,
+        "real_poc_mapping_used": bool(mapped),
+        "real_poc_mapping_source": mapping.get("source"),
+        "contact_resolution_status": mapping.get("contact_resolution_status", "name_only"),
         "level_counts": {level: int(level_counts.get(level, 0)) for level in LEVEL_ORDER},
         "comprehensive_reason_count": int(execution.get("row_count", 0)),
+        "comprehensive_strategy_group_count": int(execution.get("row_count", 0)),
+        "mapped_row_count": len(mapped),
+        "unmapped_row_count": len(unmapped),
+        "missing_route_dimension_count": len(missing),
+        "mapped_label_count": len({item["mach_root_label_name"] for item in mapped}),
+        "unmapped_labels": sorted(
+            {
+                item["mach_root_label_name"]
+                for item in unmapped
+                if item.get("mach_root_label_name")
+            }
+        ),
+        "poc_summary": build_poc_summary(mapped),
+        "assignment_preview": assignments[:20],
         "routing_rules": routing_rules,
         "routing_constraints": {
             "group_send_blocked": True,
@@ -296,30 +332,74 @@ def build_poc_routing_plan(
             "query_plan_id": sample.get("QueryPlan", {}).get("query_plan_id"),
             "readonly_execution_mode": True,
         },
+        "limitations": [
+            "当前映射仅到 POC 姓名，尚未将 open_id 写入发布资产。",
+            "真实触达前必须完成联系人歧义确认、目标群确认和发送门禁校验。",
+        ],
     }
 
 
-def build_level_rule(level: str, level_result: dict[str, Any]) -> dict[str, Any]:
+def build_level_rule(
+    level: str,
+    level_result: dict[str, Any],
+    mapping_index: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
     rule = LEVEL_RULES[level]
     rows = level_result.get("rows", [])
+    assignments = [
+        resolve_row_poc(row, mapping_index)
+        | summarize_row(row)
+        | {
+            "severity_level": level,
+            "hit_rule_ids": row.get("hit_rule_ids"),
+            "hit_conditions": row.get("hit_conditions"),
+        }
+        for row in rows
+    ]
+    mapped = [item for item in assignments if item["mapping_status"].startswith("mapped_")]
+    unmapped = [item for item in assignments if item["mapping_status"] == "unmapped_label"]
+    missing = [
+        item
+        for item in assignments
+        if item["mapping_status"] == "missing_route_dimension"
+    ]
+    poc_names = sorted({item["poc_name"] for item in mapped if item.get("poc_name")})
     return {
         "severity_level": level,
         "target_roles": rule["target_roles"],
         "action_required": rule["action_required"],
         "default_recipient": "self",
         "recipient_resolution": {
-            "mode": "placeholder",
-            "recipients": ["self"],
-            "real_poc_count": 0,
-            "fallback_reason": "real reason/strategy -> POC mapping is not available",
+            "mode": "mach_root_label_mapping",
+            "routing_key": "mach_root_label_name",
+            "recipients": poc_names,
+            "contact_resolution_status": "name_only",
+            "real_poc_count": len(poc_names),
+            "mapped_row_count": len(mapped),
+            "unmapped_row_count": len(unmapped),
+            "missing_route_dimension_count": len(missing),
+            "fallback_recipient": "self" if unmapped or missing else None,
         },
         "requires_human_confirmation_before_real_send": True,
         "group_send_blocked": True,
         "online_write_executed": False,
         "reason_count": len(rows),
+        "strategy_group_count": len(rows),
+        "poc_names": poc_names,
+        "unmapped_labels": sorted(
+            {
+                item["mach_root_label_name"]
+                for item in unmapped
+                if item.get("mach_root_label_name")
+            }
+        ),
         "evidence_refs": [
             {
+                "mach_root_label_name": row.get("mach_root_label_name"),
+                "strategy_id": row.get("strategy_id"),
+                "strategy_name": row.get("strategy_name"),
                 "reason": row.get("reason"),
+                "POC": row.get("POC") or row.get("poc_name"),
                 "hit_rule_ids": row.get("hit_rule_ids"),
                 "hit_conditions": row.get("hit_conditions"),
             }

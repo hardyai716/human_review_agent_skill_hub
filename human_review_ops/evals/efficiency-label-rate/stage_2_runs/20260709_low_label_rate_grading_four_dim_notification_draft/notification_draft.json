@@ -1,0 +1,614 @@
+{
+  "schema_version": "stage_2_notification_draft_detail.v1",
+  "scenario_key": "efficiency-label-rate",
+  "report_type": "low_efficiency_grading",
+  "draft_mode": "self_preview_with_name_level_poc_routing",
+  "default_self_validation": true,
+  "real_poc_mapping_used": true,
+  "source_stage_1_result": "evals/efficiency-label-rate/stage_1_runs/20260709_real_readonly_label_rate_grading_four_dim_results.jsonl",
+  "level_counts": {
+    "notice": 9357,
+    "P2": 7,
+    "P1": 4,
+    "P0": 3
+  },
+  "comprehensive_reason_count": 9357,
+  "comprehensive_strategy_group_count": 9357,
+  "data_link": {
+    "sheet_url": "https://bytedance.larkoffice.com/sheets/C8obsw600hiWbJtIpGicwVpYnNg",
+    "workbook": "low_label_rate_grading_2026-07-02_2026-07-08.xlsx",
+    "csv_files": {
+      "notice": "notice.csv",
+      "P2": "P2.csv",
+      "P1": "P1.csv",
+      "P0": "P0.csv",
+      "comprehensive": "综合.csv"
+    }
+  },
+  "card_draft": {
+    "card_json": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_four_dim_notification_draft/publish/low_efficiency_grading.card.json",
+    "card_json_with_meta": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_four_dim_notification_draft/publish/low_efficiency_grading.card.with_meta.json",
+    "card_hash_check": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_four_dim_notification_draft/publish/card_hash_check.json",
+    "send_card_meta_removed": true
+  },
+  "poc_routing": {
+    "poc_routing_plan": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_four_dim_notification_draft/poc_routing_plan.json",
+    "routing_mode": "mach_root_label_mapping",
+    "fallback_to_default_user": false,
+    "default_recipient": "self",
+    "routing_key": "mach_root_label_name",
+    "contact_resolution_status": "name_only",
+    "mapped_row_count": 9357,
+    "unmapped_row_count": 0,
+    "missing_route_dimension_count": 0,
+    "poc_summary": [
+      {
+        "poc_name": "杜衡",
+        "poc_open_id": null,
+        "mach_root_label_names": [
+          "国家安全"
+        ],
+        "row_count": 3181,
+        "top_reasons": [
+          {
+            "reason": "LS_regular_BASE_OCR_words_review",
+            "strategy_id": "10012811198",
+            "avg_review_done_cnt": 4200.285714285715,
+            "label_rate": 0.016325420039453097
+          },
+          {
+            "reason": "national_security_recall_rewords_review",
+            "strategy_id": "10015622164",
+            "avg_review_done_cnt": 2068.5714285714284,
+            "label_rate": 0.021823204419889504
+          },
+          {
+            "reason": "national_security_regular_OCR_words_review",
+            "strategy_id": "10013031733",
+            "avg_review_done_cnt": 7687.571428571428,
+            "label_rate": 0.05576719380075446
+          },
+          {
+            "reason": "national_security_tibetan_risk_user_list_for_dailai_birthday_temp_manual",
+            "strategy_id": "10034206201",
+            "avg_review_done_cnt": 3863.3333333333335,
+            "label_rate": 0.040983606557377046
+          },
+          {
+            "reason": "model_llm_gandalf_8class_p2_ls_manual",
+            "strategy_id": "10033554719",
+            "avg_review_done_cnt": 3780.285714285714,
+            "label_rate": 0.04878693976267856
+          }
+        ]
+      },
+      {
+        "poc_name": "张发奇",
+        "poc_open_id": null,
+        "mach_root_label_names": [
+          "偏激社会情绪和涉外言论",
+          "指令舆情相关"
+        ],
+        "row_count": 2067,
+        "top_reasons": [
+          {
+            "reason": "fence_recall",
+            "strategy_id": "10008330225",
+            "avg_review_done_cnt": 6809.0,
+            "label_rate": 0.03466000881186665
+          },
+          {
+            "reason": "ZL_antidirt_10518_aigc_ocr_aigc_review",
+            "strategy_id": "10022271678",
+            "avg_review_done_cnt": 2521.8571428571427,
+            "label_rate": 0.09312864668894806
+          },
+          {
+            "reason": "model_llm_safe_mind_leader_beyond_rule_leader_name_chinese_charactor_zl_friend_see_review",
+            "strategy_id": "10019351880",
+            "avg_review_done_cnt": 2240.5,
+            "label_rate": 0.04340548984601651
+          },
+          {
+            "reason": "user_politic_rept_cnt_review",
+            "strategy_id": "10022809883",
+            "avg_review_done_cnt": 1808.5714285714287,
+            "label_rate": 0.09984202211690363
+          },
+          {
+            "reason": "ZL_eva_227415_general_multi_rept_review",
+            "strategy_id": "10027554497",
+            "avg_review_done_cnt": 1577.5,
+            "label_rate": 0.059904912836767035
+          }
+        ]
+      },
+      {
+        "poc_name": "齐思蕾",
+        "poc_open_id": null,
+        "mach_root_label_names": [
+          "党和国家形象负面"
+        ],
+        "row_count": 1356,
+        "top_reasons": [
+          {
+            "reason": "party_state_military_gov_8871_ocr_antidirt",
+            "strategy_id": "10012612012",
+            "avg_review_done_cnt": 8125.285714285715,
+            "label_rate": 0.09840533080155422
+          },
+          {
+            "reason": "tuwen_eva_120363_parodyingmartyrs_homogenization_ocr_title_review",
+            "strategy_id": "10024100858",
+            "avg_review_done_cnt": 2273.1428571428573,
+            "label_rate": 0.08320764203117144
+          },
+          {
+            "reason": "eva_0845_govhr_review",
+            "strategy_id": "10008386569",
+            "avg_review_done_cnt": 1823.5714285714287,
+            "label_rate": 0.022483352918135528
+          },
+          {
+            "reason": "model_llm_mechanisms_improper_use_review",
+            "strategy_id": "10028068996",
+            "avg_review_done_cnt": 1353.5714285714287,
+            "label_rate": 0.07757255936675461
+          },
+          {
+            "reason": "eva_045_wenge_sh",
+            "strategy_id": "10004801327",
+            "avg_review_done_cnt": 1082.857142857143,
+            "label_rate": 0.08786279683377309
+          }
+        ]
+      },
+      {
+        "poc_name": "宋诗慧",
+        "poc_open_id": null,
+        "mach_root_label_names": [
+          "领导人"
+        ],
+        "row_count": 1236,
+        "top_reasons": [
+          {
+            "reason": "core_protection_gov_user",
+            "strategy_id": "10006128216",
+            "avg_review_done_cnt": 4742.0,
+            "label_rate": 0.00012050370548894379
+          },
+          {
+            "reason": "is_govB_media",
+            "strategy_id": "10006132401",
+            "avg_review_done_cnt": 2597.8571428571427,
+            "label_rate": 0.0020346439373109706
+          },
+          {
+            "reason": "pentax_fans_19_n2",
+            "strategy_id": "10011265292",
+            "avg_review_done_cnt": 2625.714285714286,
+            "label_rate": 0.06387377584330794
+          },
+          {
+            "reason": "lkq_eva_daonian",
+            "strategy_id": "10004770670",
+            "avg_review_done_cnt": 2044.0,
+            "label_rate": 0.019765166340508806
+          },
+          {
+            "reason": "title_leader_table_8578",
+            "strategy_id": "10003788046",
+            "avg_review_done_cnt": 9093.42857142857,
+            "label_rate": 0.06827536368492161
+          }
+        ]
+      },
+      {
+        "poc_name": "叶健",
+        "poc_open_id": null,
+        "mach_root_label_names": [
+          "违法违规"
+        ],
+        "row_count": 442,
+        "top_reasons": [
+          {
+            "reason": "risk_of_illegal_drug_list_v0626",
+            "strategy_id": "10033607810",
+            "avg_review_done_cnt": 1164.6,
+            "label_rate": 0.08277520178602095
+          },
+          {
+            "reason": "risk_of_illegal_bypass_vpn_accelerator_v1",
+            "strategy_id": "10026036091",
+            "avg_review_done_cnt": 1137.6,
+            "label_rate": 0.08069620253164557
+          },
+          {
+            "reason": "risk_of_illegal_house_rent_v0703",
+            "strategy_id": "10034122543",
+            "avg_review_done_cnt": 675.0,
+            "label_rate": 0.02419753086419753
+          },
+          {
+            "reason": "risk_of_illegal_animal_treating_veomni_v15",
+            "strategy_id": "10033273921",
+            "avg_review_done_cnt": 212.5,
+            "label_rate": 0.04
+          },
+          {
+            "reason": "eva_youxidubo",
+            "strategy_id": "10034299412",
+            "avg_review_done_cnt": 190.66666666666666,
+            "label_rate": 0.05944055944055944
+          }
+        ]
+      },
+      {
+        "poc_name": "张宇轩",
+        "poc_open_id": null,
+        "mach_root_label_names": [
+          "侵犯未成年权益"
+        ],
+        "row_count": 414,
+        "top_reasons": [
+          {
+            "reason": "juvenile_pojiefangchenmi",
+            "strategy_id": "10032123015",
+            "avg_review_done_cnt": 1691.142857142857,
+            "label_rate": 0.09891873627301909
+          },
+          {
+            "reason": "mouliertongcaizhuang",
+            "strategy_id": "10022130710",
+            "avg_review_done_cnt": 155.42857142857142,
+            "label_rate": 0.08272058823529412
+          },
+          {
+            "reason": "underage_zaohunzaoyun_keywords",
+            "strategy_id": "10023503462",
+            "avg_review_done_cnt": 88.85714285714286,
+            "label_rate": 0.07877813504823152
+          },
+          {
+            "reason": "recall_weichengnianpeiwanpeiliaodaida_review",
+            "strategy_id": "10014498285",
+            "avg_review_done_cnt": 78.42857142857143,
+            "label_rate": 0.07103825136612021
+          },
+          {
+            "reason": "underage_xtc",
+            "strategy_id": "10023201536",
+            "avg_review_done_cnt": 26.142857142857142,
+            "label_rate": 0.01092896174863388
+          }
+        ]
+      },
+      {
+        "poc_name": "刘小楷",
+        "poc_open_id": null,
+        "mach_root_label_names": [
+          "色情性化"
+        ],
+        "row_count": 337,
+        "top_reasons": [
+          {
+            "reason": "sqds_sqdl_key_word_high_acc_review",
+            "strategy_id": "10013833877",
+            "avg_review_done_cnt": 4613.857142857143,
+            "label_rate": 0.07205003560702232
+          },
+          {
+            "reason": "sqds_sqdl_wy_mp_review",
+            "strategy_id": "10023903408",
+            "avg_review_done_cnt": 1495.4285714285713,
+            "label_rate": 0.08024455483377914
+          },
+          {
+            "reason": "sqds_sqll_zuqiu_vv_eva_review",
+            "strategy_id": "10032378726",
+            "avg_review_done_cnt": 891.3333333333334,
+            "label_rate": 0.028234854151084517
+          },
+          {
+            "reason": "sqds_sqdl_czxxcc_low_fans_review",
+            "strategy_id": "10025295440",
+            "avg_review_done_cnt": 122.8,
+            "label_rate": 0.016286644951140065
+          },
+          {
+            "reason": "sqds_sqdl_czxxcc_review",
+            "strategy_id": "10030221280",
+            "avg_review_done_cnt": 36.8,
+            "label_rate": 0.043478260869565216
+          }
+        ]
+      },
+      {
+        "poc_name": "陈雅静",
+        "poc_open_id": null,
+        "mach_root_label_names": [
+          "不良行为或争议价值观",
+          "危险行为"
+        ],
+        "row_count": 208,
+        "top_reasons": [
+          {
+            "reason": "safety_value_yyfqtdldyt_pxdl_v1_review",
+            "strategy_id": "10011746841",
+            "avg_review_done_cnt": 260.5,
+            "label_rate": 0.015355086372360844
+          },
+          {
+            "reason": "model_llm_buliangxingweiyuzhengyijiazhiguan_guoduyinshi_PE_auto_review",
+            "strategy_id": "10028846803",
+            "avg_review_done_cnt": 251.71428571428572,
+            "label_rate": 0.09875141884222474
+          },
+          {
+            "reason": "safety_public_eva_keywords_lgbt_rainbow_v2_review",
+            "strategy_id": "10013310374",
+            "avg_review_done_cnt": 236.57142857142858,
+            "label_rate": 0.08152173913043478
+          },
+          {
+            "reason": "safety_value_yyfqtdldyt_pxdl_v1_auto_review",
+            "strategy_id": "10011746841",
+            "avg_review_done_cnt": 55.833333333333336,
+            "label_rate": 0.09253731343283582
+          },
+          {
+            "reason": "toxic_culture_controversial_issue_marriage_pregnet_v8_auto_review",
+            "strategy_id": "10023162637",
+            "avg_review_done_cnt": 54.285714285714285,
+            "label_rate": 0.08947368421052632
+          }
+        ]
+      },
+      {
+        "poc_name": "陈思乔",
+        "poc_open_id": null,
+        "mach_root_label_names": [
+          "引人不适",
+          "短期策略迁移"
+        ],
+        "row_count": 116,
+        "top_reasons": [
+          {
+            "reason": "review_sensitive_faces",
+            "strategy_id": "10004251878",
+            "avg_review_done_cnt": 23.0,
+            "label_rate": 0.018633540372670808
+          },
+          {
+            "reason": "special_Illegal_arts_keywords_manual",
+            "strategy_id": "10024813633",
+            "avg_review_done_cnt": 19.0,
+            "label_rate": 0.06015037593984962
+          },
+          {
+            "reason": "fengjin_wanghong_eva_s2_nhs_review",
+            "strategy_id": "10010169295",
+            "avg_review_done_cnt": 12.571428571428571,
+            "label_rate": 0.07954545454545454
+          },
+          {
+            "reason": "eva_73281_nihilism_revolution_neg_general_long_term_cluster_review",
+            "strategy_id": "10004804746",
+            "avg_review_done_cnt": 8.666666666666666,
+            "label_rate": 0.07692307692307693
+          },
+          {
+            "reason": "Illegal_arts_keywords_manual",
+            "strategy_id": "10023590423",
+            "avg_review_done_cnt": 6.285714285714286,
+            "label_rate": 0.06818181818181818
+          }
+        ]
+      }
+    ],
+    "routing_rules": {
+      "notice": {
+        "target_roles": [
+          "群内同步策略明细和数据链接"
+        ],
+        "action_required": "周知明细，纳入观察。",
+        "default_recipient": "self",
+        "recipient_resolution": {
+          "mode": "mach_root_label_mapping",
+          "routing_key": "mach_root_label_name",
+          "recipients": [
+            "刘小楷",
+            "叶健",
+            "宋诗慧",
+            "张发奇",
+            "张宇轩",
+            "杜衡",
+            "陈思乔",
+            "陈雅静",
+            "齐思蕾"
+          ],
+          "contact_resolution_status": "name_only",
+          "real_poc_count": 9,
+          "mapped_row_count": 9357,
+          "unmapped_row_count": 0,
+          "missing_route_dimension_count": 0,
+          "fallback_recipient": null
+        },
+        "requires_human_confirmation_before_real_send": true,
+        "group_send_blocked": true,
+        "reason_count": 9357,
+        "strategy_group_count": 9357,
+        "poc_names": [
+          "刘小楷",
+          "叶健",
+          "宋诗慧",
+          "张发奇",
+          "张宇轩",
+          "杜衡",
+          "陈思乔",
+          "陈雅静",
+          "齐思蕾"
+        ],
+        "unmapped_labels": []
+      },
+      "P2": {
+        "target_roles": [
+          "治理 BP",
+          "审核 VOC POC",
+          "人审运营"
+        ],
+        "action_required": "请相关 POC 说明低打标原因和后续处理计划。",
+        "default_recipient": "self",
+        "recipient_resolution": {
+          "mode": "mach_root_label_mapping",
+          "routing_key": "mach_root_label_name",
+          "recipients": [
+            "宋诗慧",
+            "张发奇",
+            "杜衡"
+          ],
+          "contact_resolution_status": "name_only",
+          "real_poc_count": 3,
+          "mapped_row_count": 7,
+          "unmapped_row_count": 0,
+          "missing_route_dimension_count": 0,
+          "fallback_recipient": null
+        },
+        "requires_human_confirmation_before_real_send": true,
+        "group_send_blocked": true,
+        "reason_count": 7,
+        "strategy_group_count": 7,
+        "poc_names": [
+          "宋诗慧",
+          "张发奇",
+          "杜衡"
+        ],
+        "unmapped_labels": []
+      },
+      "P1": {
+        "target_roles": [
+          "治理 BP",
+          "审核 VOC POC",
+          "人审运营",
+          "治理 BP +1",
+          "VOC 负责人",
+          "人审运营负责人"
+        ],
+        "action_required": "要求负责人关注，并推动原因说明和处理计划。",
+        "default_recipient": "self",
+        "recipient_resolution": {
+          "mode": "mach_root_label_mapping",
+          "routing_key": "mach_root_label_name",
+          "recipients": [
+            "宋诗慧",
+            "杜衡"
+          ],
+          "contact_resolution_status": "name_only",
+          "real_poc_count": 2,
+          "mapped_row_count": 4,
+          "unmapped_row_count": 0,
+          "missing_route_dimension_count": 0,
+          "fallback_recipient": null
+        },
+        "requires_human_confirmation_before_real_send": true,
+        "group_send_blocked": true,
+        "reason_count": 4,
+        "strategy_group_count": 4,
+        "poc_names": [
+          "宋诗慧",
+          "杜衡"
+        ],
+        "unmapped_labels": []
+      },
+      "P0": {
+        "target_roles": [
+          "治理 BP",
+          "审核 VOC POC",
+          "人审运营",
+          "治理 BP +1",
+          "VOC 负责人",
+          "人审运营负责人",
+          "治理负责人"
+        ],
+        "action_required": "高优先级周知，要求重点关注和处理。",
+        "default_recipient": "self",
+        "recipient_resolution": {
+          "mode": "mach_root_label_mapping",
+          "routing_key": "mach_root_label_name",
+          "recipients": [
+            "宋诗慧",
+            "杜衡"
+          ],
+          "contact_resolution_status": "name_only",
+          "real_poc_count": 2,
+          "mapped_row_count": 3,
+          "unmapped_row_count": 0,
+          "missing_route_dimension_count": 0,
+          "fallback_recipient": null
+        },
+        "requires_human_confirmation_before_real_send": true,
+        "group_send_blocked": true,
+        "reason_count": 3,
+        "strategy_group_count": 3,
+        "poc_names": [
+          "宋诗慧",
+          "杜衡"
+        ],
+        "unmapped_labels": []
+      }
+    },
+    "routing_constraints": {
+      "group_send_blocked": true,
+      "group_send_allowed": false,
+      "group_recipients": [],
+      "real_notification_executed": false,
+      "online_write_executed": false,
+      "online_state_write_allowed": false
+    }
+  },
+  "methodology": {
+    "metric_formula": "`label_rate` = SUM(`[打标量__reviewid]`) / SUM(`[完审量_reviewid]`)",
+    "period": {
+      "current_start": "2026-07-02",
+      "current_end": "2026-07-08",
+      "history_start": "2026-06-11",
+      "checked_at": "2026-07-09T16:12:25.875000+08:00"
+    },
+    "source_footer": {
+      "source_tier": "governed_dataset",
+      "metric_definition_version": "draft",
+      "data_freshness": "p_date >= today() - 28 AND p_date < today(); checked_at=2026-07-09T16:12:25.875+08:00",
+      "owner": "人审效率域数据 Owner",
+      "confidence_tier": "high",
+      "review_status": "real_readonly_query_executed",
+      "scenario_key": "efficiency-label-rate",
+      "metric_id": "label_rate",
+      "quality_checks": [
+        "freshness_gate",
+        "denominator_not_zero",
+        "field_mapping_check",
+        "grain_check_four_dimension_strategy",
+        "forbidden_source_check",
+        "truncation_check",
+        "grading_rule_check"
+      ]
+    }
+  },
+  "send_safety": {
+    "current_stage": "draft_only_for_group_send",
+    "current_preview_recipient": "self",
+    "requires_confirmation_before_group_send": true,
+    "group_send_blocked": true,
+    "group_send_allowed": false,
+    "sent": false,
+    "real_group_send_executed": false,
+    "online_write_executed": false,
+    "self_preview_sent": false,
+    "self_preview_message_id": null
+  },
+  "provenance": {
+    "dataset_id": "3888816",
+    "region": "cn",
+    "query_plan_id": null
+  }
+}

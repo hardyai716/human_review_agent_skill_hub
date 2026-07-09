@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate stage 2 label-rate placeholder POC routing artifacts."""
+"""Validate stage 2 label-rate POC routing artifacts."""
 
 from __future__ import annotations
 
@@ -85,14 +85,22 @@ def assert_plan_header(plan: dict[str, Any]) -> None:
         raise AssertionError("scenario_key mismatch.")
     if plan.get("report_type") != "low_efficiency_grading":
         raise AssertionError("report_type mismatch.")
-    if plan.get("routing_mode") != "placeholder":
-        raise AssertionError("routing_mode must be placeholder.")
-    if plan.get("fallback_to_default_user") is not True:
-        raise AssertionError("fallback_to_default_user must be true.")
+    if plan.get("routing_mode") != "mach_root_label_mapping":
+        raise AssertionError("routing_mode must be mach_root_label_mapping.")
+    if plan.get("routing_key") != "mach_root_label_name":
+        raise AssertionError("routing_key must be mach_root_label_name.")
     if plan.get("default_recipient") != "self":
         raise AssertionError("default_recipient must be self.")
-    if plan.get("real_poc_mapping_used") is not False:
-        raise AssertionError("real POC mapping must not be used.")
+    if plan.get("real_poc_mapping_used") is not True:
+        raise AssertionError("real POC mapping must be used.")
+    if plan.get("contact_resolution_status") != "name_only":
+        raise AssertionError("contact_resolution_status must be name_only.")
+    if not isinstance(plan.get("poc_summary"), list):
+        raise AssertionError("poc_summary must be a list.")
+    if plan.get("mapped_row_count", 0) + plan.get("unmapped_row_count", 0) + plan.get(
+        "missing_route_dimension_count", 0
+    ) != plan.get("comprehensive_strategy_group_count", plan.get("comprehensive_reason_count")):
+        raise AssertionError("POC mapping counts must equal comprehensive group count.")
     assert_level_counts(plan)
 
 
@@ -103,11 +111,14 @@ def assert_level_counts(plan: dict[str, Any]) -> None:
     for level, count in level_counts.items():
         if not isinstance(count, int) or count < 0:
             raise AssertionError(f"{level} level_count must be a non-negative integer.")
-    comprehensive_reason_count = plan.get("comprehensive_reason_count")
-    if not isinstance(comprehensive_reason_count, int) or comprehensive_reason_count < 0:
-        raise AssertionError("comprehensive_reason_count must be a non-negative integer.")
-    if comprehensive_reason_count > level_counts.get("notice", 0):
-        raise AssertionError("comprehensive_reason_count cannot exceed notice count.")
+    comprehensive_group_count = plan.get(
+        "comprehensive_strategy_group_count",
+        plan.get("comprehensive_reason_count"),
+    )
+    if not isinstance(comprehensive_group_count, int) or comprehensive_group_count < 0:
+        raise AssertionError("comprehensive strategy group count must be non-negative.")
+    if comprehensive_group_count > level_counts.get("notice", 0):
+        raise AssertionError("comprehensive group count cannot exceed notice count.")
 
 
 def assert_level_rules(plan: dict[str, Any]) -> None:
@@ -128,14 +139,18 @@ def assert_level_rules(plan: dict[str, Any]) -> None:
         if actual.get("requires_human_confirmation_before_real_send") is not True:
             raise AssertionError(f"{level} must require confirmation before real send.")
         resolution = actual.get("recipient_resolution", {})
-        if resolution.get("mode") != "placeholder":
+        if resolution.get("mode") != "mach_root_label_mapping":
             raise AssertionError(f"{level} recipient resolution mode mismatch.")
-        if resolution.get("recipients") != ["self"]:
-            raise AssertionError(f"{level} recipients must be self only.")
-        if resolution.get("real_poc_count") != 0:
-            raise AssertionError(f"{level} must not contain real POCs.")
+        if resolution.get("routing_key") != "mach_root_label_name":
+            raise AssertionError(f"{level} recipient routing_key mismatch.")
+        if actual.get("reason_count") > 0 and resolution.get("real_poc_count", 0) <= 0:
+            raise AssertionError(f"{level} must contain name-level POCs when rows exist.")
+        if actual.get("reason_count") > 0 and not actual.get("poc_names"):
+            raise AssertionError(f"{level} poc_names missing.")
         if actual.get("reason_count") != plan["level_counts"][level]:
             raise AssertionError(f"{level} reason_count mismatch.")
+        if actual.get("strategy_group_count") != plan["level_counts"][level]:
+            raise AssertionError(f"{level} strategy_group_count mismatch.")
 
 
 def assert_no_group_send(plan: dict[str, Any]) -> None:

@@ -109,6 +109,9 @@ def assert_level_counts(summary: dict[str, Any]) -> None:
         raise AssertionError("summary comprehensive_reason_count must be a non-negative integer.")
     if comprehensive_reason_count > level_counts.get("notice", 0):
         raise AssertionError("summary comprehensive_reason_count cannot exceed notice count.")
+    comprehensive_group_count = summary.get("comprehensive_strategy_group_count")
+    if comprehensive_group_count != comprehensive_reason_count:
+        raise AssertionError("summary comprehensive_strategy_group_count mismatch.")
 
 
 def assert_notification_draft(
@@ -123,14 +126,18 @@ def assert_notification_draft(
         raise AssertionError("notification_draft report_type mismatch.")
     if notification_draft.get("default_self_validation") is not True:
         raise AssertionError("notification_draft must declare default self validation.")
-    if notification_draft.get("real_poc_mapping_used") is not False:
-        raise AssertionError("notification_draft must not use real POC mapping.")
+    if notification_draft.get("real_poc_mapping_used") is not True:
+        raise AssertionError("notification_draft must use name-level POC mapping.")
     if notification_draft.get("level_counts") != summary.get("level_counts"):
         raise AssertionError("notification_draft level_counts mismatch.")
     if notification_draft.get("comprehensive_reason_count") != summary.get(
         "comprehensive_reason_count"
     ):
         raise AssertionError("notification_draft comprehensive count mismatch.")
+    if notification_draft.get("comprehensive_strategy_group_count") != summary.get(
+        "comprehensive_strategy_group_count"
+    ):
+        raise AssertionError("notification_draft comprehensive group count mismatch.")
 
     data_link = notification_draft.get("data_link", {})
     if data_link.get("sheet_url") != summary.get("sheet_url"):
@@ -143,10 +150,14 @@ def assert_notification_draft(
         raise AssertionError("notification_draft must declare _meta removal.")
 
     poc_routing = notification_draft.get("poc_routing", {})
-    if poc_routing.get("routing_mode") != "placeholder":
-        raise AssertionError("notification_draft routing_mode must be placeholder.")
-    if poc_routing.get("fallback_to_default_user") is not True:
-        raise AssertionError("notification_draft must fallback to default user.")
+    if poc_routing.get("routing_mode") != "mach_root_label_mapping":
+        raise AssertionError("notification_draft routing_mode must be mach_root_label_mapping.")
+    if poc_routing.get("routing_key") != "mach_root_label_name":
+        raise AssertionError("notification_draft routing_key mismatch.")
+    if poc_routing.get("contact_resolution_status") != "name_only":
+        raise AssertionError("notification_draft contact_resolution_status mismatch.")
+    if poc_routing.get("mapped_row_count", 0) <= 0:
+        raise AssertionError("notification_draft mapped_row_count must be positive.")
     if poc_routing.get("default_recipient") != "self":
         raise AssertionError("notification_draft default_recipient must be self.")
     routing_rules = poc_routing.get("routing_rules", {})
@@ -157,8 +168,13 @@ def assert_notification_draft(
             raise AssertionError(f"{level} target_roles missing.")
         if not rule.get("action_required"):
             raise AssertionError(f"{level} action_required missing.")
-        if rule.get("default_recipient") != "self":
-            raise AssertionError(f"{level} default_recipient must be self.")
+        resolution = rule.get("recipient_resolution", {})
+        if resolution.get("mode") != "mach_root_label_mapping":
+            raise AssertionError(f"{level} recipient_resolution mode mismatch.")
+        if resolution.get("routing_key") != "mach_root_label_name":
+            raise AssertionError(f"{level} recipient_resolution routing_key mismatch.")
+        if rule.get("reason_count", 0) > 0 and not rule.get("poc_names"):
+            raise AssertionError(f"{level} poc_names missing.")
         if rule.get("group_send_blocked") is not True:
             raise AssertionError(f"{level} group_send_blocked must be true.")
 
@@ -226,7 +242,11 @@ def assert_csvs(output_dir: Path, summary: dict[str, Any]) -> None:
             raise AssertionError(f"{filename} row count mismatch.")
         for field in (
             "severity_level",
+            "mach_root_label_name",
+            "strategy_id",
+            "strategy_name",
             "reason",
+            "POC",
             "avg_review_in_cnt",
             "avg_review_done_cnt",
             "avg_label_cnt",
@@ -234,7 +254,7 @@ def assert_csvs(output_dir: Path, summary: dict[str, Any]) -> None:
             "hit_rule_ids",
             "hit_conditions",
         ):
-            if field not in rows[0]:
+            if rows and field not in rows[0]:
                 raise AssertionError(f"{filename} missing field: {field}")
 
 
@@ -255,6 +275,16 @@ def assert_card(
         raise AssertionError("hash_check must confirm _meta removal.")
 
     top_rows = extract_table_rows(card_with_meta)
+    for row in top_rows:
+        for field in (
+            "poc_name",
+            "mach_root_label_name",
+            "strategy_id",
+            "strategy_name",
+            "reason",
+        ):
+            if field not in row:
+                raise AssertionError(f"Card table row missing field: {field}")
     verify_card_hash(card_with_meta, top_rows)
     design_check = card_design_check(card_with_meta)
     if design_check != hash_check.get("design_check"):

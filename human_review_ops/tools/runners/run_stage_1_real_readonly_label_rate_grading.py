@@ -11,11 +11,21 @@ from __future__ import annotations
 import argparse
 import json
 import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[2]
+NOTIFICATION_SCRIPTS = ROOT / "skills" / "notification" / "scripts"
+sys.path.insert(0, str(NOTIFICATION_SCRIPTS))
+
+from resolve_label_rate_poc_routing import (  # noqa: E402
+    load_poc_mapping,
+    poc_mapping_index,
+    resolve_row_poc,
+)
+
 SCENARIO_KEY = "efficiency-label-rate"
 EVAL_DIR = ROOT / "evals" / SCENARIO_KEY
 OUTPUT_DATE = "20260708"
@@ -26,6 +36,7 @@ APP_ID = "1128"
 REGION = "cn"
 DATASET_NAME = "[重点模型]-社区_人工审核明细数据"
 SOURCE_TABLE = "olap_content_security_community.dws_sft_tcs_review_task_detail_di"
+QUERY_LIMIT = "50000"
 METRIC_FORMULA = (
     "`label_rate` = SUM(`[打标量__reviewid]`) / SUM(`[完审量_reviewid]`)"
 )
@@ -44,6 +55,7 @@ ANALYSIS_RULE_PATH = (
 LEVEL_ORDER = ["P0", "P1", "P2", "notice"]
 LEVEL_PRIORITY = {"P0": 0, "P1": 1, "P2": 2, "notice": 3}
 DEFAULT_LEVELS = ["notice", "P2", "P1", "P0"]
+DIMENSIONS = ["mach_root_label_name", "strategy_id", "strategy_name", "reason"]
 FLOAT_FIELDS = {
     "total_review_in_cnt",
     "total_review_done_cnt",
@@ -125,6 +137,9 @@ def period_aggregate_sql(start_days_ago: int, end_days_ago: int) -> str:
     end_expr = "today()" if end_days_ago == 0 else f"today() - {end_days_ago}"
     return f"""
 SELECT
+  mach_root_label_name,
+  strategy_id,
+  strategy_name,
   reason,
   COUNT(DISTINCT dt) AS data_days,
   SUM(jin_shen) AS total_review_in_cnt,
@@ -136,7 +151,10 @@ SELECT
   if(SUM(wan_shen) = 0, 0, SUM(da_biao) / SUM(wan_shen)) AS label_rate
 FROM (
   SELECT
-    `[reason]` AS reason,
+    ifNull(`[机审一级标签]`, '（空/机审一级标签）') AS mach_root_label_name,
+    ifNull(`[strategy_id]`, '（空/strategy_id）') AS strategy_id,
+    ifNull(`[strategy_name]`, '（空/strategy_name）') AS strategy_name,
+    ifNull(`[reason]`, '（空/reason）') AS reason,
     `[p_date]` AS dt,
     `[进审量_reviewid]` AS jin_shen,
     `[完审量_reviewid]` AS wan_shen,
@@ -145,11 +163,15 @@ FROM (
   WHERE `[p_date]` >= today() - {start_days_ago}
     AND `[p_date]` < {end_expr}
 {base_filter_sql("    ")}
-  GROUP BY reason, dt
+  GROUP BY mach_root_label_name, strategy_id, strategy_name, reason, dt
 ) daily
-GROUP BY reason
+GROUP BY mach_root_label_name, strategy_id, strategy_name, reason
 HAVING SUM(wan_shen) > 0
 """.strip()
+
+
+def dimension_join(left: str, right: str) -> str:
+    return " AND ".join(f"{left}.{field} = {right}.{field}" for field in DIMENSIONS)
 
 
 def level_select_sql(
@@ -170,6 +192,9 @@ def level_select_sql(
 SELECT
   '{level}' AS severity_level,
   {LEVEL_PRIORITY[level]} AS severity_priority,
+  cur.mach_root_label_name AS mach_root_label_name,
+  cur.strategy_id AS strategy_id,
+  cur.strategy_name AS strategy_name,
   cur.reason AS reason,
   cur.data_days AS data_days,
   cur.total_review_in_cnt AS total_review_in_cnt,
@@ -198,7 +223,7 @@ def build_notice_sql() -> str:
     where_sql="cur.label_rate < 0.1 AND cur.total_review_in_cnt > 0",
 )}
 ORDER BY avg_review_done_cnt DESC
-LIMIT 1000
+LIMIT {QUERY_LIMIT}
 """.strip()
 
 
@@ -221,7 +246,7 @@ def build_p2_sql() -> str:
         level="P2",
         hit_rule_id="p2_low_efficiency_growth",
         hit_condition="本期打标率<10%，上期日均进审>0，环比>20%，日均增量>2000",
-        from_sql=f"{cur} INNER JOIN {prev} ON cur.reason = prev.reason",
+        from_sql=f"{cur} INNER JOIN {prev} ON {dimension_join('cur', 'prev')}",
         where_sql=(
             "cur.label_rate < 0.1 AND prev.avg_review_in_cnt > 0 "
             "AND (cur.avg_review_in_cnt - prev.avg_review_in_cnt) "
@@ -238,7 +263,7 @@ UNION ALL
 {indent_sql(condition_two)}
 ) hits
 ORDER BY avg_review_done_cnt DESC
-LIMIT 1000
+LIMIT {QUERY_LIMIT}
 """.strip()
 
 
@@ -259,7 +284,7 @@ def build_p1_sql() -> str:
         level="P1",
         hit_rule_id="p1_two_week_persistent_low_efficiency",
         hit_condition="双周期日均进审>2000且双周期打标率<3%",
-        from_sql=f"{cur} INNER JOIN {prev} ON cur.reason = prev.reason",
+        from_sql=f"{cur} INNER JOIN {prev} ON {dimension_join('cur', 'prev')}",
         where_sql=(
             "cur.avg_review_in_cnt > 2000 AND prev.avg_review_in_cnt > 2000 "
             "AND cur.label_rate < 0.03 AND prev.label_rate < 0.03"
@@ -277,7 +302,7 @@ def build_p1_sql() -> str:
         level="P1",
         hit_rule_id="p1_low_efficiency_volume_spike",
         hit_condition="本期/上期打标率<10%，环比>30%，日均增量>5000",
-        from_sql=f"{cur} INNER JOIN {prev} ON cur.reason = prev.reason",
+        from_sql=f"{cur} INNER JOIN {prev} ON {dimension_join('cur', 'prev')}",
         where_sql=(
             "cur.label_rate < 0.1 AND prev.label_rate < 0.1 "
             "AND prev.avg_review_in_cnt > 0 "
@@ -297,7 +322,7 @@ UNION ALL
 {indent_sql(condition_three)}
 ) hits
 ORDER BY avg_review_done_cnt DESC
-LIMIT 1000
+LIMIT {QUERY_LIMIT}
 """.strip()
 
 
@@ -322,9 +347,9 @@ def build_p0_sql() -> str:
         hit_rule_id="p0_four_week_persistent_low_efficiency",
         hit_condition="近1周日均进审>2000且连续4周打标率<3%",
         from_sql=(
-            f"{cur} INNER JOIN {w2} ON cur.reason = w2.reason "
-            f"INNER JOIN {w3} ON cur.reason = w3.reason "
-            f"INNER JOIN {w4} ON cur.reason = w4.reason"
+            f"{cur} INNER JOIN {w2} ON {dimension_join('cur', 'w2')} "
+            f"INNER JOIN {w3} ON {dimension_join('cur', 'w3')} "
+            f"INNER JOIN {w4} ON {dimension_join('cur', 'w4')}"
         ),
         where_sql=(
             "cur.avg_review_in_cnt > 2000 AND cur.label_rate < 0.03 "
@@ -336,7 +361,7 @@ def build_p0_sql() -> str:
         level="P0",
         hit_rule_id="p0_two_week_high_volume_low_efficiency",
         hit_condition="近1周日均进审>5000且连续2周打标率<3%",
-        from_sql=f"{cur} INNER JOIN {w2} ON cur.reason = w2.reason",
+        from_sql=f"{cur} INNER JOIN {w2} ON {dimension_join('cur', 'w2')}",
         where_sql=(
             "cur.avg_review_in_cnt > 5000 AND cur.label_rate < 0.03 "
             "AND w2.label_rate < 0.03"
@@ -354,7 +379,7 @@ def build_p0_sql() -> str:
         level="P0",
         hit_rule_id="p0_review_in_volume_spike",
         hit_condition="近1周打标率<10%，日均进审环比>50%，日均增量>10000",
-        from_sql=f"{cur} INNER JOIN {w2} ON cur.reason = w2.reason",
+        from_sql=f"{cur} INNER JOIN {w2} ON {dimension_join('cur', 'w2')}",
         where_sql=(
             "cur.label_rate < 0.1 AND w2.avg_review_in_cnt > 0 "
             "AND (cur.avg_review_in_cnt - w2.avg_review_in_cnt) "
@@ -375,7 +400,7 @@ UNION ALL
 {indent_sql(condition_d)}
 ) hits
 ORDER BY avg_review_done_cnt DESC
-LIMIT 1000
+LIMIT {QUERY_LIMIT}
 """.strip()
 
 
@@ -428,7 +453,7 @@ def run_query(sql: str) -> dict[str, Any]:
         DATASET_ID,
         sql,
         "--limit",
-        "1000",
+        QUERY_LIMIT,
     ]
     completed = subprocess.run(
         command,
@@ -490,7 +515,7 @@ def build_records(
         {
             "record_type": "sample",
             "id": event_id(),
-            "input": "近7天低打标率策略分P0/P1/P2/notice的情况",
+            "input": "近7天低打标率策略按机审一级标签×策略ID×策略名称×送审原因分P0/P1/P2/notice的情况",
             "run_mode": "debug_only",
             "scenario_key": SCENARIO_KEY,
             "task_type": "query_only",
@@ -544,7 +569,7 @@ def build_query_plan(levels: list[str], sql_map: dict[str, str]) -> dict[str, An
             "current_where": "`[p_date]` >= today() - 7 AND `[p_date]` < today()",
             "history_where": "`[p_date]` >= today() - 28 AND `[p_date]` < today()",
         },
-        "dimensions": ["reason"],
+        "dimensions": list(DIMENSIONS),
         "filters": ["standard_review_scope", "label_rate_lt_thresholds"],
         "levels": levels,
         "level_priority": LEVEL_PRIORITY,
@@ -571,7 +596,7 @@ def build_query_plan(levels: list[str], sql_map: dict[str, str]) -> dict[str, An
             "freshness_gate",
             "denominator_not_zero",
             "field_mapping_check",
-            "grain_check",
+            "grain_check_four_dimension_strategy",
             "forbidden_source_check",
             "truncation_check",
             "grading_rule_check",
@@ -625,6 +650,7 @@ def build_level_result(level: str, payload: dict[str, Any]) -> dict[str, Any]:
 
 def normalize_rows(payload: dict[str, Any]) -> list[dict[str, Any]]:
     columns = payload["data"]["columns"]
+    mapping_index = poc_mapping_index(load_poc_mapping())
     rows: list[dict[str, Any]] = []
     for raw_row in payload["data"]["rows"]:
         row = dict(zip(columns, raw_row))
@@ -636,22 +662,32 @@ def normalize_rows(payload: dict[str, Any]) -> list[dict[str, Any]]:
                 normalized[column] = int(value)
             else:
                 normalized[column] = value
+        poc = resolve_row_poc(normalized, mapping_index)
+        poc_name = poc.get("poc_name") or "未映射"
+        normalized["poc_name"] = poc_name
+        normalized["POC"] = poc_name
+        normalized["poc_open_id"] = poc.get("poc_open_id")
+        normalized["poc_mapping_status"] = poc.get("mapping_status")
         rows.append(normalized)
     return rows
 
 
+def dimension_key(row: dict[str, Any]) -> tuple[str, str, str, str]:
+    return tuple(str(row.get(field, "")) for field in DIMENSIONS)  # type: ignore[return-value]
+
+
 def dedupe_level_rows(rows: list[dict[str, Any]], level: str) -> list[dict[str, Any]]:
-    deduped: dict[str, dict[str, Any]] = {}
+    deduped: dict[tuple[str, str, str, str], dict[str, Any]] = {}
     for row in rows:
-        reason = row["reason"]
-        existing = deduped.get(reason)
+        key = dimension_key(row)
+        existing = deduped.get(key)
         if existing is None:
             merged = dict(row)
             merged["severity_level"] = level
             merged["severity_priority"] = LEVEL_PRIORITY[level]
             merged["hit_rule_ids"] = [row["hit_rule_id"]]
             merged["hit_conditions"] = [row["hit_condition"]]
-            deduped[reason] = merged
+            deduped[key] = merged
         else:
             if row["hit_rule_id"] not in existing["hit_rule_ids"]:
                 existing["hit_rule_ids"].append(row["hit_rule_id"])
@@ -667,17 +703,17 @@ def dedupe_level_rows(rows: list[dict[str, Any]], level: str) -> list[dict[str, 
 def build_comprehensive_results(
     level_results: dict[str, dict[str, Any]]
 ) -> list[dict[str, Any]]:
-    best_by_reason: dict[str, dict[str, Any]] = {}
+    best_by_key: dict[tuple[str, str, str, str], dict[str, Any]] = {}
     for level in LEVEL_ORDER:
         if level not in level_results:
             continue
         for row in level_results[level]["rows"]:
-            reason = row["reason"]
-            existing = best_by_reason.get(reason)
+            key = dimension_key(row)
+            existing = best_by_key.get(key)
             if existing is None or row["severity_priority"] < existing["severity_priority"]:
-                best_by_reason[reason] = dict(row)
+                best_by_key[key] = dict(row)
     return sorted(
-        best_by_reason.values(),
+        best_by_key.values(),
         key=lambda item: (item["severity_priority"], -item["avg_review_done_cnt"]),
     )
 
@@ -734,7 +770,12 @@ def build_readonly_execution(
         "comprehensive_results": comprehensive_results,
         "evidence_fields": [
             "severity_level",
+            "mach_root_label_name",
+            "strategy_id",
+            "strategy_name",
             "reason",
+            "POC",
+            "poc_name",
             "avg_review_in_cnt",
             "avg_review_done_cnt",
             "avg_label_cnt",
@@ -748,13 +789,14 @@ def build_readonly_execution(
             "freshness_gate": "passed_via_p_date_filter",
             "denominator_not_zero": "passed",
             "field_mapping_check": "passed",
-            "grain_check": "passed_reason",
+            "grain_check": "passed_mach_root_label_strategy_reason",
+            "poc_name_mapping": "passed_name_only",
             "forbidden_source_check": "passed",
             "truncation_check": "passed",
             "grading_rule_check": "passed",
         },
         "limitations": [
-            "Owner remains role-level until a concrete owner mechanism is connected.",
+            "POC is resolved to name only; Feishu open_id resolution and recipient confirmation are still required before real notification.",
             "Semantic Layer cannot yet express the multi-condition grading rule; used governed Aeolus SQL fallback.",
         ],
     }
@@ -813,8 +855,8 @@ def build_analysis_result(
         "query_plan": compact_query_plan(query_plan),
         "readonly_execution": readonly_execution,
         "impact_assessment": {
-            "summary": f"近7天低打标率分级完成，综合命中 {readonly_execution['row_count']} 个 reason；{summary}。",
-            "impact_scope": f"comprehensive_reason_count={readonly_execution['row_count']}",
+            "summary": f"近7天低打标率四维分级完成，综合命中 {readonly_execution['row_count']} 个策略分组；{summary}。",
+            "impact_scope": f"comprehensive_strategy_group_count={readonly_execution['row_count']}",
             "risk_level": highest_hit_level(level_counts),
             "business_risk": "本结果为分级查询结果，不自动触发通知或状态写入。",
             "duration": "trailing_7_days_with_28_day_history",
@@ -842,7 +884,8 @@ def build_analysis_result(
             "evidence_complete": True,
             "data_fresh": True,
             "metric_definition_consistent": True,
-            "owner_resolved": False,
+            "owner_resolved": True,
+            "owner_resolution_level": "poc_name_only",
             "confidence": 0.9,
             "warnings": readonly_execution["limitations"],
         },

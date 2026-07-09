@@ -810,8 +810,8 @@ human_review_ops/evals/efficiency-label-rate/eval_samples.jsonl
 | 阶段 2 | P2 | 生成低打标率分级通知卡片草稿。 | 生成 summary、notice/P2/P1/P0/综合 CSV、xlsx、Card 2.0、hash 校验和 publish summary。 | 已完成 |
 | 阶段 2 | P2 | 新增通知卡片草稿 runner 和校验脚本。 | `run_stage_2_label_rate_notification_draft.py`、`validate_stage_2_label_rate_notification_draft.py`。 | 已完成 |
 | 阶段 2 | P2 | 完成单人飞书卡片预览推送。 | 以用户明确要求为前提，导入飞书表格并单独推送给用户本人；发送前剥离 `_meta`。 | 已完成 |
-| 阶段 2 | P2 | 实现 POC / 触达对象路由占位。 | 生成 `poc_routing_plan.json`，固定 `routing_mode=placeholder`、`fallback_to_default_user=true`、`default_recipient=self`，不编造真实 POC。 | 已完成 |
-| 阶段 2 | P2 | 新增 POC 路由占位 runner 和校验脚本。 | `run_stage_2_label_rate_poc_routing.py`、`validate_stage_2_label_rate_poc_routing.py`。 | 已完成 |
+| 阶段 2 | P2 | 实现 POC / 触达对象路由基础能力。 | 生成 `poc_routing_plan.json`，支持从占位路由演进到 `mach_root_label_name -> POC 姓名` 映射；真实触达前仍保留人工确认门禁。 | 已完成 |
+| 阶段 2 | P2 | 新增 POC 路由 runner 和校验脚本。 | `run_stage_2_label_rate_poc_routing.py`、`validate_stage_2_label_rate_poc_routing.py`。 | 已完成 |
 | 阶段 2 | P2 | 增强通知草稿并生成群推送门禁计划。 | 生成 `notification_draft.json` 和 `send_plan.json`；默认 `requires_confirmation=true`、`group_send_blocked=true`、`sent=false`。 | 已完成 |
 | 阶段 2 | P2 | 新增本地人工处理状态记录。 | 生成 `manual_tracking.json`；包含 `evidence_refs`、`operator_note`、`next_action`、`continue_observation`，且 `online_write_executed=false`。 | 已完成 |
 | 阶段 2 | P2 | 新增局部调度回归。 | 生成 `owner_lookup_only_results.jsonl`、`notification_only_results.jsonl`、`resolution_only_results.jsonl` 和 `partial_dispatch_results.jsonl`。 | 已完成 |
@@ -822,6 +822,10 @@ human_review_ops/evals/efficiency-label-rate/eval_samples.jsonl
 | 发布验证 | P2 | 完成 AgentBuddy restricted 空间发布。 | 将 `perceiving-ops-events`、`analyzing-ops-metrics`、`routing-ops-notifications`、`tracking-ops-resolution` 发布到 `skills.byted.org/lizhongtao/hunman_review_ops`；四个 Skill 均可通过 AgentBuddy 搜索命中，发布摘要记录在 `human_review_ops/evals/agentbuddy_publish/20260709_agentbuddy_publish_summary.json`。 | 已完成 |
 | 发布验证 | P2 | 同步 AgentBuddy 指标契约 SQL 片段版本。 | 将打标率默认样本池由自然语言枚举改为可直接复用的 SQL 片段后，重新发布 `perceiving-ops-events` 与 `analyzing-ops-metrics` 到 AgentBuddy restricted 空间，版本升至 `1.0.1`。 | 已完成 |
 | 阶段 2 | P1 | 接入打标率场景 POC 姓名级映射。 | 按 `mach_root_label_name` 映射 POC 姓名，映射来源为飞书表格 `HKdm9w`；自定义多维低打标率查询默认生成 `poc_routing_plan.json`，10293 行历史明细均命中 POC，真实触达前仍需 open_id 解析和人工确认。 | 已完成 |
+| 阶段 2 | P1 | 完成低打标率分级四维粒度升级。 | notice/P2/P1/P0 分级粒度升级为 `机审一级标签 × strategy_id × strategy_name × reason`，输出日均进审、日均完审、日均打标、打标率和 `POC` 列；真实查询结果 `notice=9357, P2=7, P1=4, P0=3`，未截断。 | 已完成 |
+| 阶段 2 | P1 | 完成分级结果姓名级 POC 路由与通知草稿联动。 | 新产物目录 `20260709_low_label_rate_grading_four_dim_notification_draft`；`poc_routing_plan.json` 覆盖 9357/9357 行，未映射 0；飞书表格链接 `https://bytedance.larkoffice.com/sheets/C8obsw600hiWbJtIpGicwVpYnNg`。 | 已完成 |
+| 阶段 2 | P1 | 完成 POC open_id 可获取性验证。 | 从飞书表格 `HKdm9w` 的富文本 @ 读取 mention token；15 行均可读取，14 行与姓名映射一致，`党和国家形象负面` 存在“齐思蕾 vs 李中涛”冲突；仅记录脱敏前缀，不写完整 open_id。 | 已完成 |
+| 阶段 2 | P1 | 完成群内 bot @ 用户验证。 | 在私有验证群 `人审阶段2群发验证-20260709` 中使用 bot 身份发送文本 @ 用户本人，返回 `ok=true`，记录 `group_at_mention_validation.json`。 | 已完成 |
 
 ### 12.3 阶段 3 / 后续实施计划
 
@@ -829,20 +833,20 @@ human_review_ops/evals/efficiency-label-rate/eval_samples.jsonl
 
 | 事项 | 当前结论 | 后续解锁条件 |
 | --- | --- | --- |
-| POC 映射 | 已接入 `mach_root_label_name -> POC 姓名` 映射；当前是姓名级，不含 open_id。 | 完成飞书联系人解析、歧义消解、open_id 存储策略和真实触达确认链路。 |
-| 分析粒度 | 当前按 `reason` 粒度完成端到端验证。 | 业务确认是否切换或补充 `strategy_name` 粒度。 |
-| 触达身份 | 开发验证阶段默认本人预览。 | 真实 POC 身份字段、open_id 解析方式和权限边界确认。 |
-| 群推送 | 已生成 `send_plan.json` 门禁，默认阻断群发；用户明确授权下已完成一次私有验证群发送。 | 真实 POC 群推送仍需人工确认目标群 / POC 收件人、发送身份和卡片内容。 |
+| POC 映射 | 已接入 `mach_root_label_name -> POC 姓名` 映射；分级结果可生成姓名级 POC 列。表格富文本 @ 可读取 mention token，但 `党和国家形象负面` 存在“齐思蕾 vs 李中涛”冲突。 | 确认冲突项、定义 open_id 安全存储策略，并决定是否申请 `contact:user:search` 做姓名补全。 |
+| 分析粒度 | notice/P2/P1/P0 已升级为 `机审一级标签 × strategy_id × strategy_name × reason` 四维粒度，指标包含日均进审、日均完审、日均打标和打标率。 | 后续如需更细拆解，再按场景新增维度，不回退到单 reason 粒度。 |
+| 触达身份 | 开发验证阶段仍默认本人预览；姓名级 POC 已可审计，完整 open_id 暂不落 Git。 | 真实 POC 身份字段、open_id 解析方式和权限边界确认。 |
+| 群推送 | 已生成 `send_plan.json` 门禁，默认阻断群发；用户明确授权下已完成私有验证群 Card 发送，并完成 bot 群内 @ 用户验证。 | 真实 POC 群推送仍需人工确认目标群 / POC 收件人、发送身份和卡片内容。 |
 | 回收闭环 | 当前仅记录本地 `manual_tracking.json`。 | 明确联系人回复收集、卡片按钮回调或 Lark Base 状态表设计。 |
 | 状态存储 | 开发阶段仅本地存储，不写线上状态。 | 状态表 schema、权限、写入幂等和回滚策略确认。 |
-| 发送身份 | 当前默认 bot，未确认时不做真实群推送。 | 若 bot 权限不足，再评估 user identity 或应用权限补齐。 |
+| 发送身份 | 当前默认 bot；bot 已验证可发送群消息并在验证群里 @ 用户。 | 若后续真实 POC 群权限不足，再评估 user identity 或应用权限补齐。 |
 
 #### 12.3.2 后续任务表
 
 | 优先级 | 任务 | 要做什么 | 预期产物 | 验收标准 | 状态 |
 | --- | --- | --- | --- | --- | --- |
-| P1 | 接入 POC 联系人身份解析 | 基于当前 `mach_root_label_name -> POC 姓名` 映射，解析飞书 open_id，处理重名歧义，并保留姓名级 fallback。 | POC open_id 映射配置、联系人解析 runner、validator、脱敏样例。 | 能输出可触达 POC 或明确 fallback 原因；不泄露敏感身份；映射缺失可解释。 | 待开始 |
-| P1 | 固化触达对象解析 | 将角色范围、POC 身份、open_id 解析和置信度写入路由计划。 | 增强版 `poc_routing_plan.json`。 | notice/P2/P1/P0 均有可审计收件人来源、置信度和升级关系。 | 待开始 |
+| P1 | 接入 POC 联系人身份解析 | 基于当前 `mach_root_label_name -> POC 姓名` 映射，确认 `党和国家形象负面` 冲突项，决定 open_id 安全存储方式，并保留姓名级 fallback。 | POC open_id 映射配置、联系人解析 runner、validator、脱敏样例。 | 能输出可触达 POC 或明确 fallback 原因；不泄露敏感身份；映射缺失可解释。 | 待开始 |
+| P1 | 固化触达对象解析 | 将角色范围、POC 身份、open_id 解析和置信度写入路由计划。 | 增强版 `poc_routing_plan.json`。 | notice/P2/P1/P0 均有可审计收件人来源、置信度、升级关系和人工确认状态。 | 待开始 |
 | P1 | 建立群推送确认链路 | 在 `send_plan.json` 基础上增加人工确认状态和真实发送前检查。 | 确认记录、发送前 validator、群推送 dry-run 结果。 | 未确认不发送；确认后仅向指定群 / POC 发送；发送结果可追踪。 | 待开始 |
 | P2 | 设计回收闭环 | 设计联系人说明、处理计划、继续观察和关闭条件。 | 状态表 schema、卡片交互方案或本地回收样例。 | 可记录回复、处理结论、下一次观察时间；支持不写线上表的回退模式。 | 待开始 |
 | P2 | 发布治理与 Skill 打包 | 将阶段 2 新增 Notification / Resolution 能力纳入 Skill 自包含资产和发布校验。 | Skill 包、打包校验、发布前检查清单。 | Skill 独立可发布；根场景包与 Skill 快照一致；回归脚本通过。 | 待开始 |
