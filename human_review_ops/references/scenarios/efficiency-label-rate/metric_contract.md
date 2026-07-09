@@ -87,7 +87,7 @@
 
 ## 支持维度
 
-- `reason`：送审原因 / 送审策略。
+- `reason`：送审原因。
 - `p_date`：日期分区。
 - `mach_root_label_name`：机审一级标签。
 - `strategy_id`：策略 / 规则 ID，2026-07-09 经 `dataset-fields` 与真实只读查询确认。
