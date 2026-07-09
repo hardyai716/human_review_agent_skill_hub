@@ -1,0 +1,28 @@
+{
+  "schema_version": "agentbuddy_republish_summary.v1",
+  "published_at": "2026-07-09T17:30:00+08:00",
+  "group": "skills.byted.org/lizhongtao/hunman_review_ops",
+  "access": "restricted",
+  "reason": "Add current-period review-in >100 default gate to label-rate grading rules.",
+  "skills": [
+    {
+      "skill_name": "analyzing-ops-metrics",
+      "source": "/tmp/analyzing_ops_metrics_20260709_min_review_in.zip",
+      "command": "NPM_CONFIG_REGISTRY=http://bnpm.byted.org npx -y agentbuddy@latest skill publish /tmp/analyzing_ops_metrics_20260709_min_review_in.zip --group skills.byted.org/lizhongtao/hunman_review_ops --access restricted --region cn -y",
+      "status": "published",
+      "id": "skills:skills.byted.org/lizhongtao/hunman_review_ops/analyzing-ops-metrics:1.0.2",
+      "verification_command": "NPM_CONFIG_REGISTRY=http://bnpm.byted.org npx -y agentbuddy@latest skill find analyzing-ops",
+      "verification_result": "skills.byted.org/lizhongtao/hunman_review_ops@analyzing-ops-metrics",
+      "retry_note": "Directory publish and first ZIP publish failed with upload network errors; second ZIP publish succeeded."
+    }
+  ],
+  "validation": {
+    "validate_agentbuddy_publish": "passed",
+    "validate_scenario_package_efficiency_label_rate": "passed",
+    "stage_1_min_review_in_grading": "passed",
+    "stage_2_poc_routing": "passed",
+    "stage_2_notification_draft": "passed",
+    "stage_2_manual_tracking": "passed",
+    "stage_2_partial_dispatch": "passed"
+  }
+}
