@@ -1,0 +1,23 @@
+{
+  "report_type": "low_efficiency_grading",
+  "scenario_key": "efficiency-label-rate",
+  "source_stage_1_result": "evals/efficiency-label-rate/stage_1_runs/20260709_real_readonly_label_rate_grading_min_review_in_results.jsonl",
+  "output_dir": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_min_review_in_draft",
+  "summary_json": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_min_review_in_draft/summary.json",
+  "workbook": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_min_review_in_draft/low_label_rate_grading_2026-07-02_2026-07-08.xlsx",
+  "summary_by_label_poc_csv": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_min_review_in_draft/汇总统计.csv",
+  "sheet_url": "https://bytedance.larkoffice.com/sheets/min_review_in_dry_run",
+  "card_json": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_min_review_in_draft/publish/low_efficiency_grading.card.json",
+  "card_json_with_meta": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_min_review_in_draft/publish/low_efficiency_grading.card.with_meta.json",
+  "card_hash_check": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_min_review_in_draft/publish/card_hash_check.json",
+  "sent": false,
+  "send_identity": null,
+  "target_type": null,
+  "target_user": null,
+  "target_user_open_id_prefix": null,
+  "target_chat_id": null,
+  "message_id": null,
+  "send_result": null,
+  "notification_draft": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_min_review_in_draft/notification_draft.json",
+  "send_plan": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_min_review_in_draft/send_plan.json"
+}

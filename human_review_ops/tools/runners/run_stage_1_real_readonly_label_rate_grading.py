@@ -37,6 +37,7 @@ REGION = "cn"
 DATASET_NAME = "[重点模型]-社区_人工审核明细数据"
 SOURCE_TABLE = "olap_content_security_community.dws_sft_tcs_review_task_detail_di"
 QUERY_LIMIT = "50000"
+MIN_CURRENT_REVIEW_IN_CNT = 100
 METRIC_FORMULA = (
     "`label_rate` = SUM(`[打标量__reviewid]`) / SUM(`[完审量_reviewid]`)"
 )
@@ -208,7 +209,8 @@ SELECT
   '{hit_rule_id}' AS hit_rule_id,
   '{hit_condition}' AS hit_condition
 FROM {from_sql}
-WHERE {where_sql}
+WHERE ({where_sql})
+  AND cur.total_review_in_cnt > {MIN_CURRENT_REVIEW_IN_CNT}
 """.strip()
 
 
@@ -218,9 +220,9 @@ def build_notice_sql() -> str:
 {level_select_sql(
     level="notice",
     hit_rule_id="notice_low_label_rate",
-    hit_condition="近7天打标率<10%且进审量>0，纳入观察",
+    hit_condition="近7天打标率<10%且进审量>100，纳入观察",
     from_sql=cur,
-    where_sql="cur.label_rate < 0.1 AND cur.total_review_in_cnt > 0",
+    where_sql="cur.label_rate < 0.1",
 )}
 ORDER BY avg_review_done_cnt DESC
 LIMIT {QUERY_LIMIT}
@@ -570,7 +572,11 @@ def build_query_plan(levels: list[str], sql_map: dict[str, str]) -> dict[str, An
             "history_where": "`[p_date]` >= today() - 28 AND `[p_date]` < today()",
         },
         "dimensions": list(DIMENSIONS),
-        "filters": ["standard_review_scope", "label_rate_lt_thresholds"],
+        "filters": [
+            "standard_review_scope",
+            "label_rate_lt_thresholds",
+            "current_review_in_gt_100",
+        ],
         "levels": levels,
         "level_priority": LEVEL_PRIORITY,
         "required_hygiene_filters": [
@@ -597,6 +603,7 @@ def build_query_plan(levels: list[str], sql_map: dict[str, str]) -> dict[str, An
             "denominator_not_zero",
             "field_mapping_check",
             "grain_check_four_dimension_strategy",
+            "min_current_review_in_gate",
             "forbidden_source_check",
             "truncation_check",
             "grading_rule_check",
@@ -791,6 +798,7 @@ def build_readonly_execution(
             "field_mapping_check": "passed",
             "grain_check": "passed_mach_root_label_strategy_reason",
             "poc_name_mapping": "passed_name_only",
+            "min_current_review_in_gate": f"passed_cur_total_review_in_cnt_gt_{MIN_CURRENT_REVIEW_IN_CNT}",
             "forbidden_source_check": "passed",
             "truncation_check": "passed",
             "grading_rule_check": "passed",

@@ -21,6 +21,7 @@ DEFAULT_RESULTS = (
 LEVEL_ORDER = ["P0", "P1", "P2", "notice"]
 LEVEL_PRIORITY = {"P0": 0, "P1": 1, "P2": 2, "notice": 3}
 DIMENSIONS = ["mach_root_label_name", "strategy_id", "strategy_name", "reason"]
+MIN_CURRENT_REVIEW_IN_CNT = 100
 REQUIRED_SQL_SNIPPETS = [
     "`[p_date]` >= today() - 7",
     "`[project_title]` NOT LIKE '%虚假%'",
@@ -45,6 +46,7 @@ REQUIRED_SQL_SNIPPETS = [
     "GROUP BY mach_root_label_name, strategy_id, strategy_name, reason",
     "SUM(jin_shen) / COUNT(DISTINCT dt) AS avg_review_in_cnt",
     "if(SUM(wan_shen) = 0, 0, SUM(da_biao) / SUM(wan_shen)) AS label_rate",
+    "cur.total_review_in_cnt > 100",
 ]
 LEVEL_WINDOW_SNIPPETS = {
     "notice": ["`[p_date]` >= today() - 7"],
@@ -262,6 +264,8 @@ def assert_grading_row(row: dict[str, Any], level: str, priority: int) -> None:
         raise AssertionError("Row POC is required.")
     if row.get("avg_review_in_cnt", 0) < 0:
         raise AssertionError("avg_review_in_cnt must be non-negative.")
+    if row.get("total_review_in_cnt", 0) <= MIN_CURRENT_REVIEW_IN_CNT:
+        raise AssertionError("total_review_in_cnt must be greater than 100.")
     if row.get("avg_review_done_cnt", 0) <= 0:
         raise AssertionError("avg_review_done_cnt must be positive.")
     if row.get("avg_label_cnt", 0) < 0:
