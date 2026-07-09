@@ -1,0 +1,15 @@
+schema_version: v1
+
+metadata:
+  name: human-review-ops-skills
+  description: 人审运营 Agent + Skill 能力集合
+  owner: human-review-ops
+
+registry:
+  skills:
+    - path: human_review_ops/skills
+      items:
+        - perception
+        - analysis
+        - notification
+        - resolution
