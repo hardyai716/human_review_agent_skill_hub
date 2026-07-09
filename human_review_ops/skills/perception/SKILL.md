@@ -1,9 +1,9 @@
 ---
 name: perceiving-ops-events
-description: "识别人审运营场景、任务类型、指标和数据就绪状态，输出结构化路由；不执行查询、通知或状态写入。"
-allowed-tools: []
-disallowed-tools:
-  - write
+description: "识别人审运营请求中的场景、任务类型、指标意图、维度和数据就绪状态，输出可交给 analysis、notification 或 resolution 的结构化路由；用于打标率等人审运营任务的前置判断，不执行 SQL、通知或线上状态写入。"
+allowed-tools:
+  - Read
+  - Bash
 ---
 
 # 感知 Skill

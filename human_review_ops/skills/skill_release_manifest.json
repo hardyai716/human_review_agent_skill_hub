@@ -11,7 +11,7 @@
   "skills": {
     "perception": {
       "skill_md": "perception/SKILL.md",
-      "test_prompts": "perception/test-prompts.json",
+      "test_prompts": "perception/assets/test-prompts.json",
       "references": [
         "perception/references/common.md",
         "perception/references/scenario-index.md",
@@ -21,7 +21,8 @@
         "perception/references/scenarios/efficiency-label-rate.examples.md"
       ],
       "assets": [
-        "perception/assets/README.md"
+        "perception/assets/README.md",
+        "perception/assets/test-prompts.json"
       ],
       "scripts": [
         {
@@ -42,7 +43,7 @@
       "external_dependencies": [],
       "release_assets": [
         "perception/SKILL.md",
-        "perception/test-prompts.json",
+        "perception/assets/test-prompts.json",
         "perception/references/common.md",
         "perception/references/scenario-index.md",
         "perception/references/scenarios/efficiency-label-rate.manifest.md",

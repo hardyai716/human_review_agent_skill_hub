@@ -138,7 +138,7 @@ def validate_manifest_skill_entry(
         if path is None:
             continue
         declared_paths.add(raw_path)
-        if path != SKILLS_ROOT / skill / Path(raw_path).name:
+        if not raw_path.startswith(f"{skill}/"):
             issues.append(f"{rel(MANIFEST_PATH)} {skill}.{field} points outside its Skill.")
         if not path.exists():
             issues.append(f"{rel(MANIFEST_PATH)} {skill}.{field} missing path: {raw_path}")
@@ -237,10 +237,19 @@ def validate_skill_layout(skill: str, issues: list[str]) -> None:
         issues.append(f"Missing Skill directory: {rel(skill_dir)}")
         return
 
-    for required_file in ("SKILL.md", "test-prompts.json"):
-        path = skill_dir / required_file
-        if not path.exists():
-            issues.append(f"Missing {required_file}: {rel(path)}")
+    skill_md = skill_dir / "SKILL.md"
+    if not skill_md.exists():
+        issues.append(f"Missing SKILL.md: {rel(skill_md)}")
+
+    test_prompt_candidates = [
+        skill_dir / "test-prompts.json",
+        skill_dir / "assets" / "test-prompts.json",
+    ]
+    if not any(path.exists() for path in test_prompt_candidates):
+        issues.append(
+            "Missing test-prompts.json: "
+            + " or ".join(rel(path) for path in test_prompt_candidates)
+        )
 
     for required_dir in ("references", "assets", "scripts"):
         path = skill_dir / required_dir

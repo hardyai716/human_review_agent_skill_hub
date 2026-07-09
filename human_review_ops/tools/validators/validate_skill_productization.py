@@ -198,9 +198,16 @@ def validate_skill_md(skill_dir: Path, issues: list[str], strict: bool) -> None:
 
 
 def validate_test_prompts(skill_dir: Path, skill: str, issues: list[str]) -> int:
-    path = skill_dir / "test-prompts.json"
+    candidates = [
+        skill_dir / "test-prompts.json",
+        skill_dir / "assets" / "test-prompts.json",
+    ]
+    path = next((candidate for candidate in candidates if candidate.exists()), candidates[0])
     if not path.exists():
-        issues.append(f"Missing test prompts: {rel(path)}")
+        issues.append(
+            "Missing test prompts: "
+            + " or ".join(rel(candidate) for candidate in candidates)
+        )
         return 0
 
     try:
