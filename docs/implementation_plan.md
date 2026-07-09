@@ -757,7 +757,7 @@ human_review_ops/evals/efficiency-label-rate/eval_samples.jsonl
 
 ### 12.1 当前架构合规结论
 
-当前架构与本实施方案的核心要求一致，阶段 0.5 TRAE 调试验证已完成，阶段 1 感知 + 分析链路已围绕打标率场景跑通。阶段 1 P1 已完成 mock / 只读 Tool 记录、mock 只读执行、真实只读打标率查询、维度参数化查询、分组计数查询，以及低打标率 notice/P2/P1/P0 分级查询。
+当前架构与本实施方案的核心要求一致，阶段 0.5 TRAE 调试验证已完成，阶段 1 感知 + 分析链路已围绕打标率场景跑通。阶段 2 已完成低打标率分级结果的通知卡片草稿、POC / 触达对象路由占位、群推送门禁、本地人工处理状态记录和局部调度回归。
 
 | 检查项 | 当前状态 | 结论 |
 | --- | --- | --- |
@@ -812,36 +812,39 @@ human_review_ops/evals/efficiency-label-rate/eval_samples.jsonl
 | 阶段 2 | P2 | 完成单人飞书卡片预览推送。 | 以用户明确要求为前提，导入飞书表格并单独推送给用户本人；发送前剥离 `_meta`。 | 已完成 |
 | 阶段 2 | P2 | 实现 POC / 触达对象路由占位。 | 生成 `poc_routing_plan.json`，固定 `routing_mode=placeholder`、`fallback_to_default_user=true`、`default_recipient=self`，不编造真实 POC。 | 已完成 |
 | 阶段 2 | P2 | 新增 POC 路由占位 runner 和校验脚本。 | `run_stage_2_label_rate_poc_routing.py`、`validate_stage_2_label_rate_poc_routing.py`。 | 已完成 |
+| 阶段 2 | P2 | 增强通知草稿并生成群推送门禁计划。 | 生成 `notification_draft.json` 和 `send_plan.json`；默认 `requires_confirmation=true`、`group_send_blocked=true`、`sent=false`。 | 已完成 |
+| 阶段 2 | P2 | 新增本地人工处理状态记录。 | 生成 `manual_tracking.json`；包含 `evidence_refs`、`operator_note`、`next_action`、`continue_observation`，且 `online_write_executed=false`。 | 已完成 |
+| 阶段 2 | P2 | 新增局部调度回归。 | 生成 `owner_lookup_only_results.jsonl`、`notification_only_results.jsonl`、`resolution_only_results.jsonl` 和 `partial_dispatch_results.jsonl`。 | 已完成 |
+| 阶段 2 | P2 | 完成阶段 2 全量安全验收。 | `validate_stage_2_label_rate_poc_routing.py`、`validate_stage_2_label_rate_notification_draft.py`、`validate_stage_2_label_rate_manual_tracking.py`、`validate_stage_2_label_rate_partial_dispatch.py` 均通过。 | 已完成 |
 
-### 12.3 阶段 2 实施计划
+### 12.3 阶段 3 / 后续实施计划
 
-#### 12.3.1 当前边界决策
+#### 12.3.1 阶段 2 收尾结论
 
-| 事项 | 当前决策 |
-| --- | --- |
-| POC 映射 | 真实 `reason/strategy -> POC` 映射后续补充；当前不编造真实 POC。 |
-| 分析粒度 | 当前按 `reason` 粒度实现；暂不强制绑定 `strategy_name`。 |
-| 触达身份 | 具体角色身份后续补充；开发验证阶段默认触达用户本人。 |
-| 群推送 | 群推送边界后续设计；当前不自动群发。 |
-| 回收闭环 | 暂不做联系人回复收集、卡片按钮回调或结果回收闭环。 |
-| 状态存储 | 开发阶段先本地存储，不写 Lark Base 或线上状态表。 |
-| 发送身份 | 默认使用 bot；失败或权限不足时再评估 user identity。 |
-| 数据敏感性 | 当前触达范围可接受；现阶段只发送给用户本人。 |
+| 事项 | 当前结论 | 后续解锁条件 |
+| --- | --- | --- |
+| POC 映射 | 当前仅使用 placeholder，不编造真实 POC。 | 明确 SOP Wiki / 表格中的 `reason/strategy -> POC` 数据源和字段口径。 |
+| 分析粒度 | 当前按 `reason` 粒度完成端到端验证。 | 业务确认是否切换或补充 `strategy_name` 粒度。 |
+| 触达身份 | 开发验证阶段默认本人预览。 | 真实 POC 身份字段、open_id 解析方式和权限边界确认。 |
+| 群推送 | 已生成 `send_plan.json` 门禁，默认阻断群发。 | 人工确认目标群 / POC 收件人、发送身份和卡片内容。 |
+| 回收闭环 | 当前仅记录本地 `manual_tracking.json`。 | 明确联系人回复收集、卡片按钮回调或 Lark Base 状态表设计。 |
+| 状态存储 | 开发阶段仅本地存储，不写线上状态。 | 状态表 schema、权限、写入幂等和回滚策略确认。 |
+| 发送身份 | 当前默认 bot，未确认时不做真实群推送。 | 若 bot 权限不足，再评估 user identity 或应用权限补齐。 |
 
-#### 12.3.2 阶段 2 任务表
+#### 12.3.2 后续任务表
 
-| 优先级 | 任务 | 要做什么 | 产物路径 | 验收标准 | 状态 |
+| 优先级 | 任务 | 要做什么 | 预期产物 | 验收标准 | 状态 |
 | --- | --- | --- | --- | --- | --- |
-| P2 | POC / 触达对象路由占位 | 固化 notice/P2/P1/P0 的触达角色范围；当前真实 POC 映射为空，所有等级默认路由到用户本人。 | `stage_2_runs/.../poc_routing_plan.json` | 输出 `routing_mode=placeholder`、`fallback_to_default_user=true`、各等级 `target_roles`、`default_recipient=self`；不编造具体 POC。 | 已完成 |
-| P2 | 等级触达规则固化 | 按 SOP 语义定义等级触达范围：notice 群同步策略明细；P2 周知治理 BP、审核 VOC POC、人审运营；P1 增加治理 BP +1、VOC 负责人、人审运营负责人；P0 额外周知治理负责人。 | `owner_routing.md`、`poc_routing_plan.json` | 每个等级均有角色范围、动作要求、是否需要人工确认；规则可被 validator 校验。 | 已完成 |
-| P2 | 通知草稿增强 | 将当前 Card 草稿与 POC 路由占位合并，说明当前为默认本人验证，后续接真实 POC 映射。 | `stage_2_runs/.../notification_draft.json`、`publish/*.card.json` | 草稿包含等级统计、数据链接、POC 占位策略、口径说明；发送前 `_meta` 已剥离；未确认时不群发。 | 已完成 |
-| P2 | 群推送门禁计划 | 生成真实群推送前的 `send_plan.json`，记录目标类型、目标来源、发送身份、发送内容和人工确认要求。 | `stage_2_runs/.../send_plan.json` | 默认 `requires_confirmation=true`、`group_send_blocked=true`；未确认时 validator 要求 `sent=false`。 | 已完成 |
-| P2 | 人工处理状态本地记录 | 针对进入处置 / 跟进的任务，生成本地 `manual_tracking` 记录，包含状态、证据、人工备注、下一步和是否继续观察。 | `stage_2_runs/.../manual_tracking.json` | 状态符合 `state_machine.md`；包含 `evidence_refs`、`operator_note`、`next_action`；不写线上状态。 | 已完成 |
-| P2 | 局部调度回归 | 验证 `owner_lookup_only`、`notification_only`、`resolution_only` 可基于已有阶段 1 / 阶段 2 产物独立运行，不重复查数。 | `stage_2_runs/.../*_results.jsonl`、新增 validator | 每种 task_type 都有样例和校验；`notification_only` 可生成卡片；`resolution_only` 可生成 tracking；不触发真实群推送。 | 已完成 |
+| P1 | 接入真实 POC 映射源 | 基于 SOP Wiki / 表格建立 `reason/strategy -> POC` 映射读取与校验，保留 placeholder fallback。 | POC 映射配置、读取 runner、validator、脱敏样例。 | 能输出真实 POC 或明确 fallback 原因；不泄露敏感身份；映射缺失可解释。 | 待开始 |
+| P1 | 固化触达对象解析 | 将角色范围、POC 身份、open_id 解析和置信度写入路由计划。 | 增强版 `poc_routing_plan.json`。 | notice/P2/P1/P0 均有可审计收件人来源、置信度和升级关系。 | 待开始 |
+| P1 | 建立群推送确认链路 | 在 `send_plan.json` 基础上增加人工确认状态和真实发送前检查。 | 确认记录、发送前 validator、群推送 dry-run 结果。 | 未确认不发送；确认后仅向指定群 / POC 发送；发送结果可追踪。 | 待开始 |
+| P2 | 设计回收闭环 | 设计联系人说明、处理计划、继续观察和关闭条件。 | 状态表 schema、卡片交互方案或本地回收样例。 | 可记录回复、处理结论、下一次观察时间；支持不写线上表的回退模式。 | 待开始 |
+| P2 | 发布治理与 Skill 打包 | 将阶段 2 新增 Notification / Resolution 能力纳入 Skill 自包含资产和发布校验。 | Skill 包、打包校验、发布前检查清单。 | Skill 独立可发布；根场景包与 Skill 快照一致；回归脚本通过。 | 待开始 |
+| P2 | 线上观测与异常处理 | 增加发送失败、权限不足、映射缺失、数据过期等异常样例。 | 异常样例、validator、调试记录模板。 | 失败可归因到数据、权限、路由、通知或状态写入，不产生不可控副作用。 | 待开始 |
 
 ### 12.4 进度更新规则
 
-- 每完成一项开发任务，必须把 `12.2 已完成任务看板` 或 `12.3 阶段 2 实施计划` 中对应状态同步更新。
+- 每完成一项开发任务，必须把 `12.2 已完成任务看板` 或 `12.3 后续实施计划` 中对应状态同步更新。
 - 每次 TRAE 调试失败，必须补充调试检查记录，并把失败归因到路由、检索、Skill 输出、工具权限或场景包内容之一。
 - 每次修改场景包，必须重新运行场景包结构校验和相关评估样例。
 

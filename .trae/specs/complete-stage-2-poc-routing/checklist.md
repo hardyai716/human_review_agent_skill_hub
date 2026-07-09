@@ -1,0 +1,10 @@
+- [x] `docs/implementation_plan.md` 包含阶段 2 边界决策和任务表，且不再使用泛泛的 Owner 建议作为阶段 2 主概念。
+- [x] `owner_routing.md` 根场景包和 Notification Skill 快照均表达 POC / 触达对象路由，占位收件人为 self。
+- [x] 阶段 2 产物目录包含 `poc_routing_plan.json`，且 notice/P2/P1/P0 均有目标角色和动作要求。
+- [x] 阶段 2 产物目录包含 `notification_draft.json`，并声明当前为默认本人验证，不自动群发。
+- [x] 阶段 2 产物目录包含 `send_plan.json`，且 `requires_confirmation=true`、`group_send_blocked=true`、`sent=false`。
+- [x] 阶段 2 产物目录包含 `manual_tracking.json`，且 `online_write_executed=false`。
+- [x] 局部调度回归结果覆盖 `owner_lookup_only`、`notification_only`、`resolution_only`。
+- [x] 所有新增 stage 2 validator 通过。
+- [x] 阶段 2 完成后，`docs/implementation_plan.md` 已更新已完成看板，并规划后续真实 POC 映射、群推送、回收闭环或发布治理事项。
+- [x] 每个任务完成后均存在对应 Git 提交，且已推送到 `origin/main`。
