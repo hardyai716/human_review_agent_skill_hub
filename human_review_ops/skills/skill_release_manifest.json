@@ -100,7 +100,7 @@
     },
     "notification": {
       "skill_md": "notification/SKILL.md",
-      "test_prompts": "notification/test-prompts.json",
+      "test_prompts": "notification/assets/test-prompts.json",
       "references": [
         "notification/references/common.md",
         "notification/references/scenario-index.md",
@@ -109,6 +109,7 @@
         "notification/references/scenarios/efficiency-label-rate.sla.md"
       ],
       "assets": [
+        "notification/assets/test-prompts.json",
         "notification/assets/efficiency-label-rate/card_schema_notes.md",
         "notification/assets/efficiency-label-rate/low_efficiency_grading_card_template.json",
         "notification/assets/efficiency-label-rate/mach_root_label_poc_mapping.json"
@@ -152,7 +153,7 @@
       "external_dependencies": ["openpyxl"],
       "release_assets": [
         "notification/SKILL.md",
-        "notification/test-prompts.json",
+        "notification/assets/test-prompts.json",
         "notification/references/common.md",
         "notification/references/scenario-index.md",
         "notification/references/scenarios/efficiency-label-rate.notification_templates.md",
@@ -169,7 +170,7 @@
     },
     "resolution": {
       "skill_md": "resolution/SKILL.md",
-      "test_prompts": "resolution/test-prompts.json",
+      "test_prompts": "resolution/assets/test-prompts.json",
       "references": [
         "resolution/references/common.md",
         "resolution/references/scenario-index.md",
@@ -179,7 +180,8 @@
         "resolution/references/scenarios/efficiency-label-rate.examples.md"
       ],
       "assets": [
-        "resolution/assets/README.md"
+        "resolution/assets/README.md",
+        "resolution/assets/test-prompts.json"
       ],
       "scripts": [
         {
@@ -193,7 +195,7 @@
       "external_dependencies": [],
       "release_assets": [
         "resolution/SKILL.md",
-        "resolution/test-prompts.json",
+        "resolution/assets/test-prompts.json",
         "resolution/references/common.md",
         "resolution/references/scenario-index.md",
         "resolution/references/scenarios/efficiency-label-rate.owner_routing.md",

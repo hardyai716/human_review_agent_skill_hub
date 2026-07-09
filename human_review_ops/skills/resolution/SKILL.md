@@ -1,9 +1,9 @@
 ---
 name: tracking-ops-resolution
-description: "记录人审运营人工跟踪 (manual tracking)、状态流转、闭环检查和后续动作；默认禁止线上状态写入。"
-allowed-tools: []
-disallowed-tools:
-  - write
+description: "当用户需要记录人审运营事件的人工跟踪 (manual tracking)、状态流转、闭环检查、继续观察或复查计划时使用；用于 efficiency-label-rate 等场景的本地调试闭环，不发送通知、不写线上状态。"
+allowed-tools:
+  - Read
+  - Bash
 ---
 
 # 解决 Skill

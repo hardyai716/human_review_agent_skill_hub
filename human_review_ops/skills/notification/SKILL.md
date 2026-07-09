@@ -1,9 +1,9 @@
 ---
 name: routing-ops-notifications
-description: "基于分析结果生成通知草稿、负责人 (POC) 路由、飞书卡片 (Card) 和发送计划 (send_plan)；默认阻断真实群发。"
-allowed-tools: []
-disallowed-tools:
-  - write
+description: "当用户需要基于人审运营分析结果生成通知草稿、负责人 (POC) 路由、飞书卡片 (Card)、分级报表或发送计划 (send_plan) 时使用；用于 efficiency-label-rate 等场景的触达前预览与人工确认门禁，默认阻断真实群发和拉群。"
+allowed-tools:
+  - Read
+  - Bash
 ---
 
 # 通知 Skill
