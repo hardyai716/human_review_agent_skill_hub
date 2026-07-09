@@ -1,9 +1,9 @@
 ---
 name: analyzing-ops-metrics
-description: "基于治理口径生成查询计划 (QueryPlan)、只读 SQL 或只读执行请求，输出分析结果、分级和来源页脚 (source_footer)；不做通知或写入。"
-allowed-tools: []
-disallowed-tools:
-  - write
+description: "当用户需要对已识别的人审运营指标或 efficiency-label-rate 打标率场景做只读分析时使用；生成查询计划 (QueryPlan)、受控 SQL、分级结果、source_footer 和 provenance，不生成通知、不发送消息、不写线上状态。"
+allowed-tools:
+  - Read
+  - Bash
 ---
 
 # 分析 Skill
