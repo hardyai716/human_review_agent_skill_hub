@@ -9,15 +9,12 @@
   "card_json": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_notification_draft/publish/low_efficiency_grading.card.json",
   "card_json_with_meta": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_notification_draft/publish/low_efficiency_grading.card.with_meta.json",
   "card_hash_check": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_notification_draft/publish/card_hash_check.json",
-  "sent": true,
-  "send_identity": "bot",
-  "target_user": "self",
-  "target_user_open_id_prefix": "ou_7677e7...",
-  "message_id": "om_x100b6bd3bc59f0a0b241ae0ae5ad8fb",
-  "send_result": {
-    "ok": true,
-    "identity": "bot",
-    "message_id": "om_x100b6bd3bc59f0a0b241ae0ae5ad8fb",
-    "create_time": "2026-07-09 00:47:37"
-  }
+  "sent": false,
+  "send_identity": null,
+  "target_user": null,
+  "target_user_open_id_prefix": null,
+  "message_id": null,
+  "send_result": null,
+  "notification_draft": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_notification_draft/notification_draft.json",
+  "send_plan": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_notification_draft/send_plan.json"
 }

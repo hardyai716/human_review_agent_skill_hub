@@ -1,0 +1,179 @@
+{
+  "schema_version": "stage_2_notification_draft_detail.v1",
+  "scenario_key": "efficiency-label-rate",
+  "report_type": "low_efficiency_grading",
+  "draft_mode": "self_preview_with_placeholder_poc_routing",
+  "default_self_validation": true,
+  "real_poc_mapping_used": false,
+  "source_stage_1_result": "evals/efficiency-label-rate/stage_1_runs/20260708_real_readonly_label_rate_grading_results.jsonl",
+  "level_counts": {
+    "notice": 410,
+    "P2": 7,
+    "P1": 6,
+    "P0": 4
+  },
+  "comprehensive_reason_count": 410,
+  "data_link": {
+    "sheet_url": "https://bytedance.larkoffice.com/sheets/HyPHsQn31hXTzOtoq8Rc1Akhnru",
+    "workbook": "low_label_rate_grading_2026-07-01_2026-07-07.xlsx",
+    "csv_files": {
+      "notice": "notice.csv",
+      "P2": "P2.csv",
+      "P1": "P1.csv",
+      "P0": "P0.csv",
+      "comprehensive": "综合.csv"
+    }
+  },
+  "card_draft": {
+    "card_json": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_notification_draft/publish/low_efficiency_grading.card.json",
+    "card_json_with_meta": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_notification_draft/publish/low_efficiency_grading.card.with_meta.json",
+    "card_hash_check": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_notification_draft/publish/card_hash_check.json",
+    "send_card_meta_removed": true
+  },
+  "poc_routing": {
+    "poc_routing_plan": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_notification_draft/poc_routing_plan.json",
+    "routing_mode": "placeholder",
+    "fallback_to_default_user": true,
+    "default_recipient": "self",
+    "routing_rules": {
+      "notice": {
+        "target_roles": [
+          "群内同步策略明细和数据链接"
+        ],
+        "action_required": "周知明细，纳入观察。",
+        "default_recipient": "self",
+        "recipient_resolution": {
+          "mode": "placeholder",
+          "recipients": [
+            "self"
+          ],
+          "real_poc_count": 0,
+          "fallback_reason": "real reason/strategy -> POC mapping is not available"
+        },
+        "requires_human_confirmation_before_real_send": true,
+        "group_send_blocked": true,
+        "reason_count": 410
+      },
+      "P2": {
+        "target_roles": [
+          "治理 BP",
+          "审核 VOC POC",
+          "人审运营"
+        ],
+        "action_required": "请相关 POC 说明低打标原因和后续处理计划。",
+        "default_recipient": "self",
+        "recipient_resolution": {
+          "mode": "placeholder",
+          "recipients": [
+            "self"
+          ],
+          "real_poc_count": 0,
+          "fallback_reason": "real reason/strategy -> POC mapping is not available"
+        },
+        "requires_human_confirmation_before_real_send": true,
+        "group_send_blocked": true,
+        "reason_count": 7
+      },
+      "P1": {
+        "target_roles": [
+          "治理 BP",
+          "审核 VOC POC",
+          "人审运营",
+          "治理 BP +1",
+          "VOC 负责人",
+          "人审运营负责人"
+        ],
+        "action_required": "要求负责人关注，并推动原因说明和处理计划。",
+        "default_recipient": "self",
+        "recipient_resolution": {
+          "mode": "placeholder",
+          "recipients": [
+            "self"
+          ],
+          "real_poc_count": 0,
+          "fallback_reason": "real reason/strategy -> POC mapping is not available"
+        },
+        "requires_human_confirmation_before_real_send": true,
+        "group_send_blocked": true,
+        "reason_count": 6
+      },
+      "P0": {
+        "target_roles": [
+          "治理 BP",
+          "审核 VOC POC",
+          "人审运营",
+          "治理 BP +1",
+          "VOC 负责人",
+          "人审运营负责人",
+          "治理负责人"
+        ],
+        "action_required": "高优先级周知，要求重点关注和处理。",
+        "default_recipient": "self",
+        "recipient_resolution": {
+          "mode": "placeholder",
+          "recipients": [
+            "self"
+          ],
+          "real_poc_count": 0,
+          "fallback_reason": "real reason/strategy -> POC mapping is not available"
+        },
+        "requires_human_confirmation_before_real_send": true,
+        "group_send_blocked": true,
+        "reason_count": 4
+      }
+    },
+    "routing_constraints": {
+      "group_send_blocked": true,
+      "group_send_allowed": false,
+      "group_recipients": [],
+      "real_notification_executed": false,
+      "online_write_executed": false,
+      "online_state_write_allowed": false
+    }
+  },
+  "methodology": {
+    "metric_formula": "`label_rate` = SUM(`[打标量__reviewid]`) / SUM(`[完审量_reviewid]`)",
+    "period": {
+      "current_start": "2026-07-01",
+      "current_end": "2026-07-07",
+      "history_start": "2026-06-10",
+      "checked_at": "2026-07-08T23:55:56.033000+08:00"
+    },
+    "source_footer": {
+      "source_tier": "governed_dataset",
+      "metric_definition_version": "draft",
+      "data_freshness": "p_date >= today() - 28 AND p_date < today(); checked_at=2026-07-08T23:55:56.033+08:00",
+      "owner": "人审效率域数据 Owner",
+      "confidence_tier": "high",
+      "review_status": "real_readonly_query_executed",
+      "scenario_key": "efficiency-label-rate",
+      "metric_id": "label_rate",
+      "quality_checks": [
+        "freshness_gate",
+        "denominator_not_zero",
+        "field_mapping_check",
+        "grain_check",
+        "forbidden_source_check",
+        "truncation_check",
+        "grading_rule_check"
+      ]
+    }
+  },
+  "send_safety": {
+    "current_stage": "draft_only_for_group_send",
+    "current_preview_recipient": "self",
+    "requires_confirmation_before_group_send": true,
+    "group_send_blocked": true,
+    "group_send_allowed": false,
+    "sent": false,
+    "real_group_send_executed": false,
+    "online_write_executed": false,
+    "self_preview_sent": false,
+    "self_preview_message_id": null
+  },
+  "provenance": {
+    "dataset_id": "3888816",
+    "region": "cn",
+    "query_plan_id": null
+  }
+}

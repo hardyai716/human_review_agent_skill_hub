@@ -2,7 +2,7 @@
   "schema_version": "stage_2_notification_draft.v1",
   "report_type": "low_efficiency_grading",
   "scenario_key": "efficiency-label-rate",
-  "run_mode": "debug_only_with_explicit_self_send",
+  "run_mode": "draft_only_with_placeholder_poc_routing",
   "source_stage_1_result": "evals/efficiency-label-rate/stage_1_runs/20260708_real_readonly_label_rate_grading_results.jsonl",
   "output_dir": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_notification_draft",
   "dataset_id": "3888816",
@@ -31,7 +31,10 @@
     "P1_csv": "P1.csv",
     "P0_csv": "P0.csv",
     "comprehensive_csv": "综合.csv",
-    "workbook": "low_label_rate_grading_2026-07-01_2026-07-07.xlsx"
+    "workbook": "low_label_rate_grading_2026-07-01_2026-07-07.xlsx",
+    "poc_routing_plan": "poc_routing_plan.json",
+    "notification_draft": "notification_draft.json",
+    "send_plan": "send_plan.json"
   },
   "source_footer": {
     "source_tier": "governed_dataset",
@@ -63,16 +66,13 @@
     "card_json": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_notification_draft/publish/low_efficiency_grading.card.json",
     "card_json_with_meta": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_notification_draft/publish/low_efficiency_grading.card.with_meta.json",
     "card_hash_check": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_notification_draft/publish/card_hash_check.json",
-    "sent": true,
-    "send_identity": "bot",
-    "target_user": "self",
-    "target_user_open_id_prefix": "ou_7677e7...",
-    "message_id": "om_x100b6bd3bc59f0a0b241ae0ae5ad8fb",
-    "send_result": {
-      "ok": true,
-      "identity": "bot",
-      "message_id": "om_x100b6bd3bc59f0a0b241ae0ae5ad8fb",
-      "create_time": "2026-07-09 00:47:37"
-    }
+    "sent": false,
+    "send_identity": null,
+    "target_user": null,
+    "target_user_open_id_prefix": null,
+    "message_id": null,
+    "send_result": null,
+    "notification_draft": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_notification_draft/notification_draft.json",
+    "send_plan": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_notification_draft/send_plan.json"
   }
 }

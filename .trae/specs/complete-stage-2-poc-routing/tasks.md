@@ -12,11 +12,11 @@
   - [x] SubTask 2.3: 新增 validator，校验 `routing_mode=placeholder`、等级角色范围和 `default_recipient=self`。
   - [x] SubTask 2.4: 运行验证，更新计划文档，提交并推送。
 
-- [ ] Task 3: 增强通知草稿并生成群推送门禁计划。
-  - [ ] SubTask 3.1: 生成 `notification_draft.json`，合并卡片草稿、数据链接、POC 路由占位和口径说明。
-  - [ ] SubTask 3.2: 生成 `send_plan.json`，默认 `requires_confirmation=true`、`group_send_blocked=true`、`sent=false`。
-  - [ ] SubTask 3.3: 扩展 validator，校验通知草稿和群推送门禁。
-  - [ ] SubTask 3.4: 运行验证，更新计划文档，提交并推送。
+- [x] Task 3: 增强通知草稿并生成群推送门禁计划。
+  - [x] SubTask 3.1: 生成 `notification_draft.json`，合并卡片草稿、数据链接、POC 路由占位和口径说明。
+  - [x] SubTask 3.2: 生成 `send_plan.json`，默认 `requires_confirmation=true`、`group_send_blocked=true`、`sent=false`。
+  - [x] SubTask 3.3: 扩展 validator，校验通知草稿和群推送门禁。
+  - [x] SubTask 3.4: 运行验证，更新计划文档，提交并推送。
 
 - [ ] Task 4: 实现本地人工处理状态记录。
   - [ ] SubTask 4.1: 新增 Resolution Skill 脚本或 stage 2 runner，生成 `manual_tracking.json`。

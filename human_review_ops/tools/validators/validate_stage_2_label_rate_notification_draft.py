@@ -28,6 +28,8 @@ DEFAULT_OUTPUT_DIR = (
 )
 REQUIRED_FILES = [
     "summary.json",
+    "notification_draft.json",
+    "send_plan.json",
     "notice.csv",
     "P2.csv",
     "P1.csv",
@@ -55,6 +57,8 @@ def validate(output_dir: Path, *, expect_sent: bool) -> None:
             raise AssertionError(f"Missing artifact: {relative}")
 
     summary = load_json(output_dir / "summary.json")
+    notification_draft = load_json(output_dir / "notification_draft.json")
+    send_plan = load_json(output_dir / "send_plan.json")
     card = load_json(output_dir / "publish" / "low_efficiency_grading.card.json")
     card_with_meta = load_json(
         output_dir / "publish" / "low_efficiency_grading.card.with_meta.json"
@@ -65,6 +69,8 @@ def validate(output_dir: Path, *, expect_sent: bool) -> None:
     hash_check = load_json(output_dir / "publish" / "card_hash_check.json")
 
     assert_summary(summary)
+    assert_notification_draft(notification_draft, summary)
+    assert_send_plan(send_plan, notification_draft)
     assert_csvs(output_dir, summary)
     assert_card(card, card_with_meta, hash_check)
     assert_publish_summary(publish_summary, summary, expect_sent=expect_sent)
@@ -88,6 +94,109 @@ def assert_summary(summary: dict[str, Any]) -> None:
     workbook = outputs.get("workbook")
     if not workbook:
         raise AssertionError("summary outputs.workbook missing.")
+    for field in ("poc_routing_plan", "notification_draft", "send_plan"):
+        if not outputs.get(field):
+            raise AssertionError(f"summary outputs.{field} missing.")
+
+
+def assert_notification_draft(
+    notification_draft: dict[str, Any],
+    summary: dict[str, Any],
+) -> None:
+    if notification_draft.get("schema_version") != "stage_2_notification_draft_detail.v1":
+        raise AssertionError("notification_draft schema_version mismatch.")
+    if notification_draft.get("scenario_key") != "efficiency-label-rate":
+        raise AssertionError("notification_draft scenario_key mismatch.")
+    if notification_draft.get("report_type") != "low_efficiency_grading":
+        raise AssertionError("notification_draft report_type mismatch.")
+    if notification_draft.get("default_self_validation") is not True:
+        raise AssertionError("notification_draft must declare default self validation.")
+    if notification_draft.get("real_poc_mapping_used") is not False:
+        raise AssertionError("notification_draft must not use real POC mapping.")
+    if notification_draft.get("level_counts") != summary.get("level_counts"):
+        raise AssertionError("notification_draft level_counts mismatch.")
+    if notification_draft.get("comprehensive_reason_count") != summary.get(
+        "comprehensive_reason_count"
+    ):
+        raise AssertionError("notification_draft comprehensive count mismatch.")
+
+    data_link = notification_draft.get("data_link", {})
+    if data_link.get("sheet_url") != summary.get("sheet_url"):
+        raise AssertionError("notification_draft data link sheet_url mismatch.")
+    if not data_link.get("workbook"):
+        raise AssertionError("notification_draft data link workbook missing.")
+
+    card_draft = notification_draft.get("card_draft", {})
+    if card_draft.get("send_card_meta_removed") is not True:
+        raise AssertionError("notification_draft must declare _meta removal.")
+
+    poc_routing = notification_draft.get("poc_routing", {})
+    if poc_routing.get("routing_mode") != "placeholder":
+        raise AssertionError("notification_draft routing_mode must be placeholder.")
+    if poc_routing.get("fallback_to_default_user") is not True:
+        raise AssertionError("notification_draft must fallback to default user.")
+    if poc_routing.get("default_recipient") != "self":
+        raise AssertionError("notification_draft default_recipient must be self.")
+    routing_rules = poc_routing.get("routing_rules", {})
+    if set(routing_rules) != {"notice", "P2", "P1", "P0"}:
+        raise AssertionError("notification_draft routing rules must cover all levels.")
+    for level, rule in routing_rules.items():
+        if not rule.get("target_roles"):
+            raise AssertionError(f"{level} target_roles missing.")
+        if not rule.get("action_required"):
+            raise AssertionError(f"{level} action_required missing.")
+        if rule.get("default_recipient") != "self":
+            raise AssertionError(f"{level} default_recipient must be self.")
+        if rule.get("group_send_blocked") is not True:
+            raise AssertionError(f"{level} group_send_blocked must be true.")
+
+    send_safety = notification_draft.get("send_safety", {})
+    if send_safety.get("requires_confirmation_before_group_send") is not True:
+        raise AssertionError("notification_draft must require confirmation.")
+    if send_safety.get("group_send_blocked") is not True:
+        raise AssertionError("notification_draft must block group send.")
+    if send_safety.get("sent") is not False:
+        raise AssertionError("notification_draft group send sent must be false.")
+    if send_safety.get("real_group_send_executed") is not False:
+        raise AssertionError("notification_draft must not execute real group send.")
+    if send_safety.get("online_write_executed") is not False:
+        raise AssertionError("notification_draft must not write online state.")
+
+
+def assert_send_plan(
+    send_plan: dict[str, Any],
+    notification_draft: dict[str, Any],
+) -> None:
+    if send_plan.get("schema_version") != "stage_2_send_plan.v1":
+        raise AssertionError("send_plan schema_version mismatch.")
+    if send_plan.get("scenario_key") != "efficiency-label-rate":
+        raise AssertionError("send_plan scenario_key mismatch.")
+    if send_plan.get("report_type") != "low_efficiency_grading":
+        raise AssertionError("send_plan report_type mismatch.")
+    if send_plan.get("requires_confirmation") is not True:
+        raise AssertionError("send_plan requires_confirmation must be true.")
+    if send_plan.get("confirmation_status") != "not_requested":
+        raise AssertionError("send_plan confirmation_status mismatch.")
+    if send_plan.get("group_send_blocked") is not True:
+        raise AssertionError("send_plan group_send_blocked must be true.")
+    if send_plan.get("group_send_allowed") is not False:
+        raise AssertionError("send_plan group_send_allowed must be false.")
+    if send_plan.get("group_recipients") != []:
+        raise AssertionError("send_plan group_recipients must be empty.")
+    if send_plan.get("sent") is not False:
+        raise AssertionError("send_plan sent must be false.")
+    if send_plan.get("real_group_send_executed") is not False:
+        raise AssertionError("send_plan must not execute real group send.")
+    if send_plan.get("online_write_executed") is not False:
+        raise AssertionError("send_plan must not write online state.")
+    if not send_plan.get("blocked_reason"):
+        raise AssertionError("send_plan blocked_reason missing.")
+
+    content_source = send_plan.get("content_source", {})
+    if "notification_draft.json" not in content_source.get("notification_draft", ""):
+        raise AssertionError("send_plan notification draft source mismatch.")
+    if notification_draft.get("send_safety", {}).get("group_send_blocked") is not True:
+        raise AssertionError("send_plan depends on an unsafe notification draft.")
 
 
 def assert_csvs(output_dir: Path, summary: dict[str, Any]) -> None:

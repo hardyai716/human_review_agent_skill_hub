@@ -1,0 +1,33 @@
+{
+  "schema_version": "stage_2_send_plan.v1",
+  "scenario_key": "efficiency-label-rate",
+  "report_type": "low_efficiency_grading",
+  "plan_mode": "manual_confirmation_required",
+  "target_type": "future_group_or_poc_after_confirmation",
+  "target_source": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_notification_draft/poc_routing_plan.json",
+  "content_source": {
+    "card_json": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_notification_draft/publish/low_efficiency_grading.card.json",
+    "notification_draft": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_notification_draft/notification_draft.json"
+  },
+  "send_identity": "bot",
+  "requires_confirmation": true,
+  "confirmation_status": "not_requested",
+  "group_send_blocked": true,
+  "group_send_allowed": false,
+  "group_recipients": [],
+  "sent": false,
+  "real_group_send_executed": false,
+  "online_write_executed": false,
+  "blocked_reason": "Stage 2 only has placeholder POC routing. Real group/P0-P2 recipient resolution and explicit confirmation are required before group sending.",
+  "self_preview": {
+    "default_recipient": "self",
+    "sent": false,
+    "message_id": null
+  },
+  "required_before_real_send": [
+    "resolve real reason/strategy -> POC mapping",
+    "confirm target chat or POC recipients",
+    "confirm send identity and content",
+    "run validator with group-send gate enabled"
+  ]
+}

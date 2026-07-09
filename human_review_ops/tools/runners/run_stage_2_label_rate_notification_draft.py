@@ -112,6 +112,7 @@ def main() -> None:
         period=period,
         sheet_url=sheet_url,
         top_n=args.top_n,
+        self_send_requested=args.send_user_id is not None,
     )
     top_rows = build_top_rows(execution["comprehensive_results"], args.top_n)
     card_with_meta = render_grading_card(
@@ -128,6 +129,9 @@ def main() -> None:
     hash_check_path = publish_dir / "card_hash_check.json"
     summary_path = output_dir / "summary.json"
     publish_summary_path = publish_dir / f"{REPORT_TYPE}.publish_summary.json"
+    poc_routing_path = output_dir / "poc_routing_plan.json"
+    notification_draft_path = output_dir / "notification_draft.json"
+    send_plan_path = output_dir / "send_plan.json"
 
     write_json(card_path, card_json, compact=True)
     write_json(card_with_meta_path, card_with_meta)
@@ -170,8 +174,30 @@ def main() -> None:
         else None,
         "message_id": extract_message_id(sent_payload),
         "send_result": sanitize_send_payload(sent_payload),
+        "notification_draft": relative_to_root(notification_draft_path),
+        "send_plan": relative_to_root(send_plan_path),
     }
+    summary["outputs"]["poc_routing_plan"] = "poc_routing_plan.json"
+    summary["outputs"]["notification_draft"] = "notification_draft.json"
+    summary["outputs"]["send_plan"] = "send_plan.json"
     summary["publish"] = publish_summary
+    notification_draft = build_notification_draft(
+        summary=summary,
+        poc_routing_path=poc_routing_path,
+        card_path=card_path,
+        card_with_meta_path=card_with_meta_path,
+        hash_check_path=hash_check_path,
+        publish_summary=publish_summary,
+    )
+    send_plan = build_send_plan(
+        identity=args.identity,
+        publish_summary=publish_summary,
+        poc_routing_path=poc_routing_path,
+        card_path=card_path,
+        notification_draft_path=notification_draft_path,
+    )
+    write_json(notification_draft_path, notification_draft)
+    write_json(send_plan_path, send_plan)
     write_json(summary_path, summary)
     write_json(publish_summary_path, publish_summary)
 
@@ -188,6 +214,10 @@ def load_jsonl(path: Path) -> list[dict[str, Any]]:
         for line in path.read_text(encoding="utf-8").splitlines()
         if line.strip()
     ]
+
+
+def load_json(path: Path) -> dict[str, Any]:
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def load_stage_1_sample(path: Path) -> dict[str, Any]:
@@ -286,6 +316,7 @@ def build_summary(
     period: dict[str, str],
     sheet_url: str | None,
     top_n: int,
+    self_send_requested: bool,
 ) -> dict[str, Any]:
     execution = sample["readonly_execution"]
     provenance = sample["provenance"]
@@ -293,7 +324,9 @@ def build_summary(
         "schema_version": "stage_2_notification_draft.v1",
         "report_type": REPORT_TYPE,
         "scenario_key": SCENARIO_KEY,
-        "run_mode": "debug_only_with_explicit_self_send",
+        "run_mode": "debug_only_with_explicit_self_send"
+        if self_send_requested
+        else "draft_only_with_placeholder_poc_routing",
         "source_stage_1_result": relative_to_root(source_path),
         "output_dir": relative_to_root(output_dir),
         "dataset_id": provenance["dataset_id"],
@@ -315,6 +348,147 @@ def build_summary(
             "workbook": workbook_path.name,
         },
         "source_footer": sample["source_footer"],
+    }
+
+
+def build_notification_draft(
+    *,
+    summary: dict[str, Any],
+    poc_routing_path: Path,
+    card_path: Path,
+    card_with_meta_path: Path,
+    hash_check_path: Path,
+    publish_summary: dict[str, Any],
+) -> dict[str, Any]:
+    if not poc_routing_path.exists():
+        raise FileNotFoundError(
+            "Missing poc_routing_plan.json. Run run_stage_2_label_rate_poc_routing.py first."
+        )
+    poc_routing = load_json(poc_routing_path)
+    constraints = poc_routing.get("routing_constraints", {})
+    return {
+        "schema_version": "stage_2_notification_draft_detail.v1",
+        "scenario_key": SCENARIO_KEY,
+        "report_type": REPORT_TYPE,
+        "draft_mode": "self_preview_with_placeholder_poc_routing",
+        "default_self_validation": True,
+        "real_poc_mapping_used": poc_routing.get("real_poc_mapping_used", False),
+        "source_stage_1_result": summary["source_stage_1_result"],
+        "level_counts": summary["level_counts"],
+        "comprehensive_reason_count": summary["comprehensive_reason_count"],
+        "data_link": {
+            "sheet_url": summary.get("sheet_url"),
+            "workbook": summary["outputs"].get("workbook"),
+            "csv_files": {
+                "notice": summary["outputs"].get("notice_csv"),
+                "P2": summary["outputs"].get("P2_csv"),
+                "P1": summary["outputs"].get("P1_csv"),
+                "P0": summary["outputs"].get("P0_csv"),
+                "comprehensive": summary["outputs"].get("comprehensive_csv"),
+            },
+        },
+        "card_draft": {
+            "card_json": relative_to_root(card_path),
+            "card_json_with_meta": relative_to_root(card_with_meta_path),
+            "card_hash_check": relative_to_root(hash_check_path),
+            "send_card_meta_removed": True,
+        },
+        "poc_routing": {
+            "poc_routing_plan": relative_to_root(poc_routing_path),
+            "routing_mode": poc_routing.get("routing_mode"),
+            "fallback_to_default_user": poc_routing.get("fallback_to_default_user"),
+            "default_recipient": poc_routing.get("default_recipient"),
+            "routing_rules": summarize_routing_rules(poc_routing),
+            "routing_constraints": constraints,
+        },
+        "methodology": {
+            "metric_formula": summary.get("metric_formula"),
+            "period": summary.get("period"),
+            "source_footer": summary.get("source_footer"),
+        },
+        "send_safety": {
+            "current_stage": "draft_only_for_group_send",
+            "current_preview_recipient": "self",
+            "requires_confirmation_before_group_send": True,
+            "group_send_blocked": constraints.get("group_send_blocked", True),
+            "group_send_allowed": constraints.get("group_send_allowed", False),
+            "sent": False,
+            "real_group_send_executed": False,
+            "online_write_executed": constraints.get("online_write_executed", False),
+            "self_preview_sent": publish_summary.get("sent", False),
+            "self_preview_message_id": publish_summary.get("message_id"),
+        },
+        "provenance": {
+            "dataset_id": summary.get("dataset_id"),
+            "region": summary.get("region"),
+            "query_plan_id": summary.get("source_footer", {})
+            .get("query_context", {})
+            .get("query_plan_id"),
+        },
+    }
+
+
+def summarize_routing_rules(poc_routing: dict[str, Any]) -> dict[str, Any]:
+    rules = poc_routing.get("routing_rules", {})
+    return {
+        level: {
+            "target_roles": rule.get("target_roles", []),
+            "action_required": rule.get("action_required"),
+            "default_recipient": rule.get("default_recipient"),
+            "recipient_resolution": rule.get("recipient_resolution", {}),
+            "requires_human_confirmation_before_real_send": rule.get(
+                "requires_human_confirmation_before_real_send"
+            ),
+            "group_send_blocked": rule.get("group_send_blocked"),
+            "reason_count": rule.get("reason_count"),
+        }
+        for level, rule in rules.items()
+    }
+
+
+def build_send_plan(
+    *,
+    identity: str,
+    publish_summary: dict[str, Any],
+    poc_routing_path: Path,
+    card_path: Path,
+    notification_draft_path: Path,
+) -> dict[str, Any]:
+    return {
+        "schema_version": "stage_2_send_plan.v1",
+        "scenario_key": SCENARIO_KEY,
+        "report_type": REPORT_TYPE,
+        "plan_mode": "manual_confirmation_required",
+        "target_type": "future_group_or_poc_after_confirmation",
+        "target_source": relative_to_root(poc_routing_path),
+        "content_source": {
+            "card_json": relative_to_root(card_path),
+            "notification_draft": relative_to_root(notification_draft_path),
+        },
+        "send_identity": identity,
+        "requires_confirmation": True,
+        "confirmation_status": "not_requested",
+        "group_send_blocked": True,
+        "group_send_allowed": False,
+        "group_recipients": [],
+        "sent": False,
+        "real_group_send_executed": False,
+        "online_write_executed": False,
+        "blocked_reason": (
+            "Stage 2 only has placeholder POC routing. Real group/P0-P2 recipient "
+            "resolution and explicit confirmation are required before group sending."
+        ),
+        "self_preview": {
+            "default_recipient": "self",
+            "sent": publish_summary.get("sent", False),
+            "message_id": publish_summary.get("message_id"),
+        },
+        "required_before_real_send": [
+            "resolve real reason/strategy -> POC mapping",
+            "confirm target chat or POC recipients",
+            "confirm send identity and content",
+            "run validator with group-send gate enabled",
+        ],
     }
 
 
