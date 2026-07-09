@@ -1,0 +1,33 @@
+{
+  "schema_version": "stage_2_group_send_validation.v1",
+  "scenario_key": "efficiency-label-rate",
+  "report_type": "low_efficiency_grading",
+  "validation_mode": "explicit_user_requested_private_group_validation",
+  "source_stage_1_result": "evals/efficiency-label-rate/stage_1_runs/20260709_real_readonly_label_rate_grading_results.jsonl",
+  "stage_2_output_dir": "evals/efficiency-label-rate/stage_2_runs/20260709_today_data_self_preview_e2e",
+  "chat": {
+    "chat_id": "oc_9c691aa76c22a16207c6f443eac25816",
+    "chat_type": "private",
+    "name": "人审阶段2群发验证-20260709",
+    "created_by_identity": "bot",
+    "member_scope": "requester_and_bot_only",
+    "requester_open_id_prefix": "ou_7677e76..."
+  },
+  "content_source": {
+    "card_json": "evals/efficiency-label-rate/stage_2_runs/20260709_today_data_self_preview_e2e/publish/low_efficiency_grading.card.json",
+    "summary_json": "evals/efficiency-label-rate/stage_2_runs/20260709_today_data_self_preview_e2e/summary.json",
+    "sheet_url": "https://bytedance.larkoffice.com/sheets/IWXxsQZQOhuFj1tfqsIcOX8nn1c"
+  },
+  "send_result": {
+    "sent": true,
+    "send_identity": "bot",
+    "message_id": "om_x100b6bc5677e74acb39e171e04bd8e2",
+    "create_time": "2026-07-09 11:16:43"
+  },
+  "safety": {
+    "user_explicitly_requested_group_validation": true,
+    "real_poc_mapping_used": false,
+    "online_state_store_write_executed": false,
+    "group_scope_limited_to_validation": true
+  }
+}

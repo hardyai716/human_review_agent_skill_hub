@@ -1,0 +1,4 @@
+﻿severity_level,severity_priority,reason,data_days,total_review_in_cnt,total_review_done_cnt,total_label_cnt,avg_review_in_cnt,avg_review_done_cnt,avg_label_cnt,label_rate,prev_avg_review_in_cnt,prev_label_rate,growth_rate,daily_delta,hit_rule_ids,hit_conditions
+P0,0,core_protection_gov_user,7,33209.0,33208.0,4.0,4744.142857142857,4744.0,0.5714285714285714,0.00012045290291496025,4034.8571428571427,7.082152974504249e-05,0.0,0.0,p0_four_week_persistent_low_efficiency,近1周日均进审>2000且连续4周打标率<3%
+P0,0,LS_regular_BASE_OCR_words_review,7,30003.0,29625.0,503.0,4286.142857142857,4232.142857142857,71.85714285714286,0.0169789029535865,4247.142857142857,0.01554543921766987,0.0,0.0,p0_four_week_persistent_low_efficiency,近1周日均进审>2000且连续4周打标率<3%
+P0,0,is_govB_media,7,18191.0,18185.0,37.0,2598.714285714286,2597.8571428571427,5.285714285714286,0.0020346439373109706,2624.5714285714284,0.002985398686424578,0.0,0.0,p0_four_week_persistent_low_efficiency,近1周日均进审>2000且连续4周打标率<3%

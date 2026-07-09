@@ -816,6 +816,7 @@ human_review_ops/evals/efficiency-label-rate/eval_samples.jsonl
 | 阶段 2 | P2 | 新增本地人工处理状态记录。 | 生成 `manual_tracking.json`；包含 `evidence_refs`、`operator_note`、`next_action`、`continue_observation`，且 `online_write_executed=false`。 | 已完成 |
 | 阶段 2 | P2 | 新增局部调度回归。 | 生成 `owner_lookup_only_results.jsonl`、`notification_only_results.jsonl`、`resolution_only_results.jsonl` 和 `partial_dispatch_results.jsonl`。 | 已完成 |
 | 阶段 2 | P2 | 完成阶段 2 全量安全验收。 | `validate_stage_2_label_rate_poc_routing.py`、`validate_stage_2_label_rate_notification_draft.py`、`validate_stage_2_label_rate_manual_tracking.py`、`validate_stage_2_label_rate_partial_dispatch.py` 均通过。 | 已完成 |
+| 阶段 2 | P2 | 完成私有验证群群发验证。 | 用户明确授权后，新建私有验证群 `人审阶段2群发验证-20260709`，仅包含用户本人和机器人，发送今日数据版 Card 2.0 通知，并记录 `group_send_validation.json`。 | 已完成 |
 
 ### 12.3 阶段 3 / 后续实施计划
 
@@ -826,7 +827,7 @@ human_review_ops/evals/efficiency-label-rate/eval_samples.jsonl
 | POC 映射 | 当前仅使用 placeholder，不编造真实 POC。 | 明确 SOP Wiki / 表格中的 `reason/strategy -> POC` 数据源和字段口径。 |
 | 分析粒度 | 当前按 `reason` 粒度完成端到端验证。 | 业务确认是否切换或补充 `strategy_name` 粒度。 |
 | 触达身份 | 开发验证阶段默认本人预览。 | 真实 POC 身份字段、open_id 解析方式和权限边界确认。 |
-| 群推送 | 已生成 `send_plan.json` 门禁，默认阻断群发。 | 人工确认目标群 / POC 收件人、发送身份和卡片内容。 |
+| 群推送 | 已生成 `send_plan.json` 门禁，默认阻断群发；用户明确授权下已完成一次私有验证群发送。 | 真实 POC 群推送仍需人工确认目标群 / POC 收件人、发送身份和卡片内容。 |
 | 回收闭环 | 当前仅记录本地 `manual_tracking.json`。 | 明确联系人回复收集、卡片按钮回调或 Lark Base 状态表设计。 |
 | 状态存储 | 开发阶段仅本地存储，不写线上状态。 | 状态表 schema、权限、写入幂等和回滚策略确认。 |
 | 发送身份 | 当前默认 bot，未确认时不做真实群推送。 | 若 bot 权限不足，再评估 user identity 或应用权限补齐。 |

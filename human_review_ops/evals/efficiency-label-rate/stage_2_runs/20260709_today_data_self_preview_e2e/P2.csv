@@ -1,0 +1,7 @@
+﻿severity_level,severity_priority,reason,data_days,total_review_in_cnt,total_review_done_cnt,total_label_cnt,avg_review_in_cnt,avg_review_done_cnt,avg_label_cnt,label_rate,prev_avg_review_in_cnt,prev_label_rate,growth_rate,daily_delta,hit_rule_ids,hit_conditions
+P2,2,fence_recall,7,47757.0,47663.0,1652.0,6822.428571428572,6809.0,236.0,0.03466000881186665,4810.857142857143,0.04553690776771127,0.41813160707922553,2011.5714285714284,p2_low_efficiency_growth,本期打标率<10%，上期日均进审>0，环比>20%，日均增量>2000
+P2,2,core_protection_gov_user,7,33209.0,33208.0,4.0,4744.142857142857,4744.0,0.5714285714285714,0.00012045290291496025,0.0,0.0,0.0,0.0,p2_single_strategy_low_efficiency,近7天累计进审量>14000且打标率<3%
+P2,2,LS_regular_BASE_OCR_words_review,7,30003.0,29625.0,503.0,4286.142857142857,4232.142857142857,71.85714285714286,0.0169789029535865,0.0,0.0,0.0,0.0,p2_single_strategy_low_efficiency,近7天累计进审量>14000且打标率<3%
+P2,2,pentax_fans_19_n2,7,18513.0,18497.0,1251.0,2644.714285714286,2642.4285714285716,178.71428571428572,0.06763258906849759,405.2857142857143,0.05807158509861213,5.525555163905534,2239.4285714285716,p2_low_efficiency_growth,本期打标率<10%，上期日均进审>0，环比>20%，日均增量>2000
+P2,2,is_govB_media,7,18191.0,18185.0,37.0,2598.714285714286,2597.8571428571427,5.285714285714286,0.0020346439373109706,0.0,0.0,0.0,0.0,p2_single_strategy_low_efficiency,近7天累计进审量>14000且打标率<3%
+P2,2,national_security_recall_rewords_review,7,14434.0,14481.0,316.0,2062.0,2068.714285714286,45.142857142857146,0.021821697396588634,0.0,0.0,0.0,0.0,p2_single_strategy_low_efficiency,近7天累计进审量>14000且打标率<3%

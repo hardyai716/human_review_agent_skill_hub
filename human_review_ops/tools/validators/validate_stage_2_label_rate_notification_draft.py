@@ -83,10 +83,7 @@ def assert_summary(summary: dict[str, Any]) -> None:
         raise AssertionError("summary report_type mismatch.")
     if summary.get("scenario_key") != "efficiency-label-rate":
         raise AssertionError("summary scenario_key mismatch.")
-    if summary.get("level_counts") != {"notice": 410, "P2": 7, "P1": 6, "P0": 4}:
-        raise AssertionError("summary level_counts mismatch.")
-    if summary.get("comprehensive_reason_count") != 410:
-        raise AssertionError("summary comprehensive_reason_count mismatch.")
+    assert_level_counts(summary)
     if not summary.get("sheet_url"):
         raise AssertionError("summary sheet_url is required for the sent card.")
 
@@ -97,6 +94,21 @@ def assert_summary(summary: dict[str, Any]) -> None:
     for field in ("poc_routing_plan", "notification_draft", "send_plan"):
         if not outputs.get(field):
             raise AssertionError(f"summary outputs.{field} missing.")
+
+
+def assert_level_counts(summary: dict[str, Any]) -> None:
+    level_counts = summary.get("level_counts")
+    expected_levels = {"notice", "P2", "P1", "P0"}
+    if set(level_counts or {}) != expected_levels:
+        raise AssertionError("summary level_counts must cover notice/P2/P1/P0.")
+    for level, count in level_counts.items():
+        if not isinstance(count, int) or count < 0:
+            raise AssertionError(f"summary {level} count must be a non-negative integer.")
+    comprehensive_reason_count = summary.get("comprehensive_reason_count")
+    if not isinstance(comprehensive_reason_count, int) or comprehensive_reason_count < 0:
+        raise AssertionError("summary comprehensive_reason_count must be a non-negative integer.")
+    if comprehensive_reason_count > level_counts.get("notice", 0):
+        raise AssertionError("summary comprehensive_reason_count cannot exceed notice count.")
 
 
 def assert_notification_draft(
@@ -200,11 +212,12 @@ def assert_send_plan(
 
 
 def assert_csvs(output_dir: Path, summary: dict[str, Any]) -> None:
+    level_counts = summary["level_counts"]
     expected_counts = {
-        "notice.csv": 410,
-        "P2.csv": 7,
-        "P1.csv": 6,
-        "P0.csv": 4,
+        "notice.csv": level_counts["notice"],
+        "P2.csv": level_counts["P2"],
+        "P1.csv": level_counts["P1"],
+        "P0.csv": level_counts["P0"],
         "综合.csv": summary["comprehensive_reason_count"],
     }
     for filename, expected_count in expected_counts.items():

@@ -18,7 +18,6 @@ DEFAULT_OUTPUT_DIR = (
     / "20260709_low_label_rate_grading_notification_draft"
 )
 LEVEL_ORDER = ["notice", "P2", "P1", "P0"]
-EXPECTED_LEVEL_COUNTS = {"notice": 410, "P2": 7, "P1": 6, "P0": 4}
 EXPECTED_RULES = {
     "notice": {
         "target_roles": ["群内同步策略明细和数据链接"],
@@ -94,10 +93,21 @@ def assert_plan_header(plan: dict[str, Any]) -> None:
         raise AssertionError("default_recipient must be self.")
     if plan.get("real_poc_mapping_used") is not False:
         raise AssertionError("real POC mapping must not be used.")
-    if plan.get("level_counts") != EXPECTED_LEVEL_COUNTS:
-        raise AssertionError("level_counts mismatch.")
-    if plan.get("comprehensive_reason_count") != 410:
-        raise AssertionError("comprehensive_reason_count mismatch.")
+    assert_level_counts(plan)
+
+
+def assert_level_counts(plan: dict[str, Any]) -> None:
+    level_counts = plan.get("level_counts")
+    if set(level_counts or {}) != set(LEVEL_ORDER):
+        raise AssertionError("level_counts must contain notice/P2/P1/P0 only.")
+    for level, count in level_counts.items():
+        if not isinstance(count, int) or count < 0:
+            raise AssertionError(f"{level} level_count must be a non-negative integer.")
+    comprehensive_reason_count = plan.get("comprehensive_reason_count")
+    if not isinstance(comprehensive_reason_count, int) or comprehensive_reason_count < 0:
+        raise AssertionError("comprehensive_reason_count must be a non-negative integer.")
+    if comprehensive_reason_count > level_counts.get("notice", 0):
+        raise AssertionError("comprehensive_reason_count cannot exceed notice count.")
 
 
 def assert_level_rules(plan: dict[str, Any]) -> None:
@@ -124,7 +134,7 @@ def assert_level_rules(plan: dict[str, Any]) -> None:
             raise AssertionError(f"{level} recipients must be self only.")
         if resolution.get("real_poc_count") != 0:
             raise AssertionError(f"{level} must not contain real POCs.")
-        if actual.get("reason_count") != EXPECTED_LEVEL_COUNTS[level]:
+        if actual.get("reason_count") != plan["level_counts"][level]:
             raise AssertionError(f"{level} reason_count mismatch.")
 
 
