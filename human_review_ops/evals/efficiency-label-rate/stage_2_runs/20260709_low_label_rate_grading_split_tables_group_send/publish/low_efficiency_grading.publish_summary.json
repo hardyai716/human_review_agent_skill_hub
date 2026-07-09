@@ -1,0 +1,29 @@
+{
+  "report_type": "low_efficiency_grading",
+  "scenario_key": "efficiency-label-rate",
+  "source_stage_1_result": "evals/efficiency-label-rate/stage_1_runs/20260709_real_readonly_label_rate_grading_split_tables_results.jsonl",
+  "output_dir": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_split_tables_group_send",
+  "summary_json": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_split_tables_group_send/summary.json",
+  "workbook": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_split_tables_group_send/low_label_rate_grading_2026-07-02_2026-07-08.xlsx",
+  "summary_by_label_poc_csv": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_split_tables_group_send/汇总统计.csv",
+  "sheet_url": "https://bytedance.larkoffice.com/sheets/EtEHs1JdhhXL0atCA31cA86pnog",
+  "card_json": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_split_tables_group_send/publish/low_efficiency_grading.card.json",
+  "card_json_with_meta": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_split_tables_group_send/publish/low_efficiency_grading.card.with_meta.json",
+  "card_hash_check": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_split_tables_group_send/publish/card_hash_check.json",
+  "sent": true,
+  "send_identity": "bot",
+  "target_type": "chat",
+  "target_user": null,
+  "target_user_open_id_prefix": null,
+  "target_chat_id": "oc_9c691aa76c22a16207c6f443eac25816",
+  "message_id": "om_x100b6bc1944bcca8b4c70a9909b9931",
+  "send_result": {
+    "ok": true,
+    "identity": "bot",
+    "message_id": "om_x100b6bc1944bcca8b4c70a9909b9931",
+    "create_time": "2026-07-09 16:36:57"
+  },
+  "notification_draft": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_split_tables_group_send/notification_draft.json",
+  "send_plan": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_split_tables_group_send/send_plan.json",
+  "group_poc_mention_validation": "evals/efficiency-label-rate/stage_2_runs/20260709_low_label_rate_grading_split_tables_group_send/group_poc_mention_validation.json"
+}

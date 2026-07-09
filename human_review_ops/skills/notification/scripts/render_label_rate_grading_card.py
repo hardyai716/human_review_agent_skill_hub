@@ -204,7 +204,7 @@ def table_columns() -> list[dict[str, Any]]:
 def table_block(top_rows: list[dict[str, Any]]) -> dict[str, Any]:
     return {
         "tag": "table",
-        "page_size": min(5, max(1, len(top_rows))),
+        "page_size": min(10, max(1, len(top_rows))),
         "row_height": "auto",
         "freeze_first_column": True,
         "header_style": {
@@ -216,6 +216,27 @@ def table_block(top_rows: list[dict[str, Any]]) -> dict[str, Any]:
         "columns": table_columns(),
         "rows": top_rows,
     }
+
+
+def level_title_block(level: str, row_count: int) -> dict[str, Any]:
+    display = "Notice" if level == "notice" else level
+    return {
+        "tag": "markdown",
+        "content": (
+            f"### <font color='{LEVEL_COLORS[level]}'>{display} 等级 Top {row_count}</font>"
+        ),
+    }
+
+
+def level_table_blocks(
+    level_top_rows: dict[str, list[dict[str, Any]]],
+) -> list[dict[str, Any]]:
+    blocks: list[dict[str, Any]] = []
+    for level in LEVELS:
+        rows = level_top_rows.get(level, [])
+        blocks.append(level_title_block(level, len(rows)))
+        blocks.append(table_block(rows))
+    return blocks
 
 
 def sheet_button(sheet_url: str | None) -> dict[str, Any] | None:
@@ -266,7 +287,7 @@ def methodology_panel(summary: dict[str, Any]) -> dict[str, Any]:
 def render_grading_card(
     *,
     summary: dict[str, Any],
-    top_rows: list[dict[str, Any]],
+    level_top_rows: dict[str, list[dict[str, Any]]],
     sheet_url: str | None,
     title: str | None = None,
 ) -> dict[str, Any]:
@@ -281,22 +302,30 @@ def render_grading_card(
         [
             metrics_block(summary.get("level_counts", {})),
             chart_block(summary.get("level_counts", {})),
-            table_block(top_rows),
         ]
     )
+    elements.extend(level_table_blocks(level_top_rows))
     button = sheet_button(sheet_url)
     if button:
         elements.append(button)
     elements.append(methodology_panel(summary))
 
-    hits_hash = compute_hits_hash(top_rows)
+    flattened_rows = [
+        row
+        for level in LEVELS
+        for row in level_top_rows.get(level, [])
+    ]
+    hits_hash = compute_hits_hash(flattened_rows)
     return embed_hash_in_card(
         card,
         hits_hash,
         metadata={
             "report_type": "low_efficiency_grading",
             "scenario_key": "efficiency-label-rate",
-            "top_rows_count": len(top_rows),
+            "top_rows_count": len(flattened_rows),
+            "level_top_rows_count": {
+                level: len(level_top_rows.get(level, [])) for level in LEVELS
+            },
             "sheet_url": sheet_url,
         },
     )
@@ -311,6 +340,7 @@ def card_design_check(card: dict[str, Any]) -> dict[str, Any]:
         "has_metrics": "column_set" in tags,
         "has_chart": "chart" in tags,
         "has_table": "table" in tags,
+        "table_count": tags.count("table"),
         "has_methodology": "collapsible_panel" in tags,
         "top_level_blocks": len(body_elements),
         "passes_p0_p3_basic_gate": (
@@ -320,6 +350,7 @@ def card_design_check(card: dict[str, Any]) -> dict[str, Any]:
             and "chart" in tags
             and "table" in tags
             and "collapsible_panel" in tags
-            and 2 <= len(body_elements) <= 5
+            and tags.count("table") == 4
+            and 8 <= len(body_elements) <= 14
         ),
     }

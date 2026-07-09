@@ -47,7 +47,7 @@ DEFAULT_OUTPUT_DIR = (
     / f"{OUTPUT_DATE}_low_label_rate_grading_notification_draft"
 )
 REPORT_TYPE = "low_efficiency_grading"
-LEVELS = ["notice", "P2", "P1", "P0"]
+LEVELS = ["P0", "P1", "P2", "notice"]
 CSV_COLUMNS = [
     "severity_level",
     "severity_priority",
@@ -71,6 +71,15 @@ CSV_COLUMNS = [
     "hit_rule_ids",
     "hit_conditions",
 ]
+SUMMARY_COLUMNS = [
+    "mach_root_label_name",
+    "POC",
+    "low_efficiency_strategy_count",
+    "avg_review_in_cnt",
+    "avg_review_done_cnt",
+    "avg_label_cnt",
+    "label_rate",
+]
 
 
 def main() -> None:
@@ -81,12 +90,15 @@ def main() -> None:
     parser.add_argument("--sheet-url")
     parser.add_argument("--import-workbook", action="store_true")
     parser.add_argument("--send-user-id")
+    parser.add_argument("--send-chat-id")
     parser.add_argument("--identity", choices=["bot", "user"], default="bot")
     parser.add_argument("--title", default="近7天低效打标策略全等级结果")
     args = parser.parse_args()
 
     if args.top_n <= 0:
         raise SystemExit("--top-n must be a positive integer.")
+    if args.send_user_id and args.send_chat_id:
+        raise SystemExit("--send-user-id and --send-chat-id cannot be used together.")
 
     source_path = Path(args.source)
     output_dir = Path(args.output_dir)
@@ -99,7 +111,9 @@ def main() -> None:
     period = derive_period(sample)
 
     write_level_csvs(output_dir, execution)
-    workbook_path = write_workbook(output_dir, execution, period)
+    summary_rows = build_label_poc_summary_rows(execution["comprehensive_results"])
+    write_summary_csv(output_dir / "汇总统计.csv", summary_rows)
+    workbook_path = write_workbook(output_dir, execution, period, summary_rows)
 
     sheet_url = args.sheet_url
     if args.import_workbook and not sheet_url:
@@ -116,16 +130,18 @@ def main() -> None:
         period=period,
         sheet_url=sheet_url,
         top_n=args.top_n,
-        self_send_requested=args.send_user_id is not None,
+        self_send_requested=args.send_user_id is not None or args.send_chat_id is not None,
     )
-    top_rows = build_top_rows(execution["comprehensive_results"], args.top_n)
+    summary["label_poc_summary_count"] = len(summary_rows)
+    level_top_rows = build_level_top_rows(execution["level_results"], args.top_n)
+    hash_rows = flatten_level_top_rows(level_top_rows)
     card_with_meta = render_grading_card(
         summary=summary,
-        top_rows=top_rows,
+        level_top_rows=level_top_rows,
         sheet_url=sheet_url,
         title=args.title,
     )
-    verify_card_hash(card_with_meta, top_rows)
+    verify_card_hash(card_with_meta, hash_rows)
     card_json = strip_internal_keys(card_with_meta)
 
     card_path = publish_dir / f"{REPORT_TYPE}.card.json"
@@ -144,7 +160,10 @@ def main() -> None:
         {
             "ok": True,
             "data_hash": card_with_meta["_meta"]["_data_hash"],
-            "top_rows_count": len(top_rows),
+            "top_rows_count": len(hash_rows),
+            "level_top_rows_count": {
+                level: len(rows) for level, rows in level_top_rows.items()
+            },
             "internal_meta_removed": "_meta" not in card_json,
             "design_check": card_design_check(card_with_meta),
         },
@@ -155,8 +174,17 @@ def main() -> None:
         sent_payload = send_card(
             card_path=card_path,
             user_id=args.send_user_id,
+            chat_id=None,
             identity=args.identity,
             idempotency_key=safe_idempotency_key(f"{REPORT_TYPE}-{OUTPUT_DATE}-{args.send_user_id}"),
+        )
+    elif args.send_chat_id:
+        sent_payload = send_card(
+            card_path=card_path,
+            user_id=None,
+            chat_id=args.send_chat_id,
+            identity=args.identity,
+            idempotency_key=safe_idempotency_key(f"{REPORT_TYPE}-{OUTPUT_DATE}-{args.send_chat_id}"),
         )
 
     publish_summary = {
@@ -166,16 +194,19 @@ def main() -> None:
         "output_dir": relative_to_root(output_dir),
         "summary_json": relative_to_root(summary_path),
         "workbook": relative_to_root(workbook_path),
+        "summary_by_label_poc_csv": relative_to_root(output_dir / "汇总统计.csv"),
         "sheet_url": sheet_url,
         "card_json": relative_to_root(card_path),
         "card_json_with_meta": relative_to_root(card_with_meta_path),
         "card_hash_check": relative_to_root(hash_check_path),
         "sent": sent_payload is not None,
         "send_identity": args.identity if sent_payload is not None else None,
-        "target_user": "self" if sent_payload is not None else None,
+        "target_type": "user" if args.send_user_id else ("chat" if args.send_chat_id else None),
+        "target_user": "self" if args.send_user_id and sent_payload is not None else None,
         "target_user_open_id_prefix": mask_identifier(args.send_user_id)
-        if sent_payload is not None
+        if args.send_user_id and sent_payload is not None
         else None,
+        "target_chat_id": args.send_chat_id if sent_payload is not None else None,
         "message_id": extract_message_id(sent_payload),
         "send_result": sanitize_send_payload(sent_payload),
         "notification_draft": relative_to_root(notification_draft_path),
@@ -184,6 +215,7 @@ def main() -> None:
     summary["outputs"]["poc_routing_plan"] = "poc_routing_plan.json"
     summary["outputs"]["notification_draft"] = "notification_draft.json"
     summary["outputs"]["send_plan"] = "send_plan.json"
+    summary["outputs"]["summary_by_label_poc_csv"] = "汇总统计.csv"
     summary["publish"] = publish_summary
     notification_draft = build_notification_draft(
         summary=summary,
@@ -271,6 +303,17 @@ def write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
             writer.writerow({column: csv_value(csv_column_value(row, column)) for column in CSV_COLUMNS})
 
 
+def write_summary_csv(path: Path, rows: list[dict[str, Any]]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8-sig", newline="") as file:
+        writer = csv.DictWriter(file, fieldnames=SUMMARY_COLUMNS)
+        writer.writeheader()
+        for row in rows:
+            writer.writerow(
+                {column: csv_value(row.get(column)) for column in SUMMARY_COLUMNS}
+            )
+
+
 def csv_value(value: Any) -> Any:
     if isinstance(value, list):
         return "；".join(str(item) for item in value)
@@ -283,7 +326,12 @@ def csv_column_value(row: dict[str, Any], column: str) -> Any:
     return row.get(column)
 
 
-def write_workbook(output_dir: Path, execution: dict[str, Any], period: dict[str, str]) -> Path:
+def write_workbook(
+    output_dir: Path,
+    execution: dict[str, Any],
+    period: dict[str, str],
+    summary_rows: list[dict[str, Any]],
+) -> Path:
     workbook_path = (
         output_dir
         / f"low_label_rate_grading_{period['current_start']}_{period['current_end']}.xlsx"
@@ -293,10 +341,10 @@ def write_workbook(output_dir: Path, execution: dict[str, Any], period: dict[str
     workbook.remove(default_sheet)
 
     for sheet_name, rows in [
-        ("notice", execution["level_results"]["notice"]["rows"]),
-        ("P2", execution["level_results"]["P2"]["rows"]),
-        ("P1", execution["level_results"]["P1"]["rows"]),
         ("P0", execution["level_results"]["P0"]["rows"]),
+        ("P1", execution["level_results"]["P1"]["rows"]),
+        ("P2", execution["level_results"]["P2"]["rows"]),
+        ("Notice", execution["level_results"]["notice"]["rows"]),
         ("综合", execution["comprehensive_results"]),
     ]:
         sheet = workbook.create_sheet(sheet_name)
@@ -304,8 +352,70 @@ def write_workbook(output_dir: Path, execution: dict[str, Any], period: dict[str
         for row in rows:
             sheet.append([csv_value(csv_column_value(row, column)) for column in CSV_COLUMNS])
         style_sheet_header(sheet)
+    summary_sheet = workbook.create_sheet("汇总统计")
+    summary_sheet.append(SUMMARY_COLUMNS)
+    for row in summary_rows:
+        summary_sheet.append([csv_value(row.get(column)) for column in SUMMARY_COLUMNS])
+    style_sheet_header(summary_sheet)
     workbook.save(workbook_path)
     return workbook_path
+
+
+def build_label_poc_summary_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    grouped: dict[tuple[str, str], dict[str, Any]] = {}
+    for row in rows:
+        key = (
+            str(row.get("mach_root_label_name", "")),
+            str(row.get("POC") or row.get("poc_name") or "未映射"),
+        )
+        bucket = grouped.setdefault(
+            key,
+            {
+                "mach_root_label_name": key[0],
+                "POC": key[1],
+                "_strategy_names": set(),
+                "_total_review_in_cnt": 0.0,
+                "_total_review_done_cnt": 0.0,
+                "_total_label_cnt": 0.0,
+                "_avg_review_in_cnt": 0.0,
+                "_avg_review_done_cnt": 0.0,
+                "_avg_label_cnt": 0.0,
+            },
+        )
+        strategy_name = str(row.get("strategy_name") or "")
+        if strategy_name:
+            bucket["_strategy_names"].add(strategy_name)
+        bucket["_total_review_in_cnt"] += float(row.get("total_review_in_cnt", 0) or 0)
+        bucket["_total_review_done_cnt"] += float(
+            row.get("total_review_done_cnt", 0) or 0
+        )
+        bucket["_total_label_cnt"] += float(row.get("total_label_cnt", 0) or 0)
+        bucket["_avg_review_in_cnt"] += float(row.get("avg_review_in_cnt", 0) or 0)
+        bucket["_avg_review_done_cnt"] += float(row.get("avg_review_done_cnt", 0) or 0)
+        bucket["_avg_label_cnt"] += float(row.get("avg_label_cnt", 0) or 0)
+
+    result: list[dict[str, Any]] = []
+    for bucket in grouped.values():
+        total_done = bucket["_total_review_done_cnt"]
+        result.append(
+            {
+                "mach_root_label_name": bucket["mach_root_label_name"],
+                "POC": bucket["POC"],
+                "low_efficiency_strategy_count": len(bucket["_strategy_names"]),
+                "avg_review_in_cnt": round(bucket["_avg_review_in_cnt"]),
+                "avg_review_done_cnt": round(bucket["_avg_review_done_cnt"]),
+                "avg_label_cnt": round(bucket["_avg_label_cnt"]),
+                "label_rate": bucket["_total_label_cnt"] / total_done if total_done else 0.0,
+            }
+        )
+    return sorted(
+        result,
+        key=lambda item: (
+            -float(item["avg_review_done_cnt"]),
+            str(item["mach_root_label_name"]),
+            str(item["POC"]),
+        ),
+    )
 
 
 def style_sheet_header(sheet: Any) -> None:
@@ -394,6 +504,9 @@ def build_notification_draft(
             "sheet_url": summary.get("sheet_url"),
             "workbook": summary["outputs"].get("workbook"),
             "csv_files": {
+                "summary_by_label_poc": summary["outputs"].get(
+                    "summary_by_label_poc_csv"
+                ),
                 "notice": summary["outputs"].get("notice_csv"),
                 "P2": summary["outputs"].get("P2_csv"),
                 "P1": summary["outputs"].get("P1_csv"),
@@ -518,6 +631,25 @@ def build_send_plan(
     }
 
 
+def build_level_top_rows(
+    level_results: dict[str, dict[str, Any]],
+    top_n: int,
+) -> dict[str, list[dict[str, Any]]]:
+    return {
+        level: build_top_rows(level_results.get(level, {}).get("rows", []), top_n)
+        for level in ("P0", "P1", "P2", "notice")
+    }
+
+
+def flatten_level_top_rows(
+    level_top_rows: dict[str, list[dict[str, Any]]]
+) -> list[dict[str, Any]]:
+    flattened: list[dict[str, Any]] = []
+    for level in ("P0", "P1", "P2", "notice"):
+        flattened.extend(level_top_rows.get(level, []))
+    return flattened
+
+
 def build_top_rows(rows: list[dict[str, Any]], top_n: int) -> list[dict[str, Any]]:
     top_rows: list[dict[str, Any]] = []
     for index, row in enumerate(rows[:top_n], 1):
@@ -565,10 +697,14 @@ def import_workbook(workbook_path: Path, name: str) -> str:
 def send_card(
     *,
     card_path: Path,
-    user_id: str,
+    user_id: str | None,
+    chat_id: str | None,
     identity: str,
     idempotency_key: str,
 ) -> dict[str, Any]:
+    if bool(user_id) == bool(chat_id):
+        raise ValueError("Exactly one of user_id or chat_id is required.")
+    target_args = ["--user-id", user_id] if user_id else ["--chat-id", str(chat_id)]
     return run_lark_cli(
         [
             "lark-cli",
@@ -577,8 +713,7 @@ def send_card(
             "--json",
             "--as",
             identity,
-            "--user-id",
-            user_id,
+            *target_args,
             "--msg-type",
             "interactive",
             "--content",

@@ -30,6 +30,7 @@ REQUIRED_FILES = [
     "summary.json",
     "notification_draft.json",
     "send_plan.json",
+    "汇总统计.csv",
     "notice.csv",
     "P2.csv",
     "P1.csv",
@@ -94,6 +95,8 @@ def assert_summary(summary: dict[str, Any]) -> None:
     for field in ("poc_routing_plan", "notification_draft", "send_plan"):
         if not outputs.get(field):
             raise AssertionError(f"summary outputs.{field} missing.")
+    if outputs.get("summary_by_label_poc_csv") != "汇总统计.csv":
+        raise AssertionError("summary outputs.summary_by_label_poc_csv missing.")
 
 
 def assert_level_counts(summary: dict[str, Any]) -> None:
@@ -230,6 +233,7 @@ def assert_send_plan(
 def assert_csvs(output_dir: Path, summary: dict[str, Any]) -> None:
     level_counts = summary["level_counts"]
     expected_counts = {
+        "汇总统计.csv": summary.get("label_poc_summary_count"),
         "notice.csv": level_counts["notice"],
         "P2.csv": level_counts["P2"],
         "P1.csv": level_counts["P1"],
@@ -240,6 +244,19 @@ def assert_csvs(output_dir: Path, summary: dict[str, Any]) -> None:
         rows = read_csv_rows(output_dir / filename)
         if len(rows) != expected_count:
             raise AssertionError(f"{filename} row count mismatch.")
+        if filename == "汇总统计.csv":
+            for field in (
+                "mach_root_label_name",
+                "POC",
+                "low_efficiency_strategy_count",
+                "avg_review_in_cnt",
+                "avg_review_done_cnt",
+                "avg_label_cnt",
+                "label_rate",
+            ):
+                if rows and field not in rows[0]:
+                    raise AssertionError(f"{filename} missing field: {field}")
+            continue
         for field in (
             "severity_level",
             "mach_root_label_name",
@@ -274,7 +291,14 @@ def assert_card(
     if hash_check.get("internal_meta_removed") is not True:
         raise AssertionError("hash_check must confirm _meta removal.")
 
-    top_rows = extract_table_rows(card_with_meta)
+    table_rows_by_level = extract_table_rows_by_level(card_with_meta)
+    if set(table_rows_by_level) != {"P0", "P1", "P2", "notice"}:
+        raise AssertionError("Card must contain P0/P1/P2/notice table sections.")
+    top_rows = [
+        row
+        for level in ("P0", "P1", "P2", "notice")
+        for row in table_rows_by_level[level]
+    ]
     for row in top_rows:
         for field in (
             "poc_name",
@@ -293,13 +317,29 @@ def assert_card(
         raise AssertionError("card design gate failed.")
 
 
-def extract_table_rows(card: dict[str, Any]) -> list[dict[str, Any]]:
+def extract_table_rows_by_level(card: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
+    result: dict[str, list[dict[str, Any]]] = {}
+    current_level: str | None = None
     for element in card.get("body", {}).get("elements", []):
-        if isinstance(element, dict) and element.get("tag") == "table":
+        if not isinstance(element, dict):
+            continue
+        if element.get("tag") == "markdown":
+            content = str(element.get("content", ""))
+            for level, display in {
+                "P0": "P0",
+                "P1": "P1",
+                "P2": "P2",
+                "notice": "Notice",
+            }.items():
+                if f">{display} 等级 Top" in content:
+                    current_level = level
+                    break
+        elif element.get("tag") == "table":
             rows = element.get("rows")
-            if isinstance(rows, list):
-                return rows
-    raise AssertionError("Card table rows not found.")
+            if current_level and isinstance(rows, list):
+                result[current_level] = rows
+                current_level = None
+    return result
 
 
 def assert_publish_summary(
@@ -317,8 +357,14 @@ def assert_publish_summary(
     if expect_sent:
         if publish_summary.get("send_identity") not in {"bot", "user"}:
             raise AssertionError("send_identity missing.")
-        if not publish_summary.get("target_user"):
-            raise AssertionError("target_user missing.")
+        if publish_summary.get("target_type") == "user":
+            if not publish_summary.get("target_user"):
+                raise AssertionError("target_user missing.")
+        elif publish_summary.get("target_type") == "chat":
+            if not publish_summary.get("target_chat_id"):
+                raise AssertionError("target_chat_id missing.")
+        else:
+            raise AssertionError("target_type missing.")
         if not publish_summary.get("message_id"):
             raise AssertionError("message_id missing.")
 

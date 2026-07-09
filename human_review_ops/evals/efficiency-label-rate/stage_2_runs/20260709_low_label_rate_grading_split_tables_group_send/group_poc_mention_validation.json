@@ -1,0 +1,62 @@
+{
+  "schema_version": "stage_2_group_poc_mention_validation.v1",
+  "scenario_key": "efficiency-label-rate",
+  "report_type": "low_efficiency_grading",
+  "validation_mode": "explicit_user_requested_test_group_poc_mentions",
+  "chat": {
+    "chat_id": "oc_9c691aa76c22a16207c6f443eac25816",
+    "invited_new_members": false
+  },
+  "source": {
+    "poc_routing_plan": "poc_routing_plan.json",
+    "sheet_url": "https://bytedance.larkoffice.com/sheets/EtEHs1JdhhXL0atCA31cA86pnog",
+    "mention_source_sheet": "https://bytedance.larkoffice.com/sheets/TpxwsA8zohUZkVtJ4J9cDcXUnbg?sheet=HKdm9w"
+  },
+  "level_pocs": {
+    "P0": [
+      "宋诗慧",
+      "杜衡"
+    ],
+    "P1": [
+      "宋诗慧",
+      "杜衡"
+    ],
+    "P2": [
+      "宋诗慧",
+      "张发奇",
+      "杜衡"
+    ]
+  },
+  "mention_resolution": {
+    "requested_names": [
+      "宋诗慧",
+      "杜衡",
+      "张发奇"
+    ],
+    "resolved_names": [
+      "宋诗慧",
+      "杜衡",
+      "张发奇"
+    ],
+    "unresolved_names": [],
+    "full_open_id_persisted": false,
+    "token_prefix_by_name": {
+      "宋诗慧": "ou_d8744cb...",
+      "杜衡": "ou_6f1390b...",
+      "张发奇": "ou_15705a5..."
+    }
+  },
+  "send_result": {
+    "sent": true,
+    "send_identity": "bot",
+    "message_id": "om_x100b6bc1928550bcb3f9ac03b8ceefe",
+    "chat_id": "oc_9c691aa76c22a16207c6f443eac25816",
+    "create_time": "2026-07-09 16:37:24"
+  },
+  "safety": {
+    "online_state_store_write_executed": false,
+    "real_poc_group_broadcast_executed": false,
+    "test_group_only": true
+  },
+  "result": "pass"
+}
