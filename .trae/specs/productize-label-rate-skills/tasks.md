@@ -42,6 +42,8 @@
   - [x] SubTask 8.1: 更新 `human_review_ops/skills/analysis/SKILL.md` 的脚本章节，删除“尚未提供下沉后的分析脚本”和“不调用不存在的 `scripts/` 入口”等过期描述，改为明确调用 `scripts/label_rate_analysis.py` 生成 QueryPlan、source_footer、SQL、分级规则和标准化输出。
   - [x] SubTask 8.2: 重新运行 `validate_skill_productization.py --strict`、`validate_label_rate_analysis_scripts.py`、`validate_skill_standalone_smoke.py`，并复核 checklist 第 3 项。
 
+- [x] Task 9: Refresh Stage 2 default validator targets: The no-argument Stage 2 validator commands still point to stale `20260709_low_label_rate_grading_notification_draft` artifacts, causing failures for missing `汇总统计.csv` and outdated `routing_mode` fields even though the newer `20260709_low_label_rate_grading_min_review_in_draft` artifacts pass with explicit paths.
+
 # Task Dependencies
 
 - Task 2 depends on Task 1.

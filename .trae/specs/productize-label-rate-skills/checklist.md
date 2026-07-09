@@ -11,3 +11,4 @@
 - [x] `docs/implementation_plan.md` 已同步本次 Skill 产品化改造结果。
 - [x] 场景包校验、AgentBuddy 发布校验、POC 映射校验、阶段 1/阶段 2 相关 validator 均通过。
 - [x] 全部变更已提交并推送到 `origin/main`。
+- [x] Stage 2 default validator commands pass without manual output-dir overrides against the current canonical artifacts.

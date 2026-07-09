@@ -24,7 +24,7 @@ DEFAULT_OUTPUT_DIR = (
     / "evals"
     / "efficiency-label-rate"
     / "stage_2_runs"
-    / "20260709_low_label_rate_grading_notification_draft"
+    / "20260709_low_label_rate_grading_min_review_in_draft"
 )
 REQUIRED_FILES = [
     "summary.json",
