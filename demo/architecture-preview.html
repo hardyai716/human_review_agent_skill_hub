@@ -1113,10 +1113,10 @@
   <main id="top">
     <section class="shell hero">
       <div class="reveal">
-        <span class="eyebrow"><span class="pulse-dot"></span> 理想预期 · 运营指挥中枢</span>
+        <span class="eyebrow"><span class="pulse-dot"></span> 当前状态 · Skill 产品化完成</span>
         <h1>把分散的人审运营经验，变成可调度、可追溯、可迭代的闭环系统。</h1>
         <p class="hero-lead">
-          这页演示按照“目标架构总览 → 数据资产与契约 → 场景流程包 → Skill 能力 → Agent 编排治理 → 运营闭环与落地计划”的顺序展开。当前 MVP（第一版最小可行范围）重点建设感知和分析能力，通知与解决先采用轻量测试闭环。
+          这页演示按照“目标架构总览 → 数据资产与契约 → 场景流程包 → Skill 能力 → Agent 编排治理 → 运营闭环与落地计划”的顺序展开。当前打标率主线已完成感知、分析、通知、解决四类 Skill 的产品化：稳定领域逻辑已下沉到各 Skill 的 scripts 目录，并通过 standalone smoke 与 AgentBuddy restricted 发布验证。
         </p>
         <div class="hero-actions">
           <a class="button primary" href="#architecture">查看目标架构总览</a>
@@ -1124,43 +1124,43 @@
         </div>
       </div>
 
-      <aside class="mission-card reveal delay-1" aria-label="第一版目标卡片">
-        <span class="section-kicker">第一版目标（MVP，即最小可行范围）</span>
-        <h2>第一版优先验证感知与分析准确性。</h2>
+      <aside class="mission-card reveal delay-1" aria-label="当前产品化状态卡片">
+        <span class="section-kicker">当前状态（Productized Skills）</span>
+        <h2>四类 Skill 已具备独立运行与发布门禁。</h2>
         <div class="mission-grid">
           <div class="metric">
-            <b>2</b>
-            <span>当前重点：感知和分析，优先验证指标映射、取数、归因和规则命中。</span>
+            <b>4/4</b>
+            <span>感知、分析、通知、解决四类 Skill 均具备可执行版 SKILL.md、test-prompts 和发布校验。</span>
           </div>
           <div class="metric">
-            <b>4 + CLI</b>
-            <span>四类业务 Skill 负责逻辑，Tool/MCP/CLI 负责原子连接、批处理和执行。</span>
+            <b>7</b>
+            <span>已下沉可复用脚本：perception 1 个、analysis 1 个、notification 4 个、resolution 1 个。</span>
           </div>
           <div class="metric">
-            <b>轻量</b>
-            <span>通知先发指定人/群，解决先记录人工状态和结论。</span>
+            <b>14/14</b>
+            <span>产品化 checklist 已通过；Stage 2 默认 validator 已指向当前 canonical 产物。</span>
           </div>
           <div class="metric">
-            <b>P0-P3（事件等级）</b>
-            <span>事件严重等级：P0 最高、P3 最低，用于决定人工卡点和升级强度。</span>
+            <b>AB</b>
+            <span>四个 Skill 已发布到 AgentBuddy restricted 空间，并可通过 skill find 命中。</span>
           </div>
         </div>
       </aside>
     </section>
 
-    <section class="shell section reveal delay-2" aria-label="第一版边界">
+    <section class="shell section reveal delay-2" aria-label="当前产品化边界">
       <div class="section-head">
         <div>
           <p class="section-kicker">Scope Boundary · 范围边界</p>
-          <h2>清晰的第一版边界</h2>
+          <h2>清晰的产品化边界</h2>
         </div>
-        <p class="section-note">页面上所有架构选择都围绕这个边界展开：先验证效率/质量场景的感知与分析准确性，再逐步完善 Owner（责任人）路由、升级和解决闭环。</p>
+        <p class="section-note">页面上所有架构选择都围绕这个边界展开：Skill 需要独立可用，Agent 负责编排，Tool/MCP/CLI 执行原子动作；真实群发、线上写状态和高风险动作继续由人工确认门禁控制。</p>
       </div>
       <div class="boundary-strip">
-        <div class="boundary">优先感知：识别效率/质量场景、任务类型、指标粒度和数据就绪。</div>
-        <div class="boundary">优先分析：生成查询计划（QueryPlan）、查治理指标、输出归因和规则命中。</div>
-        <div class="boundary">通知轻量：测试阶段统一发送指定人或指定群。</div>
-        <div class="boundary">解决轻量：测试阶段只记录人工状态、结论和是否继续观察。</div>
+        <div class="boundary">Skill 自包含：每个 Skill 包含 SKILL.md、scripts、references、assets 和触发测试。</div>
+        <div class="boundary">逻辑下沉：QueryPlan、SQL、分级、通知草稿、send_plan、readiness 均由 Skill scripts 承载。</div>
+        <div class="boundary">Runner 编排：tools/runners 只负责端到端串联、eval 产物、真实发送门禁和回归入口。</div>
+        <div class="boundary">安全门禁：真实群发、拉人入群、线上状态写入仍需人工确认，不由 Skill 默认执行。</div>
       </div>
     </section>
 
@@ -1183,8 +1183,8 @@
           </div>
         </article>
         <article class="principle-card reveal delay-1">
-          <h3>Skill负责方法，不内置场景差异</h3>
-          <p>感知、分析、通知、解决是通用能力。真正的业务差异由 `scenario_package_ref` 和 scenario-index 定位；前期可读 Skill 内快照，目标态读取根目录 human_review_ops/references/scenarios。</p>
+          <h3>Skill负责方法，也要能独立运行</h3>
+          <p>感知、分析、通知、解决是通用能力。每个 Skill 都必须自带操作手册、脚本、参考资料、资产和触发测试；业务事实仍由 `scenario_package_ref` 和 scenario-index 定位。</p>
           <div class="tag-row">
             <span class="tag">感知</span>
             <span class="tag">分析</span>
@@ -1274,11 +1274,11 @@
               <span>CAPABILITY · 能力</span>
             </div>
             <div class="node-list">
-              <div class="node">感知：场景识别、指标实体、数据就绪</div>
-              <div class="node">分析：查询计划、只读查询、归因、来源脚注</div>
-              <div class="node">触达：模板生成、固定触达、升级建议</div>
-              <div class="node">解决：人工状态、证据归档、结论回收</div>
-              <div class="node">统一输入输出：契约化、可校验、可回测</div>
+              <div class="node">感知：场景识别、任务类型、readiness、检索策略</div>
+              <div class="node">分析：QueryPlan、SQL、分级规则、source_footer</div>
+              <div class="node">通知：POC 路由、通知草稿、send_plan、Card 和报表</div>
+              <div class="node">解决：manual_tracking、状态流转、闭环三件套</div>
+              <div class="node">产品化资产：scripts、assets、test-prompts、standalone smoke</div>
             </div>
             <span class="flow-arrow"></span>
           </article>
@@ -1330,9 +1330,9 @@
       <div class="section-head reveal">
         <div>
           <p class="section-kicker">Architecture Decision Record · 架构决策记录</p>
-          <h2>四个通用 Skill 与场景流程包引用策略</h2>
+          <h2>四个通用 Skill 的产品化边界与场景流程包引用策略</h2>
         </div>
-        <p class="section-note">本节记录能力拆分、场景治理和前期调试策略。结论是：稳定动作沉淀为通用 Skill，变化事实沉淀在 human_review_ops/references/scenarios；前期 TRAE 调试可使用 Skill 内本地快照先跑通流程。</p>
+        <p class="section-note">本节记录能力拆分、场景治理和产品化策略。结论是：稳定动作沉淀为 Skill scripts，变化事实沉淀在 human_review_ops/references/scenarios；单个 Skill 也必须具备独立安装、独立 dry-run 和独立校验能力。</p>
       </div>
 
       <div class="data-grid">
@@ -1347,10 +1347,11 @@
 
         <article class="data-card reveal delay-1">
           <h3>决策</h3>
-          <p>采用“四个通用 Skill + 根目录场景流程包 + TRAE 调试快照”的结构。Skill 承载通用能力方法，根目录场景包承载完整业务事实；如果 TRAE 前期跨目录读取不稳定，就先把必要文件同步到 Skill 自己的 references 目录。</p>
+          <p>采用“四个通用 Skill + 根目录场景流程包 + Skill 自包含发布包”的结构。Skill 承载通用能力方法和可执行脚本，根目录场景包承载完整业务事实；发布时由 Skill 内 references/assets/scripts 保证脱离当前 Agent 也可运行。</p>
           <div class="field-list">
-            <div class="field"><span>Skill</span><span>感知、分析、触达、解决</span></div>
+            <div class="field"><span>Skill</span><span>感知、分析、通知、解决</span></div>
             <div class="field"><span>场景包</span><span>模块 + 指标/对象 + 任务类型 + 维度规则</span></div>
+            <div class="field"><span>发布门禁</span><span>validate_skill_productization.py --strict + validate_skill_standalone_smoke.py</span></div>
           </div>
         </article>
 
@@ -1366,10 +1367,11 @@
 
         <article class="data-card reveal delay-3">
           <h3>影响</h3>
-          <p>新增运营内容时优先新增或更新根目录场景流程包，而不是复制 Skill。前期调试快照和未来独立发布包都应由根目录场景包生成，保证流程能跑通且口径不漂移。</p>
+          <p>新增运营内容时优先新增或更新根目录场景流程包，而不是复制 Skill。Skill 内快照、assets 和 scripts 必须可由发布清单追踪，保证流程能跑通、口径不漂移、发布可回滚。</p>
           <div class="field-list">
             <div class="field"><span>收益</span><span>复用通用能力，降低重复建设</span></div>
             <div class="field"><span>约束</span><span>场景包必须具备契约、样例、路由、SLA 和发布校验</span></div>
+            <div class="field"><span>现状</span><span>打标率场景已完成四类 Skill 产品化和 AgentBuddy restricted 发布</span></div>
           </div>
         </article>
       </div>
@@ -1526,12 +1528,12 @@
           </div>
         </article>
         <article class="asset-card reveal delay-3">
-          <h3>当前 MVP（第一版最小可行范围）的测试模式</h3>
-          <p>通知模块不接入动态 Owner（责任人）路由，统一发送指定人或群；解决模块不做自动处理，只记录人工状态和结论。</p>
+          <h3>当前产品化状态与安全门禁</h3>
+          <p>通知 Skill 已支持 POC 路由、通知草稿、send_plan、Card 和报表生成；解决 Skill 已支持 manual_tracking。真实群发、open_id 解析、拉人入群和线上写状态仍由人工确认门禁控制。</p>
           <div class="tag-row">
-            <span class="tag hot">固定收件人测试模式（mvp_test_fixed_recipient）</span>
-            <span class="tag hot">人工跟进记录模式（mvp_manual_tracking）</span>
-            <span class="tag">建议 Owner（责任人）仅展示</span>
+            <span class="tag hot">POC 路由（mach_root_label_name）</span>
+            <span class="tag hot">发送计划（send_plan）默认阻断群发</span>
+            <span class="tag">人工跟踪（manual_tracking）本地记录</span>
           </div>
         </article>
       </div>
@@ -1565,47 +1567,47 @@
           <p class="section-kicker">能力模块目录</p>
           <h2>每个 Skill 长什么样、谁来维护、如何扩展</h2>
         </div>
-        <p class="section-note">四个 Skill 只沉淀通用方法。目标态完整场景流程包放在 human_review_ops/references/scenarios；前期 TRAE 调试时，每个 Skill 可以在 human_review_ops/skills/{skill}/references/scenarios 下保留本地快照，先保证流程跑通。</p>
+        <p class="section-note">四个 Skill 不再只是说明文档，而是可独立运行的能力包。每个 Skill 至少包含 `SKILL.md`、`scripts/`、`references/`、`assets/` 和 `test-prompts.json`；根目录场景流程包仍是长期业务事实来源。</p>
       </div>
 
       <div class="asset-grid">
         <article class="asset-card reveal">
-          <h3>通用 Skill 的目录骨架</h3>
-          <p>每个 Skill 都有自己的能力说明（`SKILL.md`），定义能力边界、输入输出、禁止事项和引用路径；具体场景规则放在 references（参考资料）下。</p>
+          <h3>产品化 Skill 的目录骨架</h3>
+          <p>每个 Skill 都有自己的能力说明（`SKILL.md`），定义能力边界、输入输出、禁止事项、脚本入口和验证命令；稳定执行逻辑放入 scripts，模板、映射表和 schema 放入 assets。</p>
           <div class="tree-block" aria-label="能力模块目录结构">
             <div>human_review_ops/</div>
             <div>└── skills/</div>
             <div>    ├── perception/                         <span>感知 Skill：识别场景、指标、任务类型、数据就绪</span></div>
-            <div>    │   ├── SKILL.md                         <span>能力说明：触发条件、输入输出、禁止事项</span></div>
-            <div>    │   └── references/</div>
-            <div>    │       ├── common.md                     <span>通用感知规则</span></div>
-            <div>    │       ├── scenario-index.md             <span>一级索引：直达本 Skill 内置场景文件</span></div>
-            <div>    │       └── scenarios/                    <span>TRAE 调试快照：可由根目录场景包生成</span></div>
+            <div>    │   ├── SKILL.md                         <span>可执行操作手册：触发、边界、workflow、失败分支</span></div>
+            <div>    │   ├── scripts/label_rate_perception.py <span>输出 scenario_key、task_type、readiness</span></div>
+            <div>    │   ├── references/                       <span>common、scenario-index、场景快照</span></div>
+            <div>    │   ├── assets/README.md                  <span>资源占位与发布说明</span></div>
+            <div>    │   └── test-prompts.json                 <span>should-trigger / should-not-trigger</span></div>
             <div>    ├── analysis/                             <span>分析 Skill：查询计划、归因、质量检查、结论</span></div>
             <div>    │   ├── SKILL.md</div>
-            <div>    │   └── references/</div>
-            <div>    │       ├── common.md</div>
-            <div>    │       ├── scenario-index.md</div>
-            <div>    │       └── scenarios/</div>
-            <div>    ├── notification/                         <span>触达 Skill：模板、收件人、升级、卡片</span></div>
+            <div>    │   ├── scripts/label_rate_analysis.py    <span>QueryPlan、SQL、分级规则、source_footer</span></div>
+            <div>    │   ├── references/</div>
+            <div>    │   ├── assets/README.md</div>
+            <div>    │   └── test-prompts.json</div>
+            <div>    ├── notification/                         <span>通知 Skill：POC 路由、send_plan、Card、报表</span></div>
             <div>    │   ├── SKILL.md</div>
-            <div>    │   └── references/</div>
-            <div>    │       ├── common.md</div>
-            <div>    │       ├── scenario-index.md</div>
-            <div>    │       └── scenarios/</div>
+            <div>    │   ├── scripts/                           <span>notification_artifacts、Card、POC 路由、hash</span></div>
+            <div>    │   ├── references/</div>
+            <div>    │   ├── assets/efficiency-label-rate/       <span>卡片模板、POC 映射、schema notes</span></div>
+            <div>    │   └── test-prompts.json</div>
             <div>    ├── resolution/                           <span>解决 Skill：状态跟进、结论回收、闭环复查</span></div>
             <div>    │   ├── SKILL.md</div>
-            <div>    │   └── references/</div>
-            <div>    │       ├── common.md</div>
-            <div>    │       ├── scenario-index.md</div>
-            <div>    │       └── scenarios/</div>
-            <div>    └── build output                           <span>如需单独发布，再把需要的场景文件打入 Skill 包</span></div>
+            <div>    │   ├── scripts/build_label_rate_manual_tracking.py</div>
+            <div>    │   ├── references/</div>
+            <div>    │   ├── assets/README.md</div>
+            <div>    │   └── test-prompts.json</div>
+            <div>    └── skill_release_manifest.json            <span>声明发布资产、脚本入口和外部依赖</span></div>
           </div>
         </article>
 
         <article class="asset-card reveal delay-1">
-          <h3>目标态场景包与调试快照</h3>
-          <p>完整场景包长期放在 human_review_ops/references/scenarios，作为唯一业务事实来源。前期用 TRAE 调试时，可把单个 Skill 必需文件同步到 Skill 内部，等跨目录读取验证稳定后再切回根目录引用。</p>
+          <h3>根场景包与 Skill 自包含快照</h3>
+          <p>完整场景包长期放在 human_review_ops/references/scenarios，作为唯一业务事实来源。Skill 内 references/scenarios 是发布包自包含快照，必须通过校验确保不漂移；稳定领域逻辑不得只留在 tools/runners。</p>
           <div class="tree-block" aria-label="场景流程包目录结构">
             <div>human_review_ops/references/scenarios/{scenario_key}/          <span>目标态完整场景流程包</span></div>
             <div>├── scenario_manifest.md                 <span>场景清单：场景名、Owner、适用范围、入口关键词</span></div>
@@ -1617,8 +1619,10 @@
             <div>├── notification_templates.md            <span>通知模板和等级话术</span></div>
             <div>└── examples.md                          <span>正例、反例、边界样例和回测断言</span></div>
             <div></div>
-            <div>human_review_ops/skills/{skill}/references/scenarios/          <span>前期 TRAE 调试快照 / 未来发布包内文件</span></div>
+            <div>human_review_ops/skills/{skill}/references/scenarios/          <span>Skill 发布包内自包含快照</span></div>
             <div>└── {scenario_key}.{file_type}.md             <span>由根目录场景包生成，不手工漂移</span></div>
+            <div>human_review_ops/skills/{skill}/scripts/                       <span>稳定领域逻辑：可独立 dry-run</span></div>
+            <div>human_review_ops/tools/runners/                                <span>项目级编排：E2E、eval、真实发送门禁</span></div>
           </div>
         </article>
       </div>
@@ -1646,9 +1650,9 @@
 
         <article class="data-card reveal delay-2">
           <h3>通知 Skill</h3>
-          <p>负责把分析结论转成可执行触达，不只是告警，也包括周报、复盘提醒、人工确认和升级。</p>
+          <p>负责把分析结论转成可审阅通知资产，不只是告警，也包括周报、复盘提醒、人工确认和升级。</p>
           <div class="field-list">
-            <div class="field"><span>维护重点</span><span>通知模板、等级话术、固定收件人测试、动态路由</span></div>
+            <div class="field"><span>维护重点</span><span>通知模板、等级话术、POC 路由、send_plan、Card 和报表</span></div>
             <div class="field"><span>引用资产</span><span>通知模板（notification_templates）、责任人路由（owner_routing）、SLA（响应/处理时限）规则（sla）</span></div>
             <div class="field"><span>不能做</span><span>不能私自扩大通知范围，不能跳过人工确认策略</span></div>
           </div>
@@ -1690,21 +1694,21 @@
       <div class="section-head reveal">
         <div>
           <p class="section-kicker">Efficiency Example · 效率模块完整示例</p>
-          <h2>效率模块 / 自动处置准确率场景的完整目录格式</h2>
+          <h2>效率模块 / 打标率场景的产品化目录格式</h2>
         </div>
-        <p class="section-note">以下示例展示“效率模块下的自动处置准确率分析/预警”如何落到 Agent、Skill、根目录场景包、TRAE 调试快照、评估样例和工具策略中。重点是先跑通 Skill 流程，再逐步验证跨目录共享引用。</p>
+        <p class="section-note">以下示例展示“效率模块下的打标率低效策略分级”如何落到 Agent、Skill、根目录场景包、Skill 自包含包、评估样例和工具策略中。当前主线已完成四维粒度、POC 路由、通知草稿、manual tracking 和发布门禁。</p>
       </div>
 
       <div class="asset-grid">
         <article class="asset-card reveal">
           <h3>完整目录线框</h3>
-          <p>这是一个可落地样例，不表示效率模块只有这一类场景。根目录场景包维护完整事实；Skill 内 scenarios 目录用于前期 TRAE 调试快照，后续可切到直接引用根目录。</p>
-          <div class="tree-block" aria-label="效率模块自动处置准确率完整目录示例">
+          <p>这是当前已经产品化的主线样例，不表示效率模块只有这一类场景。根目录场景包维护完整事实；Skill 内 references/assets/scripts 保证单 Skill 独立安装后也能执行最小能力。</p>
+          <div class="tree-block" aria-label="效率模块打标率完整目录示例">
             <div>human-review-ops/</div>
             <div>└── human_review_ops/</div>
             <div>    ├── references/</div>
             <div>    │   └── scenarios/</div>
-            <div>    │       └── efficiency-auto-disposal-accuracy/ <span>目标态完整场景流程包</span></div>
+            <div>    │       └── efficiency-label-rate/             <span>目标态完整场景流程包</span></div>
             <div>    │           ├── scenario_manifest.md</div>
             <div>    │           ├── state_machine.md</div>
             <div>    │           ├── sla.md</div>
@@ -1723,37 +1727,46 @@
             <div>    │       └── trae_debug_checklist.md          <span>调试检查清单</span></div>
             <div>    ├── skills/</div>
             <div>    │   ├── perception/</div>
-            <div>    │   │   ├── SKILL.md                         <span>识别效率模块、自动处置准确率、策略维度</span></div>
-            <div>    │   │   └── references/scenarios/             <span>感知调试快照</span></div>
+            <div>    │   │   ├── SKILL.md                         <span>识别打标率场景、任务类型、readiness</span></div>
+            <div>    │   │   ├── scripts/label_rate_perception.py <span>独立 dry-run，无 SQL/通知/写入</span></div>
+            <div>    │   │   ├── references/scenarios/             <span>感知发布快照</span></div>
+            <div>    │   │   └── test-prompts.json</div>
             <div>    │   ├── analysis/</div>
-            <div>    │   │   ├── SKILL.md                         <span>生成 QueryPlan、执行只读查询、归因</span></div>
-            <div>    │   │   └── references/scenarios/             <span>分析调试快照</span></div>
+            <div>    │   │   ├── SKILL.md                         <span>生成 QueryPlan、SQL、分级、source_footer</span></div>
+            <div>    │   │   ├── scripts/label_rate_analysis.py   <span>分级 SQL、结果标准化、dry-run</span></div>
+            <div>    │   │   ├── references/scenarios/             <span>分析发布快照</span></div>
+            <div>    │   │   └── test-prompts.json</div>
             <div>    │   ├── notification/</div>
-            <div>    │   │   ├── SKILL.md                         <span>生成测试通知卡片和升级建议</span></div>
-            <div>    │   │   └── references/scenarios/             <span>通知调试快照</span></div>
+            <div>    │   │   ├── SKILL.md                         <span>生成 POC 路由、send_plan、Card、报表</span></div>
+            <div>    │   │   ├── scripts/                          <span>notification_artifacts、Card、POC、hash</span></div>
+            <div>    │   │   ├── assets/efficiency-label-rate/      <span>POC 映射、卡片模板</span></div>
+            <div>    │   │   └── test-prompts.json</div>
             <div>    │   └── resolution/</div>
             <div>    │       ├── SKILL.md                         <span>记录人工状态、结论、证据和复查</span></div>
-            <div>    │       └── references/scenarios/             <span>解决调试快照</span></div>
+            <div>    │       ├── scripts/build_label_rate_manual_tracking.py</div>
+            <div>    │       ├── references/scenarios/             <span>解决发布快照</span></div>
+            <div>    │       └── test-prompts.json</div>
             <div>    ├── evals/</div>
-            <div>    │   └── efficiency-auto-disposal-accuracy/</div>
-            <div>    │       ├── eval_samples.jsonl               <span>评估样例：查询、预警、责任人定位</span></div>
+            <div>    │   └── efficiency-label-rate/</div>
+            <div>    │       ├── eval_samples.jsonl               <span>评估样例：查询、分级、通知、闭环</span></div>
             <div>    │       ├── expected_outputs.md              <span>期望 QueryPlan / source_footer</span></div>
             <div>    │       └── query_plan_assertions.md         <span>字段、过滤条件、维度断言</span></div>
             <div>    └── tools/</div>
-            <div>        └── policies/</div>
-            <div>            └── efficiency-auto-disposal.tool-policy.md <span>只读查询、通知、写状态权限</span></div>
+            <div>        ├── runners/                             <span>端到端编排、eval、真实发送门禁</span></div>
+            <div>        ├── validators/                          <span>产品化、standalone、阶段回归校验</span></div>
+            <div>        └── policies/efficiency-label-rate.tool-policy.md</div>
           </div>
         </article>
 
         <article class="asset-card reveal delay-1">
           <h3>场景文件职责</h3>
-          <p>效率场景的完整目录不是为了堆文件，而是把“口径、字段、路由、通知、验收”拆到各自负责的文件里。</p>
+          <p>打标率场景的完整目录不是为了堆文件，而是把“口径、字段、分级、POC 路由、通知、验收”拆到各自负责的文件里。</p>
           <div class="field-list">
             <div class="field"><span>scenario_manifest</span><span>声明模块、指标、任务类型、入口关键词、排除条件</span></div>
-            <div class="field"><span>metric_contract</span><span>定义自动处置准确率的分子、分母、排除项和时间窗口</span></div>
+            <div class="field"><span>metric_contract</span><span>定义打标率分子、分母、标准样本池 SQL、维度和窗口</span></div>
             <div class="field"><span>dataset_reference</span><span>指定推荐字段、混淆字段、禁止字段和数据粒度</span></div>
-            <div class="field"><span>analysis</span><span>定义整体、策略、队列、风险域等维度的归因顺序</span></div>
-            <div class="field"><span>owner_routing</span><span>定义策略 Owner、队列 Owner、数据 Owner 的优先级</span></div>
+            <div class="field"><span>analysis</span><span>定义 notice/P2/P1/P0 分级规则、四维粒度和小样本过滤</span></div>
+            <div class="field"><span>owner_routing</span><span>定义 mach_root_label_name 到 POC 姓名级映射和触达规则</span></div>
             <div class="field"><span>eval_samples</span><span>验证 Agent 是否命中正确场景、指标、字段和输出格式</span></div>
           </div>
         </article>
@@ -1762,12 +1775,12 @@
       <article class="stack-card reveal delay-2" style="margin-top: 16px;">
         <h3>一次任务如何读取这些文件</h3>
         <div class="phase-table">
-          <div class="phase-row"><b>1. 场景识别</b><span>读取 scenario_manifest，确认属于效率模块下的自动处置准确率场景。</span><span>如果同时命中质量模块，进入候选冲突校验。</span></div>
-          <div class="phase-row"><b>2. 口径确认</b><span>读取 metric_contract，确认自动处置准确率的唯一指标口径。</span><span>未命中指标 ID 时不执行查询。</span></div>
-          <div class="phase-row"><b>3. 字段选择</b><span>读取 dataset_reference，选择策略、队列、风险域等推荐字段。</span><span>命中混淆字段或禁止字段时阻断。</span></div>
-          <div class="phase-row"><b>4. 分析执行</b><span>读取 analysis，生成 QueryPlan 并执行只读查询。</span><span>输出归因、质量检查和来源脚注。</span></div>
-          <div class="phase-row"><b>5. 责任人定位</b><span>读取 owner_routing，按策略、队列、数据资产优先级定位 Owner。</span><span>低置信度时要求人工确认。</span></div>
-          <div class="phase-row"><b>6. 评估回路</b><span>使用 eval_samples 和 query_plan_assertions 回测。</span><span>失败则回到场景包修订，不进入发布。</span></div>
+          <div class="phase-row"><b>1. 感知识别</b><span>调用 `label_rate_perception.py`，输出 `scenario_key=efficiency-label-rate`、`task_type`、`readiness`。</span><span>请求真实 SQL、群发或拉人入群时直接阻断。</span></div>
+          <div class="phase-row"><b>2. 口径确认</b><span>读取 metric_contract，确认打标率唯一口径和默认样本池 SQL。</span><span>未命中指标 ID 或时间窗口时不执行查询。</span></div>
+          <div class="phase-row"><b>3. 分析执行</b><span>调用 `label_rate_analysis.py` 生成 QueryPlan、分级 SQL、source_footer 和标准化结果。</span><span>runner 只负责真实只读查询和 eval 写入。</span></div>
+          <div class="phase-row"><b>4. 通知产物</b><span>调用 notification scripts 生成 POC 路由、notification_draft、send_plan、Card 和报表。</span><span>默认 `group_send_blocked=true`。</span></div>
+          <div class="phase-row"><b>5. 解决记录</b><span>调用 resolution script 生成 manual_tracking。</span><span>不写线上状态，不把草稿等同于已发送。</span></div>
+          <div class="phase-row"><b>6. 评估回路</b><span>运行 productization、standalone、Stage 1、Stage 2 默认 validator。</span><span>失败则回到 Skill 或场景包修订，不进入发布。</span></div>
         </div>
       </article>
     </section>
@@ -1796,7 +1809,7 @@
       <article class="stack-card reveal delay-1" style="margin-top: 16px;">
         <h3>检索策略（retrieval_policy）数据契约</h3>
         <div class="phase-table">
-          <div class="phase-row"><b>主场景（scenario_key）</b><span>主场景标识，例如 efficiency_auto_disposal_accuracy。</span><span>用于限定当前任务的主要场景包。</span></div>
+          <div class="phase-row"><b>主场景（scenario_key）</b><span>主场景标识，例如 efficiency-label-rate。</span><span>用于限定当前任务的主要场景包。</span></div>
           <div class="phase-row"><b>关联场景（related_scenarios）</b><span>关联候选场景，只允许读取场景清单和冲突排除字段。</span><span>用于处理跨效率、质量、策略、队列的复杂问题。</span></div>
           <div class="phase-row"><b>允许路径（allowed_paths）</b><span>允许读取的文件路径，例如当前场景的指标契约和数据集说明。</span><span>Tool/MCP 层必须按该列表拦截越界读取。</span></div>
           <div class="phase-row"><b>拒绝路径（denied_paths）</b><span>明确拒绝读取的文件路径、废弃场景、废弃数据集。</span><span>命中后必须终止检索并输出拒绝原因。</span></div>
@@ -1820,15 +1833,15 @@
 
         <article class="asset-card reveal delay-2">
           <h3>A 指标 / A 事件的检索示例</h3>
-          <p>以“自动处置准确率下降，需要看策略维度归因”为例，Agent不会把它混到质量模块，也不会直接等同于“机审策略有效性”；它应先命中效率模块下的“自动处置准确率分析/预警”场景，策略只是可选分析维度之一。</p>
+          <p>以“近 7 天低打标率策略分级，需要按机审一级标签和 POC 展示”为例，Agent 不会自由找表或直接群发；它应先命中效率模块下的打标率场景，策略 ID、策略名称、送审原因和机审一级标签是受控维度。</p>
           <div class="tree-block" aria-label="检索示例">
-            <div>输入：自动处置准确率下降，按策略看原因</div>
-            <div>命中：场景标识（scenario_key）= efficiency_auto_disposal_accuracy</div>
-            <div>读取：指标契约（metric_contract.md）<span>确认自动处置准确率唯一口径</span></div>
-            <div>读取：数据集说明（dataset_reference.md）<span>确认策略字段、禁用相近字段</span></div>
-            <div>读取：分析规则（analysis.md）<span>选择策略维度归因模板</span></div>
-            <div>拒绝：quality_inspection/* <span>质量模块场景，不是主场景</span></div>
-            <div>输出：查询计划（QueryPlan） + 来源脚注（source_footer）</div>
+            <div>输入：近 7 天低打标率策略，按机审一级标签 × 策略 ID × 策略名称 × 送审原因分级</div>
+            <div>命中：场景标识（scenario_key）= efficiency-label-rate</div>
+            <div>读取：指标契约（metric_contract.md）<span>确认打标率公式、样本池 SQL、小样本门槛</span></div>
+            <div>读取：数据集说明（dataset_reference.md）<span>确认四个推荐维度和禁用字段</span></div>
+            <div>读取：分析规则（analysis.md）<span>选择 notice/P2/P1/P0 分级规则</span></div>
+            <div>读取：owner_routing.md / POC 映射资产<span>按 mach_root_label_name 生成姓名级 POC</span></div>
+            <div>输出：QueryPlan + source_footer + notification_draft + send_plan + manual_tracking</div>
           </div>
         </article>
       </div>
@@ -1952,7 +1965,7 @@
             <div class="field"><span>完整闭环（full_workflow）</span><span>感知 → 分析 → 触达 → 解决 → 闭环复查</span></div>
             <div class="field"><span>只查询（query_only）</span><span>感知 + 分析，输出查询计划、结果和来源脚注</span></div>
             <div class="field"><span>责任人定位（owner_lookup_only）</span><span>感知 + 责任人路由，输出责任人、依据和置信度</span></div>
-            <div class="field"><span>只通知（notification_only）</span><span>基于已有结论生成卡片并触达固定人/群或建议 Owner（责任人）</span></div>
+            <div class="field"><span>只通知（notification_only）</span><span>基于已有结论生成 Card、POC 路由和 send_plan，真实发送仍需门禁确认</span></div>
             <div class="field"><span>只记录解决（resolution_only）</span><span>基于已有事件或人工输入记录状态、结论和证据</span></div>
             <div class="field"><span>局部流程（partial_workflow）</span><span>按用户目标组合多个节点，例如“查询分析 + 责任人定位”</span></div>
           </div>
@@ -2019,47 +2032,47 @@
         <article class="interaction-card reveal">
           <div class="step-num">01</div>
           <h3>感知节点</h3>
-          <p>Agent接收多源输入，判断是否需要进入事件闭环；如果需要，则调用感知 Skill，先映射语义层和指标契约，再通过 Tool/MCP/CLI拉取指标、SOP、Owner（责任人）和案例。</p>
+          <p>Agent接收多源输入后，先调用感知 Skill，把自然语言映射成 `scenario_key`、`task_type`、`run_mode`、`metric_ids`、`retrieval_policy` 和 `readiness`。</p>
           <div class="io">
-            <div class="io-row"><b>输入</b> 原始问题、来源上下文、SOP、指标口径、Owner（责任人）映射</div>
-            <div class="io-row"><b>输出</b> 事件画像、证据包、治理实体、数据就绪等级、Owner（责任人）候选</div>
-            <div class="io-row"><b>约束</b> 必须加载场景清单、指标契约、数据集说明和检索策略</div>
-            <div class="io-row"><b>审计</b> 记录场景命中、候选场景、拒绝原因和置信度</div>
+            <div class="io-row"><b>输入</b> 原始问题、场景提示、指标提示、维度提示、时间窗口</div>
+            <div class="io-row"><b>输出</b> 场景标识、任务类型、指标 ID、检索策略、readiness、阻断原因</div>
+            <div class="io-row"><b>约束</b> 不执行 SQL、不发通知、不写线上状态；请求真实群发或拉人入群时阻断</div>
+            <div class="io-row"><b>审计</b> 记录场景命中、候选场景、拒绝原因和 human_confirmation_required</div>
           </div>
         </article>
 
         <article class="interaction-card reveal delay-1">
           <div class="step-num">02</div>
           <h3>分析节点</h3>
-          <p>Agent根据就绪等级选择快分析、标准分析或深度分析；分析 Skill先生成查询计划（QueryPlan），解释 Tool（工具）返回的证据，并输出质量检查和来源脚注。</p>
+          <p>分析 Skill 使用 `label_rate_analysis.py` 生成 QueryPlan、打标率 SQL、notice/P2/P1/P0 分级规则、source_footer 和标准化分析结果。</p>
           <div class="io">
-            <div class="io-row"><b>输入</b> 统一事件对象、治理实体、证据包、分析模板、SOP 规则</div>
-            <div class="io-row"><b>输出</b> 查询计划（QueryPlan）、影响评估、候选根因、来源脚注、下一步动作</div>
-            <div class="io-row"><b>约束</b> 未通过查询计划断言不得执行只读查询</div>
-            <div class="io-row"><b>审计</b> 记录查询计划、字段选择、质量检查和来源脚注</div>
+            <div class="io-row"><b>输入</b> 感知输出、指标契约、数据集说明、分析规则、时间窗口和维度</div>
+            <div class="io-row"><b>输出</b> QueryPlan、SQL、readonly_execution、analysis_result、source_footer、provenance</div>
+            <div class="io-row"><b>约束</b> Skill 脚本 dry-run 无副作用；真实只读查询由 runner/Tool 门禁执行</div>
+            <div class="io-row"><b>审计</b> 记录查询计划、字段选择、SQL 过滤、小样本门槛和来源脚注</div>
           </div>
         </article>
 
         <article class="interaction-card reveal delay-2">
           <div class="step-num">03</div>
           <h3>通知节点</h3>
-          <p>当前 MVP（第一版最小可行范围）中，Agent 检查分析结论后生成 AI Summary（AI 摘要）测试卡片，通知 Skill 只负责发送给指定人或群，并展示建议 Owner（责任人）。</p>
+          <p>通知 Skill 使用 notification scripts 将分析结果转成 POC 路由、notification_draft、send_plan、CSV/XLSX 报表和飞书 Card 2.0 草稿。</p>
           <div class="io">
-            <div class="io-row"><b>输入</b> 分析结论、测试收件人、通知模板、建议 Owner（责任人）</div>
-            <div class="io-row"><b>输出</b> AI Summary（AI 摘要）卡片、发送状态、建议下一步</div>
-            <div class="io-row"><b>约束</b> MVP 阶段仅固定人/群触达，动态 Owner 路由只展示建议</div>
-            <div class="io-row"><b>审计</b> 记录触达对象、模板版本、发送状态和人工确认要求</div>
+            <div class="io-row"><b>输入</b> 分级结果、POC 映射、通知模板、表格链接、source_footer</div>
+            <div class="io-row"><b>输出</b> notification_draft、poc_routing_plan、send_plan、Card JSON、报表文件</div>
+            <div class="io-row"><b>约束</b> 默认 `group_send_blocked=true`、`requires_confirmation=true`、`sent=false`</div>
+            <div class="io-row"><b>审计</b> 记录 POC 依据、卡片哈希、模板版本、发送门禁和人工确认要求</div>
           </div>
         </article>
 
         <article class="interaction-card reveal delay-3">
           <div class="step-num">04</div>
           <h3>解决节点</h3>
-          <p>当前 MVP（第一版最小可行范围）中，解决 Skill不做自动处理和复杂 SLA（响应/处理时限），只记录人工处理状态、结论、证据和是否继续观察。</p>
+          <p>解决 Skill 使用 manual tracking 脚本承接通知产物，记录人工状态、证据、下一步动作、是否继续观察和闭环三件套。</p>
           <div class="io">
-            <div class="io-row"><b>输入</b> 通知状态、人工状态、人工结论、证据引用</div>
-            <div class="io-row"><b>输出</b> 人工跟进记录、归档状态、是否继续观察</div>
-            <div class="io-row"><b>约束</b> 未完成动作、证据、结论三件套不得自动关闭</div>
+            <div class="io-row"><b>输入</b> notification_draft、send_plan、状态机、人工动作和证据引用</div>
+            <div class="io-row"><b>输出</b> manual_tracking、state_transition、closure_check、follow_up</div>
+            <div class="io-row"><b>约束</b> 未完成动作、证据、结论三件套不得自动关闭；不写线上状态</div>
             <div class="io-row"><b>审计</b> 记录状态变更、结论来源、证据引用和复查标记</div>
           </div>
         </article>
@@ -2190,50 +2203,50 @@
           <p class="section-kicker">Delivery Plan · 建设阶段与验收标准</p>
           <h2>建设阶段、验收标准与推进节奏</h2>
         </div>
-        <p class="section-note">当前优先目标是验证感知与分析能力的准确性、可复核性和治理稳定性，确保样例可验、来源可查、规则可复用。</p>
+        <p class="section-note">当前优先目标已经从“跑通早期链路”升级为“保持产品化门禁可复现”：Skill 自包含、runner 只编排、Stage 1/Stage 2 默认校验命令可直接通过。</p>
       </div>
       <div class="asset-grid">
         <article class="asset-card reveal">
-          <h3>第一批要建设的资产</h3>
+          <h3>已经产品化的核心资产</h3>
           <div class="field-list">
-            <div class="field"><span>场景包样例</span><span>效率模块下的处置准确率预警、质量模块下的底线事故复盘、成本模块下的单位处置成本分析</span></div>
-            <div class="field"><span>指标契约样例</span><span>打标率、自动处置准确率、处置量、质检准确率、底线事故数、单位处置成本</span></div>
-            <div class="field"><span>数据集说明</span><span>Aeolus（风神查数平台）/ Hive（数仓表）推荐字段、混淆字段、禁用字段、血缘和刷新</span></div>
-            <div class="field"><span>评估样例</span><span>日常分析、周度推送、撞线预警、错字段反例、边界样例</span></div>
-            <div class="field"><span>输出样例</span><span>波动归因报告、AI Summary（AI 摘要）卡片、来源脚注（source_footer）</span></div>
+            <div class="field"><span>场景包</span><span>efficiency-label-rate 已包含 manifest、metric_contract、dataset_reference、analysis、owner_routing、notification_templates、sla、state_machine、examples</span></div>
+            <div class="field"><span>Skill 脚本</span><span>感知、分析、通知、解决均具备可执行 scripts，稳定逻辑不再只放在 tools/runners</span></div>
+            <div class="field"><span>发布清单</span><span>skill_release_manifest.json 声明发布资产、脚本入口和外部依赖</span></div>
+            <div class="field"><span>验证门禁</span><span>productization strict、standalone smoke、AgentBuddy、Stage 1、Stage 2 默认 validator</span></div>
+            <div class="field"><span>发布记录</span><span>四个 Skill 已发布到 AgentBuddy restricted 空间，版本可追溯</span></div>
           </div>
         </article>
         <article class="asset-card reveal delay-1">
-          <h3>阶段 1 的验收方式</h3>
-          <p>先不验收“是否自动找对负责人”，而是验收感知/分析是否真的稳定。</p>
+          <h3>当前验收方式</h3>
+          <p>不再只验收感知/分析是否稳定，而是同时验收 Skill 是否可独立运行、Stage 2 默认命令是否无需手动传参、真实副作用是否被门禁阻断。</p>
           <div class="tag-row">
             <span class="tag hot">场景识别正确</span>
             <span class="tag hot">指标映射正确</span>
             <span class="tag hot">查询计划通过（QueryPlan）</span>
-            <span class="tag">字段未误用</span>
-            <span class="tag">来源脚注完整</span>
-            <span class="tag">规则命中正确</span>
+            <span class="tag hot">standalone smoke</span>
+            <span class="tag">Stage 2 默认 validator</span>
+            <span class="tag">真实群发门禁</span>
           </div>
         </article>
       </div>
       <article class="stack-card reveal delay-2" style="margin-top: 16px;">
-        <h3>阶段 1 可判定验收标准</h3>
+        <h3>当前可判定验收标准</h3>
         <div class="phase-table">
-          <div class="phase-row"><b>场景识别</b><span>20 条以上评估样例中，主场景识别正确率 ≥ 95%。</span><span>跨场景冲突样例必须输出关联候选和人工确认建议。</span></div>
-          <div class="phase-row"><b>指标映射</b><span>核心指标映射正确率 100%，不得把相近指标当成主指标。</span><span>失败即阻断场景包发布。</span></div>
-          <div class="phase-row"><b>字段选择</b><span>混淆字段拒绝率 100%，禁止来源拒绝率 100%。</span><span>必须命中数据集说明（dataset_reference）里的推荐/禁止字段规则。</span></div>
-          <div class="phase-row"><b>查询计划</b><span>查询计划断言通过率 100%，包含指标、维度、窗口、过滤条件、来源层级。</span><span>未通过不得执行只读查询。</span></div>
-          <div class="phase-row"><b>来源脚注</b><span>输出完整率 100%，必须包含来源、口径版本、刷新时间、Owner（责任人）、置信度。</span><span>缺失不得进入自动触达。</span></div>
-          <div class="phase-row"><b>通知 / 解决</b><span>MVP（第一版）只验收固定人/群触达和人工状态记录。</span><span>动态 Owner（责任人）路由和 SLA（响应/处理时限）闭环进入下一阶段验收。</span></div>
+          <div class="phase-row"><b>产品化门禁</b><span>`validate_skill_productization.py --strict` 通过。</span><span>四个 Skill 必须具备操作手册、触发测试、脚本编译和路径安全检查。</span></div>
+          <div class="phase-row"><b>独立运行</b><span>`validate_skill_standalone_smoke.py` 通过。</span><span>Skill 包可定位 references、assets、scripts，并完成最小 dry-run。</span></div>
+          <div class="phase-row"><b>分析链路</b><span>Stage 1 minimal/mock/readonly/real-readonly/grading validator 全部通过。</span><span>runner 复用 analysis scripts，输出契约不回退。</span></div>
+          <div class="phase-row"><b>通知闭环</b><span>Stage 2 notification、POC routing、manual tracking、partial dispatch 默认 validator 全部通过。</span><span>无需手动传 output-dir。</span></div>
+          <div class="phase-row"><b>安全对抗</b><span>感知脚本对“真实 SQL + 群发 + 自动拉人入群”请求输出 blocked。</span><span>安全字段保持无 SQL、无通知、无线上写入。</span></div>
+          <div class="phase-row"><b>发布校验</b><span>AgentBuddy publish manifest 校验通过，四个 Skill 可在 restricted 空间命中。</span><span>发布记录写入 evals/agentbuddy_publish。</span></div>
         </div>
       </article>
       <article class="stack-card reveal delay-2" style="margin-top: 16px;">
-        <h3>从 MVP（第一版最小可行范围）到目标形态的推进节奏</h3>
+        <h3>从产品化到真实闭环的推进节奏</h3>
         <div class="phase-table">
-          <div class="phase-row"><b>当前</b><span>感知/分析 MVP（第一版最小可行范围）：场景识别、指标契约、查询计划（QueryPlan）、只读查询、归因和测试通知。</span><span>目标：验证查询准确性、结论可复核性和来源可追溯性。</span></div>
-          <div class="phase-row"><b>下一步</b><span>补齐动态 Owner（责任人）路由、P1/P2 通知模板、升级规则、人工结论回收。</span><span>目标：让分析结果能稳定触达到正确协作对象。</span></div>
-          <div class="phase-row"><b>再下一步</b><span>接入 SLA（响应/处理时限）跟进、自动催办、处理复查、纠错回收和回测 CLI（命令行工具）。</span><span>目标：形成可持续迭代的运营闭环。</span></div>
-          <div class="phase-row"><b>目标形态</b><span>场景流程包、数据资产、Tool/MCP/CLI、离线评估和线上监控一起版本化。</span><span>目标：运营经验沉淀成可运行、可审计、可演进的系统。</span></div>
+          <div class="phase-row"><b>当前</b><span>打标率 Skill 产品化：四类 Skill 自包含、脚本下沉、standalone smoke、AgentBuddy restricted 发布。</span><span>目标：确保 Skill 脱离当前 Agent 也能执行最小能力。</span></div>
+          <div class="phase-row"><b>下一步</b><span>补齐 open_id 安全存储、真实 POC 联系人解析、真实群推送确认链路。</span><span>目标：让姓名级 POC 路由变成可确认触达对象。</span></div>
+          <div class="phase-row"><b>再下一步</b><span>接入 SLA 跟进、卡片按钮回收、联系人回复收集和状态表写入。</span><span>目标：形成可持续迭代的运营闭环。</span></div>
+          <div class="phase-row"><b>目标形态</b><span>场景流程包、Skill 发布包、Tool/MCP/CLI、离线评估和线上监控一起版本化。</span><span>目标：运营经验沉淀成可运行、可审计、可演进的系统。</span></div>
         </div>
       </article>
     </section>
@@ -2261,45 +2274,45 @@
 
         <article class="road-card reveal delay-1">
           <span class="phase">阶段 1</span>
-          <h3>感知与分析 MVP（第一版最小可行范围）</h3>
-          <p>优先验证效率/质量场景的指标映射、取数、归因和规则命中。</p>
+          <h3>打标率只读分析链路</h3>
+          <p>完成效率-打标率场景识别、指标契约、只读查询、低效分级和来源脚注。</p>
           <ul>
             <li>场景指标契约</li>
             <li>查询计划（QueryPlan）</li>
-            <li>测试通知</li>
+            <li>真实只读分级</li>
           </ul>
         </article>
 
         <article class="road-card reveal delay-2">
           <span class="phase">阶段 2</span>
-          <h3>通知与闭环深化</h3>
-          <p>后续再接入动态 Owner（责任人）路由、组合升级、SLA（响应/处理时限）和结论回收。</p>
+          <h3>通知、POC 与本地闭环</h3>
+          <p>完成四维粒度、姓名级 POC 路由、分级通知卡片、send_plan 门禁和 manual_tracking。</p>
           <ul>
-            <li>通知模板</li>
-            <li>SLA（响应/处理时限）策略</li>
-            <li>闭环审核</li>
+            <li>POC 映射</li>
+            <li>分级卡片</li>
+            <li>本地跟踪</li>
           </ul>
         </article>
 
         <article class="road-card reveal delay-3">
           <span class="phase">阶段 3</span>
-          <h3>验收与迭代</h3>
-          <p>用运营专家验收样例验证结论、路由、证据和步骤减少。</p>
+          <h3>Skill 产品化与发布</h3>
+          <p>完成四个 Skill 的脚本下沉、自包含资产、standalone smoke 和 AgentBuddy restricted 发布。</p>
           <ul>
-            <li>验收评估</li>
-            <li>迭代候选池</li>
-            <li>回测样例</li>
+            <li>scripts 下沉</li>
+            <li>standalone smoke</li>
+            <li>AgentBuddy 发布</li>
           </ul>
         </article>
 
         <article class="road-card reveal delay-3">
           <span class="phase">阶段 4</span>
-          <h3>工程化增强</h3>
-          <p>从 Base（飞书多维表格主存）走向混合存储，逐步增强 Tool/MCP/CLI治理、自动化和回测。</p>
+          <h3>真实触达与状态闭环</h3>
+          <p>下一阶段补齐 open_id 安全存储、真实群推送确认、SLA 跟进和线上状态表。</p>
           <ul>
-            <li>运行状态数据库</li>
-            <li>配置发布</li>
-            <li>Tool/MCP/CLI审计</li>
+            <li>联系人解析</li>
+            <li>SLA 回收</li>
+            <li>状态写入门禁</li>
           </ul>
         </article>
       </div>
@@ -2365,10 +2378,11 @@
 
         <article class="data-card reveal delay-1">
           <h3>架构论证视角</h3>
-          <p>四个 Skill + 场景包的方向成立，但需要区分目标架构和 MVP（第一版最小可行范围），也要区分“运营模块”和“模块下的样例指标/任务”。</p>
+          <p>四个 Skill + 场景包的方向成立；产品化后需要进一步强调 Skill 独立实体、scripts 下沉和发布门禁，而不只是目标架构与早期落地状态的区分。</p>
           <div class="field-list">
             <div class="field"><span>调整结果</span><span>补充 ADR 风格决策记录和全域流程覆盖地图</span></div>
             <div class="field"><span>调整结果</span><span>补充局部调度模式，支持查询分析、责任人定位、处理记录等局部任务</span></div>
+            <div class="field"><span>本次调整</span><span>补充 Skill 自包含目录、standalone smoke、AgentBuddy 发布版本和 Stage 2 默认 validator 修复</span></div>
           </div>
         </article>
 
