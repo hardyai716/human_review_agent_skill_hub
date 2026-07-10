@@ -30,14 +30,14 @@ allowed-tools:
 
 必需输入：
 
-- `analysis_result`：分析结果或阶段 1 JSONL 结果，必须包含 `analysis_mode`、`readonly_execution`、`level_counts`、分级明细和 `source_footer`。
+- `analysis_result`：分析结果或 `analysis_result` JSONL，必须包含 `analysis_mode`、`readonly_execution`、`level_counts`、分级明细和 `source_footer`。
 - `scenario_key`：例如 `efficiency-label-rate`。
 - `risk_levels`：至少说明涉及 `notice`、`P2`、`P1`、`P0` 中哪些等级。
 - `evidence_rows`：每条命中的 reason、策略、打标率、日均量和命中条件。
 
 可选输入：
 
-- `sheet_url`：用户或 runner 生成的报表链接。
+- `sheet_url`：用户或外部执行环境提供的报表链接。
 - `recipient_candidates`：用户提供的触达对象候选。
 - `run_mode`：默认调试模式 (`debug_only`)。
 - `card_title`：卡片标题。
@@ -114,7 +114,7 @@ allowed-tools:
 }
 ```
 
-只有同时满足以下条件，宿主 Agent 或 runner 才能在本技能之外进入真实发送审批：
+只有同时满足以下条件，具备发送权限的外部执行环境才能在本技能之外进入真实发送审批：
 
 - 用户明确确认发送范围、目标群、正文和附件。
 - 负责人 (POC) 已解析到无歧义 open_id。
@@ -141,26 +141,26 @@ allowed-tools:
 
 可用脚本：
 
-- `scripts/label_rate_notification_artifacts.py`：从阶段 1 打标率分级 JSONL 生成 `notification_draft.json`、`send_plan.json`、`poc_routing_plan.json`、分等级 CSV、`汇总统计.csv`、XLSX 报表和 Card JSON；默认不发送消息。
-- `scripts/resolve_label_rate_poc_routing.py`：从阶段 1 JSONL 分析结果生成 `poc_routing_plan.json`。
+- `scripts/label_rate_notification_artifacts.py`：从打标率分级 `analysis_result` JSONL 生成 `notification_draft.json`、`send_plan.json`、`poc_routing_plan.json`、分等级 CSV、`汇总统计.csv`、XLSX 报表和 Card JSON；默认不发送消息。
+- `scripts/resolve_label_rate_poc_routing.py`：从 `analysis_result` JSONL 生成 `poc_routing_plan.json`。
 - `scripts/render_label_rate_grading_card.py`：作为 Python 模块导入，生成飞书 Card 2.0 JSON 和设计检查结果。
 - `scripts/card_hash.py`：计算和校验卡片数据哈希。
 
 通知草稿脚本示例：
 
 ```bash
-python3 human_review_ops/skills/notification/scripts/label_rate_notification_artifacts.py --source <stage1_result.jsonl> --output-dir <notification_output_dir> --sheet-url <optional_sheet_url>
+python3 human_review_ops/skills/notification/scripts/label_rate_notification_artifacts.py --source <analysis_result.jsonl> --output-dir <notification_output_dir> --sheet-url <optional_sheet_url>
 ```
 
 POC 路由脚本示例：
 
 ```bash
-python3 human_review_ops/skills/notification/scripts/resolve_label_rate_poc_routing.py --source <stage1_result.jsonl> --output <poc_routing_plan.json>
+python3 human_review_ops/skills/notification/scripts/resolve_label_rate_poc_routing.py --source <analysis_result.jsonl> --output <poc_routing_plan.json>
 ```
 
 ## 失败处理
 
-- 阶段 1 结果缺少 `record_type=sample`：停止，要求补齐分析结果。
+- 分析产物缺少 `record_type=sample`：停止，要求补齐分析结果。
 - `analysis_mode` 不是 `low_label_rate_grading`：只允许生成通用摘要草稿，不生成分级预警发送计划。
 - 缺少 `readonly_execution`、`level_counts` 或 `source_footer`：停止，交回分析技能补齐。
 - 缺少 `mach_root_label_name`：生成低置信度路由，fallback 到 `self` 预览。

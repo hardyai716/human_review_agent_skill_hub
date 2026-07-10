@@ -6,7 +6,7 @@
 
 ## 输入产物要求
 
-必需输入来自 analysis Skill 或 Stage 1 runner，且满足：
+必需输入来自 analysis Skill 生成的分析产物，且满足：
 
 - `scenario_key=efficiency-label-rate`。
 - `analysis_mode=low_label_rate_grading`。
@@ -152,7 +152,7 @@ TOP 低效组合：
 }
 ```
 
-只有同时满足以下条件，宿主 Agent 或 runner 才能在通知 Skill 外进入真实发送审批：
+只有同时满足以下条件，具备发送权限的外部执行环境才能在通知 Skill 外进入真实发送审批：
 
 - 用户明确确认发送范围、目标群、正文、附件和 Card。
 - POC 姓名已解析到无歧义 open_id。
@@ -200,7 +200,7 @@ TOP 低效组合：
 正例：
 
 ```text
-基于 efficiency-label-rate 的 Stage 1 低打标率分级结果，生成通知草稿、POC 路由、Card 和 send_plan，保持 debug_only。
+基于 efficiency-label-rate 的低打标率分级分析产物，生成通知草稿、POC 路由、Card 和 send_plan，保持 debug_only。
 ```
 
 期望：

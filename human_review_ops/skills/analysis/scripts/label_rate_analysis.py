@@ -2,8 +2,8 @@
 """Reusable label-rate analysis helpers for the analysis Skill.
 
 The module is intentionally side-effect free. It constructs QueryPlan, SQL,
-source footer, and normalized grading outputs; host runners own real readonly
-tool execution and file persistence.
+source footer, and normalized grading outputs; external execution environments
+own real readonly tool execution and file persistence.
 """
 
 from __future__ import annotations

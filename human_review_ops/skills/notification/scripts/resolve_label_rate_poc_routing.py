@@ -82,11 +82,11 @@ def load_stage_1_sample(path: Path) -> dict[str, Any]:
         None,
     )
     if not sample:
-        raise ValueError("Missing sample record in stage 1 results.")
+        raise ValueError("Missing sample record in analysis_result JSONL.")
     if sample.get("analysis_mode") != "low_label_rate_grading":
-        raise ValueError("Stage 1 source must be low_label_rate_grading.")
+        raise ValueError("Analysis result source must be low_label_rate_grading.")
     if "readonly_execution" not in sample:
-        raise ValueError("Stage 1 source missing readonly_execution.")
+        raise ValueError("Analysis result source missing readonly_execution.")
     return sample
 
 

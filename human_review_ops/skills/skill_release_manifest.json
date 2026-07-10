@@ -130,7 +130,7 @@
       "scripts": [
         {
           "path": "notification/scripts/label_rate_notification_artifacts.py",
-          "entrypoint": "python3 scripts/label_rate_notification_artifacts.py --source <stage1.jsonl> --output-dir <output>",
+          "entrypoint": "python3 scripts/label_rate_notification_artifacts.py --source <analysis_result.jsonl> --output-dir <output>",
           "smoke_command": "python3 scripts/selfcheck.py",
           "side_effects": ["none"],
           "outputs": [

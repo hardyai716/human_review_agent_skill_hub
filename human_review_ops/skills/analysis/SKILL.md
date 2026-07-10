@@ -17,7 +17,7 @@ allowed-tools:
 - 上游感知技能 (perception Skill) 已输出 `scenario_key`、`metric_ids`、`task_type` 和 `readiness.status=ready`。
 - 用户直接要求分析打标率、进审量、完审量、打标量、自动处置准确率、高/低打标 reason、低效策略分级或维度拆解。
 - 用户要求输出可复核口径、受控 SQL、数据证据、分级结果或来源页脚 (source_footer)。
-- 用户要求先生成查询计划 (QueryPlan)，再由有权限的宿主 Agent 或 runner 执行只读查询。
+- 用户要求先生成查询计划 (QueryPlan)，再由具备只读权限的外部执行环境执行查询。
 
 ## 禁止使用
 
@@ -53,7 +53,7 @@ allowed-tools:
 
 - 查询计划 (QueryPlan)：指标、时间、维度、过滤、来源优先级、禁用来源、质量检查和人工确认要求。
 - 只读 SQL 或只读执行请求 (`readonly_execution_request`)：仅在 QueryPlan 通过后生成。
-- 只读执行结果 (`readonly_execution`)：由宿主 Agent 或 runner 执行后回填；无权限时输出待执行请求。
+- 只读执行结果 (`readonly_execution`)：由具备只读权限的外部执行环境执行后回填；无权限时输出待执行请求。
 - 分析摘要：区分数据事实、解释判断和业务建议。
 - 分级结果：仅低打标率分级任务输出 `notice`、`P2`、`P1`、`P0`。
 - 来源页脚 (source_footer)：说明指标契约、数据源、时间窗口、过滤、质量检查和限制。
@@ -68,7 +68,7 @@ allowed-tools:
 3. 从场景文档读取指标口径、数据源字段、过滤、分析模式、失败条件和正反例。
 4. 生成 QueryPlan，并在执行前完成字段、权限、分区、新鲜度和样本池检查。
 5. 构造 SQL 或只读执行请求。比率类指标必须用分子和分母重新计算，不直接聚合已有比率字段。
-6. 执行只读门禁：只有宿主 Agent 或 runner 具备只读工具权限，且 QueryPlan 未命中禁用来源，才能执行查询。
+6. 执行只读门禁：只有外部执行环境具备只读工具权限，且 QueryPlan 未命中禁用来源，才能执行查询。
 7. 做质量检查：分区是否就绪、分母是否为 0、字段映射是否确认、结果行数是否合理、是否有 NULL 维度。
 8. 按 `task_type` 输出趋势、排序、低效分级或维度拆解。低效分级只在场景文档声明的模式中启用。
 9. 生成 source_footer，把口径、过滤、数据源、限制和人工确认项写清楚。
@@ -179,7 +179,7 @@ allowed-tools:
 
 ## 只读查询边界
 
-- 本技能文档不声明外部工具；真实查询只能由具备只读权限的宿主 Agent 或 runner 执行。
+- 本技能文档不声明外部工具；真实查询只能由具备只读权限的外部执行环境执行。
 - 查询前必须先生成 QueryPlan，并确认未命中 `forbidden_sources`。
 - 允许读取语义层、治理数据集或受控原始表；禁止读取无治理、无 Owner、临时、废弃或敏感明细来源。
 - 只读执行失败时，保留工具错误、QueryPlan 和 source_footer，不输出业务结论。
@@ -201,11 +201,11 @@ allowed-tools:
 python3 human_review_ops/skills/analysis/scripts/label_rate_analysis.py --dry-run --levels notice,P2,P1,P0
 ```
 
-脚本与宿主阶段 1 runner 的分工：
+脚本与外部执行环境的分工：
 
 - `label_rate_analysis.py` 负责 QueryPlan、source_footer、打标率 SQL 构造、分级规则、结果标准化和 smoke 样例。
-- 宿主 Agent 或阶段 1 runner 保留阶段 1 编排、Aeolus 只读查询、POC 名称补充和 eval 文件写入；它通过 `label_rate_analysis.parse_levels()`、`label_rate_analysis.sql_by_level()` 和 `label_rate_analysis.build_records(...)` 复用本 Skill 脚本。
-- 宿主 Agent 无只读执行权限时，只输出 QueryPlan 或只读执行请求，不绕过 runner 或工具权限门禁执行真实查询。
+- 外部执行环境负责调用只读数据工具、回填查询结果、补充 POC 名称和保存分析产物；它通过 `label_rate_analysis.parse_levels()`、`label_rate_analysis.sql_by_level()` 和 `label_rate_analysis.build_records(...)` 复用本 Skill 脚本。
+- 调用方 Agent 无只读执行权限时，只输出 QueryPlan 或只读执行请求，不绕过工具权限门禁执行真实查询。
 
 ## 失败处理
 
@@ -230,7 +230,7 @@ python3 scripts/selfcheck.py
 人工验证点：
 
 - `label_rate_analysis.py --dry-run` 输出 JSON，且包含 `QueryPlan`、`source_footer`、`readonly_execution`、`analysis_result` 和 `provenance`。
-- 阶段 1 低打标率 runner 复用 `label_rate_analysis.parse_levels()`、`label_rate_analysis.sql_by_level()` 和 `label_rate_analysis.build_records(...)`。
+- 低打标率只读执行方复用 `label_rate_analysis.parse_levels()`、`label_rate_analysis.sql_by_level()` 和 `label_rate_analysis.build_records(...)`。
 - 每次查询前都有查询计划 (QueryPlan)。
 - SQL 只读，且未出现写入、建表、删表或线上状态更新。
 - 打标率按 `SUM(label_cnt) / SUM(review_done_cnt)` 重算。
@@ -260,7 +260,7 @@ python3 scripts/selfcheck.py
   },
   "readonly_execution_request": {
     "mode": "select_only",
-    "requires_host_readonly_tool": true
+    "requires_external_readonly_executor": true
   },
   "source_footer": {
     "metric_contract_ref": "references/scenarios/efficiency-label-rate.md#指标口径",

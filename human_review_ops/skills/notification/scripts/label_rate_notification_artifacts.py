@@ -81,7 +81,7 @@ class CardArtifacts:
 
 @dataclass(frozen=True)
 class NotificationArtifacts:
-    """Top-level stage 2 notification artifact paths."""
+    """Top-level notification artifact paths."""
 
     output_dir: Path
     summary_path: Path
@@ -101,7 +101,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description=(
             "Build notification_draft, send_plan, CSV/XLSX reports, POC routing, "
-            "and Card JSON for a label-rate grading stage 1 JSONL result. "
+            "and Card JSON for a label-rate grading analysis_result JSONL. "
             "This script never sends Feishu messages."
         )
     )
@@ -660,7 +660,7 @@ def build_send_plan(
         "real_group_send_executed": False,
         "online_write_executed": False,
         "blocked_reason": (
-            "Stage 2 has name-level POC routing only. Feishu open_id resolution, "
+            "The notification artifact has name-level POC routing only. Feishu open_id resolution, "
             "target chat confirmation, and explicit confirmation are required before "
             "real POC/group sending."
         ),

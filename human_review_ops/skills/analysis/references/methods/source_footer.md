@@ -20,7 +20,7 @@
 | `dimensions` | 实际输出维度。 |
 | `quality_checks` | 新鲜度、分母、字段、权限、样本池等检查结果。 |
 | `limitations` | 样本偏差、字段缺失、fallback、权限限制、未执行原因。 |
-| `run_mode` | `debug_only`、`readonly` 或宿主 Agent 定义的只读模式。 |
+| `run_mode` | `debug_only`、`readonly` 或调用方 Agent 定义的只读模式。 |
 
 ## 单场景文档引用格式
 
