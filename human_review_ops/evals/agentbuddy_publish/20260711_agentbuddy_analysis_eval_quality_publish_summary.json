@@ -1,0 +1,80 @@
+{
+  "schema_version": "agentbuddy_publish_and_eval_summary.v1",
+  "recorded_at": "2026-07-11T01:11:51+08:00",
+  "git": {
+    "branch": "main",
+    "commit": "88a3a30",
+    "pushed_to": "origin/main",
+    "commit_message": "feat: improve analysis skill eval quality"
+  },
+  "skill": {
+    "name": "analyzing-ops-metrics",
+    "source": "./human_review_ops/skills/analysis",
+    "group": "skills.byted.org/lizhongtao/hunman_review_ops",
+    "access": "restricted",
+    "region": "cn",
+    "published_id": "skills:skills.byted.org/lizhongtao/hunman_review_ops/analyzing-ops-metrics:1.0.8",
+    "package_size_mb": 0.04
+  },
+  "local_validation": {
+    "analysis_selfcheck": {
+      "command": "python3 human_review_ops/skills/analysis/scripts/selfcheck.py",
+      "status": "passed"
+    },
+    "label_rate_analysis_validator": {
+      "command": "python3 human_review_ops/tools/validators/validate_label_rate_analysis_scripts.py",
+      "status": "passed"
+    },
+    "analysis_eval_regression": {
+      "command": "python3 human_review_ops/tools/validators/validate_analysis_eval_regression.py",
+      "status": "passed"
+    },
+    "skill_productization_strict": {
+      "command": "python3 human_review_ops/tools/validators/validate_skill_productization.py --strict",
+      "status": "passed"
+    },
+    "skill_standalone_smoke": {
+      "command": "python3 human_review_ops/tools/validators/validate_skill_standalone_smoke.py",
+      "status": "passed"
+    },
+    "agentbuddy_publish_validator": {
+      "command": "python3 human_review_ops/tools/validators/validate_agentbuddy_publish.py",
+      "status": "passed"
+    },
+    "git_diff_check": {
+      "command": "git diff --check",
+      "status": "passed"
+    }
+  },
+  "publish": {
+    "command": "NPM_CONFIG_REGISTRY=http://bnpm.byted.org npx -y agentbuddy@latest skill publish ./human_review_ops/skills/analysis --group skills.byted.org/lizhongtao/hunman_review_ops --access restricted --region cn -y",
+    "status": "success",
+    "stdout_key_lines": [
+      "Skill: analyzing-ops-metrics",
+      "Package size: 0.04 MB",
+      "[OK] Successfully published skill: analyzing-ops-metrics",
+      "ID: skills:skills.byted.org/lizhongtao/hunman_review_ops/analyzing-ops-metrics:1.0.8"
+    ]
+  },
+  "publish_verification": {
+    "command": "NPM_CONFIG_REGISTRY=http://bnpm.byted.org npx -y agentbuddy@latest skill find analyzing-ops-metrics",
+    "status": "passed",
+    "result": "skills.byted.org/lizhongtao/hunman_review_ops@analyzing-ops-metrics"
+  },
+  "dynamic_eval": {
+    "target_latest_eval_url": "https://skills.bytedance.net/skill/skills:skills.byted.org/lizhongtao/hunman_review_ops/analyzing-ops-metrics/-/eval",
+    "target_published_skill_id": "skills:skills.byted.org/lizhongtao/hunman_review_ops/analyzing-ops-metrics:1.0.8",
+    "status": "blocked_not_started",
+    "new_eval_task_link": null,
+    "new_eval_task_status": null,
+    "blocked_reason": "Could not inspect or operate the current Chrome AgentBuddy eval page through Computer Use. The first get_app_state call for Google Chrome failed with app-level approval timeout: 'The app-level approval request for \"Google Chrome\" failed: Request timed out. This is NOT a system permission issue.' A second get_app_state retry was cancelled because the user requested immediate status and no further waiting.",
+    "attempted_paths": [
+      "Loaded the Computer Use workflow instructions.",
+      "Read MCP tool descriptors for list_apps, get_app_state, click, type_text, and press_key.",
+      "Called list_apps and confirmed Google Chrome was running.",
+      "Called get_app_state for com.google.Chrome; it timed out at the app-level approval request.",
+      "Retried get_app_state for com.google.Chrome; the call was interrupted by the user's immediate status request.",
+      "Did not fabricate an eval task link or status."
+    ]
+  }
+}
