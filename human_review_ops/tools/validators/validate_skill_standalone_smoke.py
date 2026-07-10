@@ -43,6 +43,20 @@ LOCAL_PATH_PATTERNS = {
     "windows_user_home": re.compile(r"[A-Za-z]:\\Users\\"),
     "workspace_desktop_path": re.compile(r"Desktop/人审运营"),
 }
+FORBIDDEN_RUNTIME_REFERENCE_PATTERNS = {
+    "external_relative_scenario_package": re.compile(
+        r"\.\./\.\./\.\./references/scenarios"
+    ),
+    "external_human_review_ops_scenario_package": re.compile(
+        r"human_review_ops/references/scenarios"
+    ),
+    "split_runtime_scenario_markdown": re.compile(
+        r"(?:references/scenarios/|scenarios/|/)"
+        r"(?:efficiency-label-rate|efficiency-auto-disposal-accuracy)"
+        r"\.(?:manifest|metric_contract|dataset_reference|analysis|examples|"
+        r"notification_templates|owner_routing|sla|state_machine)\.md\b"
+    ),
+}
 SECRET_PATTERNS = {
     "bearer_token": re.compile(r"Bearer\s+[A-Za-z0-9._-]{24,}"),
     "assigned_secret": re.compile(
@@ -368,6 +382,12 @@ def scan_text_file(path: Path, issues: list[str]) -> None:
             if pattern.search(line):
                 issues.append(
                     f"{rel(path)}:{line_number} contains local path risk: {pattern_name}"
+                )
+        for pattern_name, pattern in FORBIDDEN_RUNTIME_REFERENCE_PATTERNS.items():
+            if pattern.search(line):
+                issues.append(
+                    f"{rel(path)}:{line_number} contains forbidden runtime "
+                    f"reference: {pattern_name}"
                 )
         lowered = line.lower()
         if any(marker in lowered for marker in PLACEHOLDER_MARKERS):

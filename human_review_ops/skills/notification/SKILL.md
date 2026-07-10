@@ -59,7 +59,7 @@ allowed-tools:
 
 1. 校验输入来自分析阶段：`scenario_key=efficiency-label-rate`，且分级任务应为 `low_label_rate_grading`。
 2. 校验分析结果包含 `readonly_execution`、分级明细、`level_counts`、查询计划 (QueryPlan) 和来源页脚 (source_footer)。
-3. 加载通知参考资料、负责人 (POC) 路由规则、SLA 建议、卡片模板和映射资产。
+3. 加载通知通用规则、场景索引、单场景运行态文档、卡片模板和映射资产。
 4. 生成或复用负责人 (POC) 路由计划：优先按 `mach_root_label_name` 映射，`reason`、`strategy_id`、`strategy_name` 只作为证据字段。
 5. 生成通知草稿：包含等级、周期、摘要、证据、Owner 依据、置信度、限制说明和 debug_only 声明。
 6. 生成飞书卡片 (Card) 草稿：使用 Card 2.0 模板，嵌入卡片数据哈希，方便发送前核验数据是否变更。
@@ -130,14 +130,12 @@ allowed-tools:
 
 - `references/common.md`
 - `references/scenario-index.md`
-- `references/scenarios/efficiency-label-rate.owner_routing.md`
-- `references/scenarios/efficiency-label-rate.notification_templates.md`
-- `references/scenarios/efficiency-label-rate.sla.md`
+- `references/scenarios/efficiency-label-rate.md`
 - `assets/efficiency-label-rate/mach_root_label_poc_mapping.json`
 - `assets/efficiency-label-rate/low_efficiency_grading_card_template.json`
 - `assets/efficiency-label-rate/card_schema_notes.md`
 
-只读取当前场景所需文件；不从聊天上下文猜测 POC、open_id 或目标群。
+其他场景按 `references/scenario-index.md` 选择对应 `references/scenarios/<scenario_key>.md`。只读取当前 Skill 内当前场景所需文件；不读取 Skill 外部 reference 目录，不从聊天上下文猜测 POC、open_id 或目标群。
 
 ## 脚本
 

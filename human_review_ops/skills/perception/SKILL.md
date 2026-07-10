@@ -68,8 +68,7 @@ allowed-tools:
   "handoff": {
     "next_skill": "analysis",
     "required_refs": [
-      "references/scenarios/efficiency-label-rate.metric_contract.md",
-      "references/scenarios/efficiency-label-rate.dataset_reference.md"
+      "references/scenarios/efficiency-label-rate.md"
     ]
   }
 }
@@ -81,7 +80,7 @@ allowed-tools:
 
 1. 保留用户原文，不改写业务含义。
 2. 读取 `references/common.md` 和 `references/scenario-index.md`，先确认可用场景列表。
-3. 按场景索引加载最小必要参考资料；命中打标率时加载 `efficiency-label-rate` 的 manifest、指标契约、数据集说明和示例。
+3. 按场景索引加载最小必要参考资料；命中打标率时只加载 `references/scenarios/efficiency-label-rate.md`。
 4. 识别 `scenario_key`。无法唯一识别时输出 `scenario_key=unknown` 并要求澄清。
 5. 识别 `task_type`：可选值包括 `label_rate_trend`、`label_rate_ranking`、`low_label_rate_grading`、`dimension_breakdown`、`notification_request`、`resolution_tracking`、`unknown`。
 6. 识别 `metric_ids`。打标率场景默认使用 `label_rate`，相关证据指标包括 `review_in_cnt`、`review_done_cnt`、`label_cnt`。
@@ -99,12 +98,13 @@ allowed-tools:
 
 打标率场景的最小参考资料：
 
-- `references/scenarios/efficiency-label-rate.manifest.md`
-- `references/scenarios/efficiency-label-rate.metric_contract.md`
-- `references/scenarios/efficiency-label-rate.dataset_reference.md`
-- `references/scenarios/efficiency-label-rate.examples.md`
+- `references/scenarios/efficiency-label-rate.md`
 
-只读取当前问题需要的场景文件，不批量加载无关场景；不从旧目录、临时文档或记忆中猜测核心口径。
+相邻自动处置准确率场景只读取：
+
+- `references/scenarios/efficiency-auto-disposal-accuracy.md`
+
+只读取当前问题需要的单场景文件，不批量加载无关场景；不从旧目录、临时文档或记忆中猜测核心口径。
 
 ## 脚本
 
@@ -141,13 +141,13 @@ PYTHONDONTWRITEBYTECODE=1 python3 human_review_ops/tools/validators/validate_lab
 运行产品化严格校验：
 
 ```bash
-PYTHONDONTWRITEBYTECODE=1 python3 human_review_ops/tools/validators/validate_skill_productization.py --strict
+PYTHONDONTWRITEBYTECODE=1 python3 human_review_ops/tools/validators/validate_skill_productization.py --strict --skills perception
 ```
 
 人工验证点：
 
 - 输出包含 `scenario_key`、`task_type`、`run_mode`、`metric_ids`、`retrieval_policy`、`readiness`。
-- 命中打标率时指向 `efficiency-label-rate` 参考资料。
+- 命中打标率时指向 `references/scenarios/efficiency-label-rate.md`。
 - 信息不足时阻断并列出澄清字段。
 - 未执行 SQL、未发送通知、未写线上状态。
 

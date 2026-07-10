@@ -26,6 +26,12 @@ from resolve_label_rate_poc_routing import build_poc_routing_plan, load_stage_1_
 
 ROOT = Path(__file__).resolve().parents[3]
 SCENARIO_KEY = "efficiency-label-rate"
+SCENARIO_REFERENCE = "references/scenarios/efficiency-label-rate.md"
+CARD_TEMPLATE_ASSET = (
+    "assets/efficiency-label-rate/low_efficiency_grading_card_template.json"
+)
+CARD_SCHEMA_NOTES_ASSET = "assets/efficiency-label-rate/card_schema_notes.md"
+POC_MAPPING_ASSET = "assets/efficiency-label-rate/mach_root_label_poc_mapping.json"
 REPORT_TYPE = "low_efficiency_grading"
 CSV_LEVELS = ["notice", "P2", "P1", "P0"]
 CARD_LEVELS = ["P0", "P1", "P2", "notice"]
@@ -391,6 +397,12 @@ def build_summary(
         if self_send_requested
         else "draft_only_with_name_level_poc_routing",
         "source_stage_1_result": relative_to_root(source_path),
+        "reference_docs": [SCENARIO_REFERENCE],
+        "asset_refs": {
+            "poc_mapping": POC_MAPPING_ASSET,
+            "card_template": CARD_TEMPLATE_ASSET,
+            "card_schema_notes": CARD_SCHEMA_NOTES_ASSET,
+        },
         "output_dir": relative_to_root(output_dir),
         "dataset_id": provenance["dataset_id"],
         "region": provenance["region"],
@@ -578,6 +590,12 @@ def build_notification_draft(
             "metric_formula": summary.get("metric_formula"),
             "period": summary.get("period"),
             "source_footer": summary.get("source_footer"),
+            "reference_docs": [SCENARIO_REFERENCE],
+            "asset_refs": {
+                "poc_mapping": POC_MAPPING_ASSET,
+                "card_template": CARD_TEMPLATE_ASSET,
+                "card_schema_notes": CARD_SCHEMA_NOTES_ASSET,
+            },
         },
         "send_safety": {
             "current_stage": "draft_only_for_group_send",
@@ -592,6 +610,12 @@ def build_notification_draft(
             "self_preview_message_id": publish_summary.get("message_id"),
         },
         "provenance": {
+            "reference_docs": [SCENARIO_REFERENCE],
+            "asset_refs": {
+                "poc_mapping": POC_MAPPING_ASSET,
+                "card_template": CARD_TEMPLATE_ASSET,
+                "card_schema_notes": CARD_SCHEMA_NOTES_ASSET,
+            },
             "dataset_id": summary.get("dataset_id"),
             "region": summary.get("region"),
             "query_plan_id": summary.get("source_footer", {})
@@ -619,6 +643,12 @@ def build_send_plan(
         "content_source": {
             "card_json": relative_to_root(card_path),
             "notification_draft": relative_to_root(notification_draft_path),
+        },
+        "reference_docs": [SCENARIO_REFERENCE],
+        "asset_refs": {
+            "poc_mapping": POC_MAPPING_ASSET,
+            "card_template": CARD_TEMPLATE_ASSET,
+            "card_schema_notes": CARD_SCHEMA_NOTES_ASSET,
         },
         "send_identity": identity,
         "requires_confirmation": True,

@@ -15,10 +15,8 @@
       "references": [
         "perception/references/common.md",
         "perception/references/scenario-index.md",
-        "perception/references/scenarios/efficiency-label-rate.manifest.md",
-        "perception/references/scenarios/efficiency-label-rate.metric_contract.md",
-        "perception/references/scenarios/efficiency-label-rate.dataset_reference.md",
-        "perception/references/scenarios/efficiency-label-rate.examples.md"
+        "perception/references/scenarios/efficiency-label-rate.md",
+        "perception/references/scenarios/efficiency-auto-disposal-accuracy.md"
       ],
       "assets": [
         "perception/assets/README.md",
@@ -46,10 +44,8 @@
         "perception/assets/test-prompts.json",
         "perception/references/common.md",
         "perception/references/scenario-index.md",
-        "perception/references/scenarios/efficiency-label-rate.manifest.md",
-        "perception/references/scenarios/efficiency-label-rate.metric_contract.md",
-        "perception/references/scenarios/efficiency-label-rate.dataset_reference.md",
-        "perception/references/scenarios/efficiency-label-rate.examples.md",
+        "perception/references/scenarios/efficiency-label-rate.md",
+        "perception/references/scenarios/efficiency-auto-disposal-accuracy.md",
         "perception/assets/README.md",
         "perception/scripts/label_rate_perception.py"
       ]
@@ -60,10 +56,11 @@
       "references": [
         "analysis/references/common.md",
         "analysis/references/scenario-index.md",
-        "analysis/references/scenarios/efficiency-label-rate.analysis.md",
-        "analysis/references/scenarios/efficiency-label-rate.metric_contract.md",
-        "analysis/references/scenarios/efficiency-label-rate.dataset_reference.md",
-        "analysis/references/scenarios/efficiency-label-rate.examples.md"
+        "analysis/references/methods/query_plan.md",
+        "analysis/references/methods/source_footer.md",
+        "analysis/references/methods/weighted_attribution.md",
+        "analysis/references/scenarios/efficiency-label-rate.md",
+        "analysis/references/scenarios/efficiency-auto-disposal-accuracy.md"
       ],
       "assets": [
         "analysis/assets/README.md",
@@ -90,10 +87,11 @@
         "analysis/assets/test-prompts.json",
         "analysis/references/common.md",
         "analysis/references/scenario-index.md",
-        "analysis/references/scenarios/efficiency-label-rate.analysis.md",
-        "analysis/references/scenarios/efficiency-label-rate.metric_contract.md",
-        "analysis/references/scenarios/efficiency-label-rate.dataset_reference.md",
-        "analysis/references/scenarios/efficiency-label-rate.examples.md",
+        "analysis/references/methods/query_plan.md",
+        "analysis/references/methods/source_footer.md",
+        "analysis/references/methods/weighted_attribution.md",
+        "analysis/references/scenarios/efficiency-label-rate.md",
+        "analysis/references/scenarios/efficiency-auto-disposal-accuracy.md",
         "analysis/assets/README.md",
         "analysis/scripts/label_rate_analysis.py"
       ]
@@ -104,9 +102,8 @@
       "references": [
         "notification/references/common.md",
         "notification/references/scenario-index.md",
-        "notification/references/scenarios/efficiency-label-rate.notification_templates.md",
-        "notification/references/scenarios/efficiency-label-rate.owner_routing.md",
-        "notification/references/scenarios/efficiency-label-rate.sla.md"
+        "notification/references/scenarios/efficiency-label-rate.md",
+        "notification/references/scenarios/efficiency-auto-disposal-accuracy.md"
       ],
       "assets": [
         "notification/assets/test-prompts.json",
@@ -156,9 +153,8 @@
         "notification/assets/test-prompts.json",
         "notification/references/common.md",
         "notification/references/scenario-index.md",
-        "notification/references/scenarios/efficiency-label-rate.notification_templates.md",
-        "notification/references/scenarios/efficiency-label-rate.owner_routing.md",
-        "notification/references/scenarios/efficiency-label-rate.sla.md",
+        "notification/references/scenarios/efficiency-label-rate.md",
+        "notification/references/scenarios/efficiency-auto-disposal-accuracy.md",
         "notification/assets/efficiency-label-rate/card_schema_notes.md",
         "notification/assets/efficiency-label-rate/low_efficiency_grading_card_template.json",
         "notification/assets/efficiency-label-rate/mach_root_label_poc_mapping.json",
@@ -174,10 +170,8 @@
       "references": [
         "resolution/references/common.md",
         "resolution/references/scenario-index.md",
-        "resolution/references/scenarios/efficiency-label-rate.owner_routing.md",
-        "resolution/references/scenarios/efficiency-label-rate.sla.md",
-        "resolution/references/scenarios/efficiency-label-rate.state_machine.md",
-        "resolution/references/scenarios/efficiency-label-rate.examples.md"
+        "resolution/references/scenarios/efficiency-label-rate.md",
+        "resolution/references/scenarios/efficiency-auto-disposal-accuracy.md"
       ],
       "assets": [
         "resolution/assets/README.md",
@@ -198,10 +192,8 @@
         "resolution/assets/test-prompts.json",
         "resolution/references/common.md",
         "resolution/references/scenario-index.md",
-        "resolution/references/scenarios/efficiency-label-rate.owner_routing.md",
-        "resolution/references/scenarios/efficiency-label-rate.sla.md",
-        "resolution/references/scenarios/efficiency-label-rate.state_machine.md",
-        "resolution/references/scenarios/efficiency-label-rate.examples.md",
+        "resolution/references/scenarios/efficiency-label-rate.md",
+        "resolution/references/scenarios/efficiency-auto-disposal-accuracy.md",
         "resolution/assets/README.md",
         "resolution/scripts/build_label_rate_manual_tracking.py"
       ]

@@ -44,6 +44,37 @@
 
 - [x] Task 9: Refresh Stage 2 default validator targets: The no-argument Stage 2 validator commands still point to stale `20260709_low_label_rate_grading_notification_draft` artifacts, causing failures for missing `汇总统计.csv` and outdated `routing_mode` fields even though the newer `20260709_low_label_rate_grading_min_review_in_draft` artifacts pass with explicit paths.
 
+- [x] Task 10: 收敛 perception Skill 为运行态自包含单场景文档结构。
+  - [x] SubTask 10.1: 将 `perception/references/scenarios/efficiency-label-rate.*.md` 合并为 `perception/references/scenarios/efficiency-label-rate.md`，内容只保留感知阶段需要的场景标识、触发/排除、别名、task_type 判定、readiness、handoff、阻断条件和正反例。
+  - [x] SubTask 10.2: 将 `perception/references/scenarios/efficiency-auto-disposal-accuracy.*.md` 合并为同名单场景文档，避免保留外部场景包引用。
+  - [x] SubTask 10.3: 更新 `perception/SKILL.md`、`perception/references/scenario-index.md`、`perception/scripts/label_rate_perception.py` 和 release manifest，使 required refs 指向单场景文档。
+  - [x] SubTask 10.4: 运行 perception 脚本 validator 和 productization validator，确认 readiness 输出和阻断行为不回退。
+
+- [x] Task 11: 收敛 notification Skill 为运行态自包含单场景文档结构。
+  - [x] SubTask 11.1: 将 `notification/references/scenarios/efficiency-label-rate.*.md` 合并为 `notification/references/scenarios/efficiency-label-rate.md`，内容覆盖输入产物要求、POC 路由、通知模板、Card 要求、send_plan 门禁、SLA/升级话术、失败处理和正反例。
+  - [x] SubTask 11.2: 将 `notification/references/scenarios/efficiency-auto-disposal-accuracy.*.md` 合并为同名单场景文档，保留通知阶段必要信息。
+  - [x] SubTask 11.3: 保留 `assets/efficiency-label-rate/` 下 Card 模板、POC mapping JSON 和 schema notes 作为结构化资产，不合并进 Markdown。
+  - [x] SubTask 11.4: 更新 `notification/SKILL.md`、`notification/references/scenario-index.md`、notification scripts 的 reference/provenance 字段和 release manifest。
+  - [x] SubTask 11.5: 运行 notification 脚本 validator、Card/hash 校验和 Stage 2 通知相关 validator。
+
+- [x] Task 12: 收敛 resolution Skill 为运行态自包含单场景文档结构。
+  - [x] SubTask 12.1: 将 `resolution/references/scenarios/efficiency-label-rate.*.md` 合并为 `resolution/references/scenarios/efficiency-label-rate.md`，内容覆盖输入产物要求、状态机、闭环三件套、manual tracking、关闭条件、继续观察/升级规则、失败处理和正反例。
+  - [x] SubTask 12.2: 将 `resolution/references/scenarios/efficiency-auto-disposal-accuracy.*.md` 合并为同名单场景文档，保留解决阶段必要信息。
+  - [x] SubTask 12.3: 更新 `resolution/SKILL.md`、`resolution/references/scenario-index.md`、`build_label_rate_manual_tracking.py` 默认 state_machine ref 和 release manifest，移除外部根场景包依赖。
+  - [x] SubTask 12.4: 运行 resolution standalone smoke 和 Stage 2 manual tracking validator。
+
+- [x] Task 13: 更新跨 Skill 打包、校验和发布资产规则。
+  - [x] SubTask 13.1: 更新 `tools/packagers/build_skill_package.py`，让 perception、notification、resolution 也按各自定位生成单场景运行态文档。
+  - [x] SubTask 13.2: 更新 `skill_release_manifest.json`，四个 Skill 的 references 均指向单场景文档和必要 methods/assets。
+  - [x] SubTask 13.3: 增加或更新 validator，检查四个 Skill 不再引用 `../../../references/scenarios`、`human_review_ops/references/scenarios` 或旧四件套路径。
+
+- [x] Task 14: 跑通感知、分析、通知全流程并发送验证群。
+  - [x] SubTask 14.1: 运行严格回归：`validate_skill_productization.py --strict`、`validate_skill_standalone_smoke.py`、perception/analysis/notification/resolution 脚本 validator、Stage 1/Stage 2 关键 validator、AgentBuddy publish validator 和 `git diff --check`。
+  - [x] SubTask 14.2: 使用真实或已保存的当前 canonical stage artifact 跑通 `perception -> analysis -> notification`，确认输出包含 readiness、QueryPlan、source_footer、notification_draft、Card、poc_routing_plan、send_plan。
+  - [x] SubTask 14.3: 定位“验证群”的唯一目标群；若无法从配置或用户上下文中唯一确定 chat_id，则记录阻断原因，不伪造发送。
+  - [x] SubTask 14.4: 在目标群唯一且权限满足时发送验证摘要；发送内容必须包含本次结构调整摘要、关键验证命令结果、send_plan/card 产物路径和未执行线上写入声明。
+  - [x] SubTask 14.5: 将发送结果或阻断原因记录到本规格 progress，并更新 checklist。
+
 # Task Dependencies
 
 - Task 2 depends on Task 1.
@@ -52,9 +83,14 @@
 - Task 5 depends on Task 1 and Task 2.
 - Task 6 depends on Task 3, Task 4, and Task 5.
 - Task 7 depends on Task 6.
+- Task 10、Task 11、Task 12 可并行执行。
+- Task 13 depends on Task 10、Task 11、Task 12.
+- Task 14 depends on Task 13.
 
 # Parallelization Notes
 
 - Task 3、Task 4、Task 5 在 Task 1 和 Task 2 完成后可并行实施。
 - Task 3 和 Task 4 的 runner 改造需要分别保持阶段 1、阶段 2 既有 validator 通过。
 - Task 6 的 standalone smoke validator 依赖前三类 Skill 脚本稳定后再统一接入。
+- Task 10、Task 11、Task 12 的目录合并可由不同子 Agent 并行处理，但都必须遵守各自 Skill 定位。
+- Task 14 的验证群发送必须在所有回归通过后执行；若缺少唯一群标识，不得使用猜测目标。

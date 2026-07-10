@@ -12,3 +12,12 @@
 - [x] 场景包校验、AgentBuddy 发布校验、POC 映射校验、阶段 1/阶段 2 相关 validator 均通过。
 - [x] 全部变更已提交并推送到 `origin/main`。
 - [x] Stage 2 default validator commands pass without manual output-dir overrides against the current canonical artifacts.
+- [x] perception Skill 使用单场景运行态文档，不再保留同场景 `manifest / metric_contract / dataset_reference / examples` 四件套。
+- [x] notification Skill 使用单场景运行态文档，不再保留同场景 `owner_routing / notification_templates / sla` 多 Markdown 切片；Card 模板和 POC 映射仍保留为 assets。
+- [x] resolution Skill 使用单场景运行态文档，不再保留同场景 `state_machine / sla / owner_routing / examples` 四件套。
+- [x] 四个 Skill 的 scenario-index、SKILL.md、脚本 reference/provenance 和 `skill_release_manifest.json` 均指向 Skill 内部单场景文档。
+- [x] `tools/packagers/build_skill_package.py` 能为四个 Skill 生成对应定位的单场景运行态文档。
+- [x] 全仓扫描确认四个 Skill 不再引用 `../../../references/scenarios`、`human_review_ops/references/scenarios` 或旧四件套路径作为运行态资料。
+- [x] 严格回归通过：productization、standalone smoke、perception/analysis/notification/resolution 脚本 validator、Stage 1/Stage 2 关键 validator、AgentBuddy publish validator 和 `git diff --check`。
+- [x] 感知、分析、通知流程可跑通，并产出 readiness、QueryPlan、source_footer、notification_draft、Card、poc_routing_plan 和 send_plan。
+- [x] 验证群发送完成；若无法唯一定位验证群或权限不足，则记录明确阻断原因且不伪造发送结果。

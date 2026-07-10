@@ -2,31 +2,28 @@
 
 ## efficiency-auto-disposal-accuracy
 
-调试态快照：
+运行态场景文档：
 
-- `scenarios/efficiency-auto-disposal-accuracy.owner_routing.md`
-- `scenarios/efficiency-auto-disposal-accuracy.notification_templates.md`
-- `scenarios/efficiency-auto-disposal-accuracy.sla.md`
+- `scenarios/efficiency-auto-disposal-accuracy.md`
 
-目标态场景包：
+用途：
 
-- `../../../references/scenarios/efficiency-auto-disposal-accuracy/`
+- 自动处置准确率异常的通知草稿、Owner 路由建议、send_plan 门禁、SLA 和失败处理。
 
 ## efficiency-label-rate
 
-调试态快照：
+运行态场景文档：
 
-- `scenarios/efficiency-label-rate.owner_routing.md`
-- `scenarios/efficiency-label-rate.notification_templates.md`
-- `scenarios/efficiency-label-rate.sla.md`
-
-目标态场景包：
-
-- `../../../references/scenarios/efficiency-label-rate/`
+- `scenarios/efficiency-label-rate.md`
 
 卡片资产与脚本：
 
-- `../../assets/efficiency-label-rate/low_efficiency_grading_card_template.json`
-- `../../assets/efficiency-label-rate/card_schema_notes.md`
-- `../../scripts/render_label_rate_grading_card.py`
-- `../../scripts/card_hash.py`
+- `../assets/efficiency-label-rate/low_efficiency_grading_card_template.json`
+- `../assets/efficiency-label-rate/card_schema_notes.md`
+- `../assets/efficiency-label-rate/mach_root_label_poc_mapping.json`
+- `../scripts/render_label_rate_grading_card.py`
+- `../scripts/card_hash.py`
+
+用途：
+
+- 低打标率分级结果的通知草稿、POC 路由、Card 草稿、send_plan 门禁、SLA 和失败处理。

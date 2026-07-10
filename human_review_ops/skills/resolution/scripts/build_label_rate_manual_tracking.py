@@ -19,7 +19,7 @@ def main() -> None:
     parser.add_argument("--output", required=True)
     parser.add_argument(
         "--state-machine-ref",
-        default="human_review_ops/references/scenarios/efficiency-label-rate/state_machine.md",
+        default="references/scenarios/efficiency-label-rate.md#状态机",
     )
     args = parser.parse_args()
 

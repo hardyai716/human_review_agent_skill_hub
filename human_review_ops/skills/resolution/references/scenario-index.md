@@ -2,26 +2,36 @@
 
 ## efficiency-auto-disposal-accuracy
 
-调试态快照：
+运行态场景文档：
 
-- `scenarios/efficiency-auto-disposal-accuracy.state_machine.md`
-- `scenarios/efficiency-auto-disposal-accuracy.sla.md`
-- `scenarios/efficiency-auto-disposal-accuracy.owner_routing.md`
-- `scenarios/efficiency-auto-disposal-accuracy.examples.md`
+- `scenarios/efficiency-auto-disposal-accuracy.md`
 
-目标态场景包：
+关键章节：
 
-- `../../../references/scenarios/efficiency-auto-disposal-accuracy/`
+- `scenarios/efficiency-auto-disposal-accuracy.md#输入产物要求`
+- `scenarios/efficiency-auto-disposal-accuracy.md#状态机`
+- `scenarios/efficiency-auto-disposal-accuracy.md#闭环三件套`
+- `scenarios/efficiency-auto-disposal-accuracy.md#manual-tracking`
+- `scenarios/efficiency-auto-disposal-accuracy.md#owner-路由`
+- `scenarios/efficiency-auto-disposal-accuracy.md#sla继续观察与升级`
+- `scenarios/efficiency-auto-disposal-accuracy.md#关闭条件`
+- `scenarios/efficiency-auto-disposal-accuracy.md#失败处理`
+- `scenarios/efficiency-auto-disposal-accuracy.md#正反例`
 
 ## efficiency-label-rate
 
-调试态快照：
+运行态场景文档：
 
-- `scenarios/efficiency-label-rate.state_machine.md`
-- `scenarios/efficiency-label-rate.sla.md`
-- `scenarios/efficiency-label-rate.owner_routing.md`
-- `scenarios/efficiency-label-rate.examples.md`
+- `scenarios/efficiency-label-rate.md`
 
-目标态场景包：
+关键章节：
 
-- `../../../references/scenarios/efficiency-label-rate/`
+- `scenarios/efficiency-label-rate.md#输入产物要求`
+- `scenarios/efficiency-label-rate.md#状态机`
+- `scenarios/efficiency-label-rate.md#闭环三件套`
+- `scenarios/efficiency-label-rate.md#manual-tracking`
+- `scenarios/efficiency-label-rate.md#poc--owner-路由`
+- `scenarios/efficiency-label-rate.md#sla继续观察与升级`
+- `scenarios/efficiency-label-rate.md#关闭条件`
+- `scenarios/efficiency-label-rate.md#失败处理`
+- `scenarios/efficiency-label-rate.md#正反例`

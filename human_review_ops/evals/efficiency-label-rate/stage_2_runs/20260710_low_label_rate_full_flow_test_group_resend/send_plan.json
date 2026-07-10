@@ -1,0 +1,41 @@
+{
+  "schema_version": "stage_2_send_plan.v1",
+  "scenario_key": "efficiency-label-rate",
+  "report_type": "low_efficiency_grading",
+  "plan_mode": "manual_confirmation_required",
+  "target_type": "future_group_or_name_level_poc_after_confirmation",
+  "target_source": "evals/efficiency-label-rate/stage_2_runs/20260710_low_label_rate_full_flow_test_group_resend/poc_routing_plan.json",
+  "content_source": {
+    "card_json": "evals/efficiency-label-rate/stage_2_runs/20260710_low_label_rate_full_flow_test_group_resend/publish/low_efficiency_grading.card.json",
+    "notification_draft": "evals/efficiency-label-rate/stage_2_runs/20260710_low_label_rate_full_flow_test_group_resend/notification_draft.json"
+  },
+  "reference_docs": [
+    "references/scenarios/efficiency-label-rate.md"
+  ],
+  "asset_refs": {
+    "poc_mapping": "assets/efficiency-label-rate/mach_root_label_poc_mapping.json",
+    "card_template": "assets/efficiency-label-rate/low_efficiency_grading_card_template.json",
+    "card_schema_notes": "assets/efficiency-label-rate/card_schema_notes.md"
+  },
+  "send_identity": "bot",
+  "requires_confirmation": true,
+  "confirmation_status": "not_requested",
+  "group_send_blocked": true,
+  "group_send_allowed": false,
+  "group_recipients": [],
+  "sent": false,
+  "real_group_send_executed": false,
+  "online_write_executed": false,
+  "blocked_reason": "Stage 2 has name-level POC routing only. Feishu open_id resolution, target chat confirmation, and explicit confirmation are required before real POC/group sending.",
+  "self_preview": {
+    "default_recipient": "self",
+    "sent": true,
+    "message_id": "om_x100b6a331c5024a0b043a0c2a93880a"
+  },
+  "required_before_real_send": [
+    "resolve POC names to confirmed Feishu open_id",
+    "confirm target chat or POC recipients",
+    "confirm send identity and content",
+    "run validator with group-send gate enabled"
+  ]
+}

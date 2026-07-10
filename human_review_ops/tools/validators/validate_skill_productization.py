@@ -24,6 +24,20 @@ LOCAL_PATH_PATTERNS = {
     "windows_user_home": re.compile(r"[A-Za-z]:\\Users\\"),
     "workspace_desktop_path": re.compile(r"Desktop/人审运营"),
 }
+FORBIDDEN_RUNTIME_REFERENCE_PATTERNS = {
+    "external_relative_scenario_package": re.compile(
+        r"\.\./\.\./\.\./references/scenarios"
+    ),
+    "external_human_review_ops_scenario_package": re.compile(
+        r"human_review_ops/references/scenarios"
+    ),
+    "split_runtime_scenario_markdown": re.compile(
+        r"(?:references/scenarios/|scenarios/|/)"
+        r"(?:efficiency-label-rate|efficiency-auto-disposal-accuracy)"
+        r"\.(?:manifest|metric_contract|dataset_reference|analysis|examples|"
+        r"notification_templates|owner_routing|sla|state_machine)\.md\b"
+    ),
+}
 STRICT_REQUIRED_SECTIONS = {
     "trigger": ("触发条件", "Use When", "When to Use", "Trigger"),
     "do-not-use": ("禁止使用", "不适用", "Do Not Use", "Do-not-use", "Do not use"),
@@ -71,6 +85,8 @@ def validate_release_manifest(skills: list[str], issues: list[str]) -> None:
     if not MANIFEST_PATH.exists():
         issues.append(f"Missing release manifest: {rel(MANIFEST_PATH)}")
         return
+
+    scan_forbidden_runtime_references(MANIFEST_PATH, issues)
 
     try:
         manifest = load_json_object(MANIFEST_PATH)
@@ -321,6 +337,25 @@ def validate_no_local_paths(skill_dir: Path, issues: list[str]) -> None:
                     issues.append(
                         f"{rel(path)}:{line_number} contains local path risk: {pattern_name}"
                     )
+            for pattern_name, pattern in FORBIDDEN_RUNTIME_REFERENCE_PATTERNS.items():
+                if pattern.search(line):
+                    issues.append(
+                        f"{rel(path)}:{line_number} contains forbidden runtime "
+                        f"reference: {pattern_name}"
+                    )
+
+
+def scan_forbidden_runtime_references(path: Path, issues: list[str]) -> None:
+    if not path.is_file() or path.suffix not in TEXT_SUFFIXES:
+        return
+    text = path.read_text(encoding="utf-8", errors="ignore")
+    for line_number, line in enumerate(text.splitlines(), start=1):
+        for pattern_name, pattern in FORBIDDEN_RUNTIME_REFERENCE_PATTERNS.items():
+            if pattern.search(line):
+                issues.append(
+                    f"{rel(path)}:{line_number} contains forbidden runtime "
+                    f"reference: {pattern_name}"
+                )
 
 
 def validate_skill(skill: str, strict: bool, issues: list[str]) -> dict[str, int | str]:

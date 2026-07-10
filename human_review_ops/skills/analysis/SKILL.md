@@ -1,6 +1,6 @@
 ---
 name: analyzing-ops-metrics
-description: "当用户需要对已识别的人审运营指标或 efficiency-label-rate 打标率场景做只读分析时使用；生成查询计划 (QueryPlan)、受控 SQL、分级结果、source_footer 和 provenance，不生成通知、不发送消息、不写线上状态。"
+description: "当用户需要对已识别的人审运营指标或场景做只读分析时使用；生成 QueryPlan、受控 SQL、分析结果、source_footer 和 provenance；不识别未知场景、不通知、不写状态。"
 allowed-tools:
   - Read
   - Bash
@@ -8,12 +8,14 @@ allowed-tools:
 
 # 分析 Skill
 
+本 Skill 是运行态自包含分析包。所有分析口径、数据源、分析模式和正反例必须从本目录 `references/` 读取，不依赖 `human_review_ops/references/` 外部场景包。
+
 ## 触发条件
 
 当用户需要对已识别的人审运营指标或场景做查询计划 (QueryPlan)、只读查询、字段选择、趋势、排序、低效分级或结论输出时使用本技能 (Skill)。
 
 - 上游感知技能 (perception Skill) 已输出 `scenario_key`、`metric_ids`、`task_type` 和 `readiness.status=ready`。
-- 用户直接要求分析打标率、进审量、完审量、打标量、高/低打标 reason、低效策略分级或维度拆解。
+- 用户直接要求分析打标率、进审量、完审量、打标量、自动处置准确率、高/低打标 reason、低效策略分级或维度拆解。
 - 用户要求输出可复核口径、受控 SQL、数据证据、分级结果或来源页脚 (source_footer)。
 - 用户要求先生成查询计划 (QueryPlan)，再由有权限的宿主 Agent 或 runner 执行只读查询。
 
@@ -25,6 +27,7 @@ allowed-tools:
 - 不执行 DDL、DML、INSERT、UPDATE、DELETE、MERGE、DROP、CREATE、ALTER、TRUNCATE、写临时线上表或任何有副作用操作。
 - 不使用未授权数据源、无 Owner 字段、已废弃表、临时表、敏感个人明细或用户未确认的样本池覆盖。
 - 不把查询失败、权限失败、分区未就绪解释为业务“无异常”。
+- 不读取 `human_review_ops/references/`、旧 Skill、历史 SQL 或未确认记忆来补运行态口径。
 
 ## 输入
 
@@ -61,14 +64,47 @@ allowed-tools:
 ## 工作流
 
 1. 确认 `scenario_key` 和 `metric_ids` 已就绪；不明确时停止并交回感知技能。
-2. 按参考资料加载顺序读取场景索引、指标契约、数据集说明和分析规则。
-3. 生成查询计划 (QueryPlan)，并在执行前完成字段、权限、分区、新鲜度和样本池检查。
-4. 构造 SQL 或只读执行请求。打标率必须使用 `SUM(label_cnt) / SUM(review_done_cnt)` 重算，不直接聚合已有比率字段。
-5. 执行只读门禁：只有宿主 Agent 或 runner 具备只读工具权限，且 QueryPlan 未命中禁用来源，才能执行查询。
-6. 做质量检查：分区是否就绪、分母是否为 0、字段映射是否确认、结果行数是否合理、是否有 NULL 维度。
-7. 按 `task_type` 输出趋势、排序、低效分级或维度拆解。低效分级默认输出 `notice`、`P2`、`P1`、`P0` 全等级。
-8. 生成来源页脚 (source_footer)，并把口径、过滤、数据源、限制和人工确认项写清楚。
-9. 遇到失败或阻断时停止，不输出业务结论，只输出 `stop_reason` 和下一步澄清/修复建议。
+2. 按固定加载顺序读取 `references/common.md`、`references/scenario-index.md`、一个场景文档和必要的 `references/methods/*.md`。
+3. 从场景文档读取指标口径、数据源字段、过滤、分析模式、失败条件和正反例。
+4. 生成 QueryPlan，并在执行前完成字段、权限、分区、新鲜度和样本池检查。
+5. 构造 SQL 或只读执行请求。比率类指标必须用分子和分母重新计算，不直接聚合已有比率字段。
+6. 执行只读门禁：只有宿主 Agent 或 runner 具备只读工具权限，且 QueryPlan 未命中禁用来源，才能执行查询。
+7. 做质量检查：分区是否就绪、分母是否为 0、字段映射是否确认、结果行数是否合理、是否有 NULL 维度。
+8. 按 `task_type` 输出趋势、排序、低效分级或维度拆解。低效分级只在场景文档声明的模式中启用。
+9. 生成 source_footer，把口径、过滤、数据源、限制和人工确认项写清楚。
+10. 遇到失败或阻断时停止，不输出业务结论，只输出 `stop_reason` 和下一步澄清/修复建议。
+
+每次只加载一个场景文档。不要为同一场景继续拆读 `metric_contract`、`dataset_reference`、`analysis`、`examples` 四类文件；这些内容已经合并到 `references/scenarios/<scenario_key>.md`。
+
+## 参考资料加载
+
+加载顺序固定如下：
+
+1. `references/common.md`
+2. `references/scenario-index.md`
+3. `references/scenarios/<scenario_key>.md`
+4. 仅当场景文档要求时，读取 `references/methods/query_plan.md`、`references/methods/source_footer.md` 或 `references/methods/weighted_attribution.md`
+
+当前场景文档：
+
+| `scenario_key` | 场景文档 | 适用指标 |
+| --- | --- | --- |
+| `efficiency-label-rate` | `references/scenarios/efficiency-label-rate.md` | `label_rate`、`review_in_cnt`、`review_done_cnt`、`label_cnt` |
+| `efficiency-auto-disposal-accuracy` | `references/scenarios/efficiency-auto-disposal-accuracy.md` | `auto_disposal_accuracy` |
+
+场景文档必须自包含以下章节：
+
+- 场景元信息
+- 触发与排除
+- 指标口径
+- 数据源与字段
+- 默认过滤
+- 支持维度
+- 分析模式
+- QueryPlan 要求
+- 输出要求
+- 失败处理
+- 正反例
 
 ## QueryPlan 与 SQL
 
@@ -90,8 +126,8 @@ allowed-tools:
 
 打标率 SQL 规则：
 
-- 默认样本池必须复用 `references/scenarios/efficiency-label-rate.metric_contract.md` 中的过滤片段，不在 `SKILL.md` 重复维护。
-- 默认治理数据源和字段映射以 `references/scenarios/efficiency-label-rate.dataset_reference.md` 为准。
+- 默认样本池必须复用 `references/scenarios/efficiency-label-rate.md#默认过滤` 中的过滤片段，不在 `SKILL.md` 重复维护。
+- 默认治理数据源和字段映射以 `references/scenarios/efficiency-label-rate.md#数据源与字段` 为准。
 - 标准分析粒度为 `mach_root_label_name × strategy_id × strategy_name × reason`，除非用户要求更粗或更细粒度且字段已治理。
 - 跨天、跨 reason、跨标签聚合时，必须分别 `SUM(label_cnt)` 和 `SUM(review_done_cnt)` 后重算 `label_rate`。
 - 用户指定新维度时，先通过语义层或数据集字段发现确认字段含义、粒度和权限；未确认前不得拼接字段名。
@@ -107,9 +143,18 @@ allowed-tools:
 - 某等级无命中时写“本期 0 条”；查询失败时写失败原因，不写“0 条”。
 - 高打标率、普通趋势或普通排序不套用低效分级。
 
-分级阈值和细节以 `references/scenarios/efficiency-label-rate.analysis.md` 和指标契约为准；不要在手册中复制完整规则。
+分级阈值和细节以 `references/scenarios/efficiency-label-rate.md#模式-b低打标率分级` 为准。
 
-## source_footer
+## 归因
+
+打标率下降归因默认使用“策略加权影响”作为主排序口径；Rate / Mix Effect 作为二级解释字段。
+
+- 主排序字段：`weighted_impact = cur_share * cur_rate - prev_share * prev_rate`
+- 维度主键：`mach_root_label_name × strategy_id × strategy_name`
+- `strategy_id` 是稳定主键，`strategy_name` 只用于展示。
+- 需要具体公式、输出字段和边界时读取 `references/methods/weighted_attribution.md`。
+
+## Source Footer
 
 来源页脚 (source_footer) 必须包含：
 
@@ -127,6 +172,8 @@ allowed-tools:
 - `limitations`
 - `run_mode`
 
+在单文档场景结构下，`metric_contract_ref`、`dataset_reference_ref`、`analysis_ref` 可以都指向同一个 `references/scenarios/<scenario_key>.md` 的不同章节锚点。不得指向 Skill 外部场景包。
+
 如果用户覆盖样本池、使用新增维度或 fallback 到受控原始 SQL，必须在 `source_footer.limitations` 和 `QueryPlan.fallback_reason` 中说明原因。
 
 ## 只读查询边界
@@ -136,23 +183,6 @@ allowed-tools:
 - 允许读取语义层、治理数据集或受控原始表；禁止读取无治理、无 Owner、临时、废弃或敏感明细来源。
 - 只读执行失败时，保留工具错误、QueryPlan 和 source_footer，不输出业务结论。
 - 不把只读查询结果写入线上状态、工单、飞书消息或持久化业务表。
-
-## 参考资料加载
-
-加载顺序固定如下：
-
-1. `references/common.md`
-2. `references/scenario-index.md`
-3. 场景索引中列出的指标契约、数据集说明、分析规则和示例。
-
-打标率场景的最小参考资料：
-
-- `references/scenarios/efficiency-label-rate.metric_contract.md`
-- `references/scenarios/efficiency-label-rate.dataset_reference.md`
-- `references/scenarios/efficiency-label-rate.analysis.md`
-- `references/scenarios/efficiency-label-rate.examples.md`
-
-只读取当前场景所需文件；不从旧 Skill、临时 SQL 或未确认记忆中补业务口径。
 
 ## 脚本
 
@@ -203,8 +233,10 @@ python3 human_review_ops/tools/validators/validate_skill_standalone_smoke.py
 - 每次查询前都有查询计划 (QueryPlan)。
 - SQL 只读，且未出现写入、建表、删表或线上状态更新。
 - 打标率按 `SUM(label_cnt) / SUM(review_done_cnt)` 重算。
+- 打标率归因排序默认使用 `weighted_impact`。
 - 低效分级只在 `low_label_rate_grading` 模式启用。
 - 输出包含来源页脚 (source_footer) 和质量检查结果。
+- Skill 内部不再存在同场景四件套文件；每个场景只有一个 `references/scenarios/<scenario_key>.md`。
 
 ## 示例
 
@@ -230,8 +262,9 @@ python3 human_review_ops/tools/validators/validate_skill_standalone_smoke.py
     "requires_host_readonly_tool": true
   },
   "source_footer": {
-    "metric_contract_ref": "references/scenarios/efficiency-label-rate.metric_contract.md",
-    "dataset_reference_ref": "references/scenarios/efficiency-label-rate.dataset_reference.md"
+    "metric_contract_ref": "references/scenarios/efficiency-label-rate.md#指标口径",
+    "dataset_reference_ref": "references/scenarios/efficiency-label-rate.md#数据源与字段",
+    "analysis_ref": "references/scenarios/efficiency-label-rate.md#分析模式"
   }
 }
 ```

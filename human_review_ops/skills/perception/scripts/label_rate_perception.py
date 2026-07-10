@@ -23,11 +23,9 @@ ANALYSIS_TASK_TYPES = {
 REFERENCE_FILES = [
     "references/common.md",
     "references/scenario-index.md",
-    "references/scenarios/efficiency-label-rate.manifest.md",
-    "references/scenarios/efficiency-label-rate.metric_contract.md",
-    "references/scenarios/efficiency-label-rate.dataset_reference.md",
-    "references/scenarios/efficiency-label-rate.examples.md",
+    "references/scenarios/efficiency-label-rate.md",
 ]
+SCENARIO_REFERENCE_FILES = ["references/scenarios/efficiency-label-rate.md"]
 LABEL_RATE_KEYWORDS = (
     "打标率",
     "低打标",
@@ -458,7 +456,7 @@ def build_handoff(
         if readiness.get("status") == "ready"
         else None,
         "candidate_next_skill": candidate_next_skill,
-        "required_refs": REFERENCE_FILES if scenario_key == SCENARIO_KEY else [],
+        "required_refs": SCENARIO_REFERENCE_FILES if scenario_key == SCENARIO_KEY else [],
         "required_inputs": readiness.get("clarification_fields", []),
         "blocked_until": readiness.get("blocking_reasons", []),
     }

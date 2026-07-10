@@ -58,7 +58,7 @@ allowed-tools:
 
 ## 工作流
 
-1. 加载状态机、SLA、Owner 路由和示例参考资料。
+1. 加载当前场景单文档，读取状态机、SLA、Owner 路由、manual tracking、关闭条件和示例章节。
 2. 校验输入来自前置阶段：分析结果应有 source_footer，通知阶段应有 `notification_draft` 和 `send_plan`。
 3. 校验发送计划 (send_plan)：如果 `group_send_blocked=true` 或 `sent=false`，不得记录为“已发送”。
 4. 建立状态流转：从 `NOTIFICATION_DRAFTED`、`MANUAL_TRACKING_RECORDED`、异常状态或用户指定状态推导 `next_state`。
@@ -100,7 +100,7 @@ allowed-tools:
 
 ## 状态流转
 
-状态流转以 `references/scenarios/efficiency-label-rate.state_machine.md` 为准。
+状态流转以 `references/scenarios/efficiency-label-rate.md#状态机` 为准。
 
 常见路径：
 
@@ -140,12 +140,9 @@ allowed-tools:
 
 - `references/common.md`
 - `references/scenario-index.md`
-- `references/scenarios/efficiency-label-rate.state_machine.md`
-- `references/scenarios/efficiency-label-rate.sla.md`
-- `references/scenarios/efficiency-label-rate.owner_routing.md`
-- `references/scenarios/efficiency-label-rate.examples.md`
+- 当前场景主文档，例如 `references/scenarios/efficiency-label-rate.md`
 
-只读取当前场景所需文件；不从通知草稿中推断未记录的真实发送状态。
+只读取当前场景所需文件和章节；不从通知草稿中推断未记录的真实发送状态。
 
 ## 脚本
 
@@ -156,7 +153,7 @@ allowed-tools:
 脚本示例：
 
 ```bash
-python3 human_review_ops/skills/resolution/scripts/build_label_rate_manual_tracking.py --notification-draft <notification_draft.json> --send-plan <send_plan.json> --output <manual_tracking.json> --state-machine-ref human_review_ops/skills/resolution/references/scenarios/efficiency-label-rate.state_machine.md
+python3 human_review_ops/skills/resolution/scripts/build_label_rate_manual_tracking.py --notification-draft <notification_draft.json> --send-plan <send_plan.json> --output <manual_tracking.json> --state-machine-ref references/scenarios/efficiency-label-rate.md#状态机
 ```
 
 脚本只写本地输出文件；不得把它包装成线上状态写入。

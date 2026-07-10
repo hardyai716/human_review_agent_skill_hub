@@ -30,16 +30,16 @@ METRIC_FORMULA = (
     "`label_rate` = SUM(`[打标量__reviewid]`) / SUM(`[完审量_reviewid]`)"
 )
 RULE_SOURCE = (
-    "human_review_ops/references/scenarios/efficiency-label-rate/analysis.md#模式-b低打标率分级"
+    "human_review_ops/skills/analysis/references/scenarios/efficiency-label-rate.md#模式-b低打标率分级"
 )
 METRIC_CONTRACT_PATH = (
-    "human_review_ops/references/scenarios/efficiency-label-rate/metric_contract.md"
+    "human_review_ops/skills/analysis/references/scenarios/efficiency-label-rate.md#指标口径"
 )
 DATASET_REFERENCE_PATH = (
-    "human_review_ops/references/scenarios/efficiency-label-rate/dataset_reference.md"
+    "human_review_ops/skills/analysis/references/scenarios/efficiency-label-rate.md#数据源与字段"
 )
 ANALYSIS_RULE_PATH = (
-    "human_review_ops/references/scenarios/efficiency-label-rate/analysis.md"
+    "human_review_ops/skills/analysis/references/scenarios/efficiency-label-rate.md#分析模式"
 )
 LEVEL_ORDER = ["P0", "P1", "P2", "notice"]
 LEVEL_PRIORITY = {"P0": 0, "P1": 1, "P2": 2, "notice": 3}

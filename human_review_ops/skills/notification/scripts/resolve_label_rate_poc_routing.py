@@ -10,6 +10,8 @@ from typing import Any
 
 
 LEVEL_ORDER = ["notice", "P2", "P1", "P0"]
+SCENARIO_REFERENCE = "references/scenarios/efficiency-label-rate.md"
+POC_MAPPING_ASSET = "assets/efficiency-label-rate/mach_root_label_poc_mapping.json"
 DEFAULT_POC_MAPPING_PATH = (
     Path(__file__).resolve().parents[1]
     / "assets"
@@ -173,6 +175,10 @@ def build_custom_dimension_poc_routing_plan(
         "report_type": "custom_label_rate_breakdown",
         "source_result": source_result,
         "source_sheet_url": sheet_url,
+        "reference_docs": [SCENARIO_REFERENCE],
+        "asset_refs": {
+            "poc_mapping": POC_MAPPING_ASSET,
+        },
         "routing_mode": "mach_root_label_mapping",
         "routing_key": "mach_root_label_name",
         "real_poc_mapping_used": bool(mapped),
@@ -295,6 +301,10 @@ def build_poc_routing_plan(
         "scenario_key": "efficiency-label-rate",
         "report_type": "low_efficiency_grading",
         "source_stage_1_result": source_stage_1_result,
+        "reference_docs": [SCENARIO_REFERENCE],
+        "asset_refs": {
+            "poc_mapping": POC_MAPPING_ASSET,
+        },
         "routing_mode": "mach_root_label_mapping",
         "routing_key": "mach_root_label_name",
         "fallback_to_default_user": bool(unmapped or missing),
@@ -328,6 +338,10 @@ def build_poc_routing_plan(
             "online_state_write_allowed": False,
         },
         "provenance": {
+            "reference_docs": [SCENARIO_REFERENCE],
+            "asset_refs": {
+                "poc_mapping": POC_MAPPING_ASSET,
+            },
             "source_footer": sample.get("source_footer", {}),
             "query_plan_id": sample.get("QueryPlan", {}).get("query_plan_id"),
             "readonly_execution_mode": True,

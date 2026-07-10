@@ -1,0 +1,28 @@
+{
+  "report_type": "low_efficiency_grading",
+  "scenario_key": "efficiency-label-rate",
+  "source_stage_1_result": "evals/efficiency-label-rate/stage_1_runs/20260710_low_label_rate_full_flow_results.jsonl",
+  "output_dir": "evals/efficiency-label-rate/stage_2_runs/20260710_low_label_rate_full_flow_test_group_resend",
+  "summary_json": "evals/efficiency-label-rate/stage_2_runs/20260710_low_label_rate_full_flow_test_group_resend/summary.json",
+  "workbook": "evals/efficiency-label-rate/stage_2_runs/20260710_low_label_rate_full_flow_test_group_resend/low_label_rate_grading_2026-07-03_2026-07-09.xlsx",
+  "summary_by_label_poc_csv": "evals/efficiency-label-rate/stage_2_runs/20260710_low_label_rate_full_flow_test_group_resend/汇总统计.csv",
+  "sheet_url": "https://bytedance.larkoffice.com/sheets/Gp3Vs7DI2hL6oKtWHIscVOcWnJe",
+  "card_json": "evals/efficiency-label-rate/stage_2_runs/20260710_low_label_rate_full_flow_test_group_resend/publish/low_efficiency_grading.card.json",
+  "card_json_with_meta": "evals/efficiency-label-rate/stage_2_runs/20260710_low_label_rate_full_flow_test_group_resend/publish/low_efficiency_grading.card.with_meta.json",
+  "card_hash_check": "evals/efficiency-label-rate/stage_2_runs/20260710_low_label_rate_full_flow_test_group_resend/publish/card_hash_check.json",
+  "sent": true,
+  "send_identity": "bot",
+  "target_type": "chat",
+  "target_user": null,
+  "target_user_open_id_prefix": null,
+  "target_chat_id": "oc_9c691aa76c22a16207c6f443eac25816",
+  "message_id": "om_x100b6a331c5024a0b043a0c2a93880a",
+  "send_result": {
+    "ok": true,
+    "identity": "bot",
+    "message_id": "om_x100b6a331c5024a0b043a0c2a93880a",
+    "create_time": "2026-07-10 12:29:30"
+  },
+  "notification_draft": "evals/efficiency-label-rate/stage_2_runs/20260710_low_label_rate_full_flow_test_group_resend/notification_draft.json",
+  "send_plan": "evals/efficiency-label-rate/stage_2_runs/20260710_low_label_rate_full_flow_test_group_resend/send_plan.json"
+}
