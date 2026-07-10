@@ -35,7 +35,7 @@
   - [x] SubTask 7.3: 跑 runner import 冒烟：确认 `run_stage_1_real_readonly_label_rate_grading.py` 仍能 import skill 脚本（不执行真实查询）
   - [x] SubTask 7.4: `git diff --check`；对抗式复查每个改动点是否引入回归
 
-- [ ] Task 8: 提交并推送收敛改动到 origin/main
+- [x] Task 8: 提交并推送收敛改动到 origin/main
 
 # Task Dependencies
 
