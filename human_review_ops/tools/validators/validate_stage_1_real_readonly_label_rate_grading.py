@@ -40,10 +40,11 @@ REQUIRED_SQL_SNIPPETS = [
     "`[scene]` IN ('community_audit_safe', 'community_audit_style', 'community_audit_moderate')",
     "`[reason]` NOT IN ('recall_skip_L6', 'fatal_output')",
     "`[机审一级标签]` IS NULL OR `[机审一级标签]` IN",
-    "ifNull(`[机审一级标签]`, '（空/机审一级标签）') AS mach_root_label_name",
-    "ifNull(`[strategy_id]`, '（空/strategy_id）') AS strategy_id",
-    "ifNull(`[strategy_name]`, '（空/strategy_name）') AS strategy_name",
-    "GROUP BY mach_root_label_name, strategy_id, strategy_name, reason",
+    "ifNull(`[机审一级标签]`, '（空/机审一级标签）') AS mach_root_label_key",
+    "ifNull(`[strategy_id]`, '（空/strategy_id）') AS strategy_id_key",
+    "ifNull(`[strategy_name]`, '（空/strategy_name）') AS strategy_name_key",
+    "ifNull(`[reason]`, '（空/reason）') AS reason_key",
+    "GROUP BY mach_root_label_key, strategy_id_key, strategy_name_key, reason_key",
     "SUM(jin_shen) / COUNT(DISTINCT dt) AS avg_review_in_cnt",
     "if(SUM(wan_shen) = 0, 0, SUM(da_biao) / SUM(wan_shen)) AS label_rate",
     "cur.total_review_in_cnt > 100",
@@ -154,6 +155,10 @@ def assert_query_plan(sample: dict[str, Any]) -> None:
         for snippet in REQUIRED_SQL_SNIPPETS + LEVEL_WINDOW_SNIPPETS[level]:
             if snippet not in sql:
                 raise AssertionError(f"{level} SQL missing snippet: {snippet}")
+        if "AS mach_root_label_name,\n    ifNull(`[strategy_id]`" in sql:
+            raise AssertionError(
+                f"{level} SQL regressed to physical-field alias collision."
+            )
 
 
 def assert_tool_calls(sample: dict[str, Any]) -> None:

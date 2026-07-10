@@ -129,6 +129,7 @@ allowed-tools:
 - 默认样本池必须复用 `references/scenarios/efficiency-label-rate.md#默认过滤` 中的过滤片段，不在 `SKILL.md` 重复维护。
 - 默认治理数据源和字段映射以 `references/scenarios/efficiency-label-rate.md#数据源与字段` 为准。
 - 标准分析粒度为 `mach_root_label_name × strategy_id × strategy_name × reason`，除非用户要求更粗或更细粒度且字段已治理。
+- 按维度字段聚合前，必须先用 `ifNull(...)` 把可空维度转换为稳定 key；内部 key 不得与底表物理字段同名，统一使用 `mach_root_label_key`、`strategy_id_key`、`strategy_name_key`、`reason_key` 这类 `*_key` 别名，并在 `GROUP BY` 中使用这些转换后的 key。外层再映射回标准输出字段名，避免 ClickHouse / Aeolus 把 `GROUP BY mach_root_label_name` 解析到同名物理字段，漏掉 NULL 维度记录。
 - 跨天、跨 reason、跨标签聚合时，必须分别 `SUM(label_cnt)` 和 `SUM(review_done_cnt)` 后重算 `label_rate`。
 - 用户指定新维度时，先通过语义层或数据集字段发现确认字段含义、粒度和权限；未确认前不得拼接字段名。
 - SQL 只能是只读 `SELECT` 或公共表达式 (CTE)，不得包含写入、建表或状态更新语句。

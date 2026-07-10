@@ -29,6 +29,13 @@
 3. `curated_raw_sql`：仅用于场景文档声明的复杂分级、拆解或 SQL 模板。
 4. `raw_exploration`：只允许字段探测，不得作为最终结论来源。
 
+## SQL 生成约束
+
+- 按维度聚合时，必须先把可空维度转换为稳定 key，例如 `ifNull(`[机审一级标签]`, '（空/机审一级标签）') AS mach_root_label_key`。
+- `GROUP BY` 必须使用转换后的 key 字段，不得使用与底表物理字段同名的别名，例如不要在内层写 `AS mach_root_label_name GROUP BY mach_root_label_name`。
+- 对外输出时再把内部 key 映射回标准字段名，例如 `mach_root_label_key AS mach_root_label_name`。
+- 该规则适用于所有维度字段，尤其是 `mach_root_label_name`、`strategy_id`、`strategy_name`、`reason`。否则 Aeolus / ClickHouse 可能在别名与物理字段重名时解析到原始字段，导致 NULL 维度记录在聚合阶段丢失。
+
 ## 失败分支
 
 - 场景不明确：停止，交回感知 Skill。

@@ -92,6 +92,7 @@
 - 禁止裸 `[Name]`。
 - 禁止在最终聚合中 `SUM(rate)`。
 - 使用风神语义指标时，可用 `` `[打标率__reviewid]` `` 展示，但 evidence 必须同时包含 `` `[完审量_reviewid]` `` 和 `` `[打标量__reviewid]` ``。
+- 维度聚合必须先处理空值：对 `mach_root_label_name`、`strategy_id`、`strategy_name`、`reason` 等维度使用 `ifNull(...)` 生成内部 `*_key` 字段，再用这些 key 做 `GROUP BY`。不要把 `ifNull(...)` 的别名直接命名成底表同名字段，例如不要写 `ifNull(`[机审一级标签]`, '（空/机审一级标签）') AS mach_root_label_name GROUP BY mach_root_label_name`；应写成 `AS mach_root_label_key GROUP BY mach_root_label_key`，外层再 `mach_root_label_key AS mach_root_label_name`。这是为了避免 Aeolus / ClickHouse 在同名字段解析时漏掉 NULL 维度记录。
 
 ## 默认过滤
 

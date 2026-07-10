@@ -176,10 +176,10 @@ def period_aggregate_sql(start_days_ago: int, end_days_ago: int) -> str:
     end_expr = "today()" if end_days_ago == 0 else f"today() - {end_days_ago}"
     return f"""
 SELECT
-  mach_root_label_name,
-  strategy_id,
-  strategy_name,
-  reason,
+  mach_root_label_key AS mach_root_label_name,
+  strategy_id_key AS strategy_id,
+  strategy_name_key AS strategy_name,
+  reason_key AS reason,
   COUNT(DISTINCT dt) AS data_days,
   SUM(jin_shen) AS total_review_in_cnt,
   SUM(wan_shen) AS total_review_done_cnt,
@@ -190,10 +190,10 @@ SELECT
   if(SUM(wan_shen) = 0, 0, SUM(da_biao) / SUM(wan_shen)) AS label_rate
 FROM (
   SELECT
-    ifNull(`[机审一级标签]`, '（空/机审一级标签）') AS mach_root_label_name,
-    ifNull(`[strategy_id]`, '（空/strategy_id）') AS strategy_id,
-    ifNull(`[strategy_name]`, '（空/strategy_name）') AS strategy_name,
-    ifNull(`[reason]`, '（空/reason）') AS reason,
+    ifNull(`[机审一级标签]`, '（空/机审一级标签）') AS mach_root_label_key,
+    ifNull(`[strategy_id]`, '（空/strategy_id）') AS strategy_id_key,
+    ifNull(`[strategy_name]`, '（空/strategy_name）') AS strategy_name_key,
+    ifNull(`[reason]`, '（空/reason）') AS reason_key,
     `[p_date]` AS dt,
     `[进审量_reviewid]` AS jin_shen,
     `[完审量_reviewid]` AS wan_shen,
@@ -202,9 +202,9 @@ FROM (
   WHERE `[p_date]` >= today() - {start_days_ago}
     AND `[p_date]` < {end_expr}
 {base_filter_sql("    ")}
-  GROUP BY mach_root_label_name, strategy_id, strategy_name, reason, dt
+  GROUP BY mach_root_label_key, strategy_id_key, strategy_name_key, reason_key, dt
 ) daily
-GROUP BY mach_root_label_name, strategy_id, strategy_name, reason
+GROUP BY mach_root_label_key, strategy_id_key, strategy_name_key, reason_key
 HAVING SUM(wan_shen) > 0
 """.strip()
 

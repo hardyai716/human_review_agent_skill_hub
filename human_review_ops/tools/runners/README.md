@@ -10,6 +10,7 @@
 - `run_stage_2_label_rate_poc_routing.py`：基于阶段 1 低打标率分级结果，按 `mach_root_label_name` 生成姓名级 POC / 触达对象路由产物；真实触达前仍需 open_id 确认、目标群确认和发送门禁。
 - `run_custom_label_rate_breakdown_e2e.py`：执行自定义多维低打标率查询，默认输出汇总、TopN、CSV/XLSX、飞书电子表格和按机审一级标签生成的 POC 路由计划；仅显式传入 `--send-chat-id` 时才发送群消息。
 - `run_label_rate_formal_flow.py`：正式 Skill-first 编排入口。先调用 perception 识别复合诉求和前置 analysis 任务，再用 analysis Skill 生成 QueryPlan/SQL 并执行只读查询，最后用 notification Skill 生成通知产物；真实群发只在宿主层显式 `--confirm-send` 后执行，并生成 `host_dispatch_record.json`。
+- `demo_aeolus_viz_query_vs_query.py`：演示同一个 Aeolus 查询任务分别用 `aeolus viz-query` 和 `aeolus query` 执行；默认 dry-run 打印命令，传 `--execute` 才真实查询。
 
 ## 使用约束
 
@@ -37,4 +38,6 @@ python3 human_review_ops/tools/validators/validate_custom_label_rate_breakdown_e
 python3 human_review_ops/tools/validators/validate_label_rate_poc_mapping.py
 python3 human_review_ops/tools/runners/run_label_rate_formal_flow.py --send-chat-id oc_9c691aa76c22a16207c6f443eac25816 --confirm-send
 python3 human_review_ops/tools/validators/validate_label_rate_formal_flow.py human_review_ops/evals/efficiency-label-rate/stage_2_runs/<run_id>_formal_skill_flow --expect-sent
+python3 human_review_ops/tools/runners/demo_aeolus_viz_query_vs_query.py
+python3 human_review_ops/tools/runners/demo_aeolus_viz_query_vs_query.py --execute
 ```
