@@ -13,3 +13,4 @@ registry:
         - analysis
         - notification
         - resolution
+        - efficiency-label-rate-ops

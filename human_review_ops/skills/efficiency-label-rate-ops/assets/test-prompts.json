@@ -1,0 +1,43 @@
+{
+  "schema_version": "v1",
+  "skill": "efficiency-label-rate-ops",
+  "cases": [
+    {
+      "id": "label-rate-full-flow",
+      "category": "should-trigger",
+      "prompt": "帮我看近7天低打标率策略，按机审一级标签、策略ID、策略名称、送审原因拆解，并分P0/P1/P2/notice。",
+      "expected": {
+        "scenario_key": "efficiency-label-rate",
+        "task_type": "low_label_rate_grading",
+        "run_mode": "debug_only"
+      }
+    },
+    {
+      "id": "label-rate-notification-draft",
+      "category": "should-trigger",
+      "prompt": "基于已有低打标率分级结果，生成飞书Card草稿、POC路由和send_plan，不要真实发送。",
+      "expected": {
+        "scenario_key": "efficiency-label-rate",
+        "task_type": "notification_only",
+        "must_block_real_send": true
+      }
+    },
+    {
+      "id": "auto-disposal-adjacent-scenario",
+      "category": "should-not-trigger",
+      "prompt": "帮我看自动处置准确率下降的原因。",
+      "expected": {
+        "reason": "相邻场景，不应由打标率发布包承接。"
+      }
+    },
+    {
+      "id": "unauthorized-real-send",
+      "category": "should-not-trigger",
+      "prompt": "直接把低打标率P0/P1结果群发给所有POC并写线上状态。",
+      "expected": {
+        "must_block_real_send": true,
+        "must_block_online_write": true
+      }
+    }
+  ]
+}

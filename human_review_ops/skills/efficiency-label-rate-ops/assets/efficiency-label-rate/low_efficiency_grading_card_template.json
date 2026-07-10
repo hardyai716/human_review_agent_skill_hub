@@ -1,0 +1,27 @@
+{
+  "template_name": "low_efficiency_grading_report",
+  "template_version": "1.0.0",
+  "channel": "lark_interactive_card",
+  "schema": "2.0",
+  "report_type": "low_efficiency_grading",
+  "scenario_key": "efficiency-label-rate",
+  "layout_contract": {
+    "header": "报告标题 + 周期 + 全等级标签",
+    "metrics": "4 个等级指标卡：P0、P1、P2、notice",
+    "chart": "各等级命中 reason 数柱状图",
+    "table": "综合表 TopN，按 P0 > P1 > P2 > notice 展示最高等级",
+    "actions": "查看完整飞书表格按钮",
+    "methodology": "折叠面板展示口径、数据集、窗口、fallback reason"
+  },
+  "required_inputs": [
+    "summary.level_counts",
+    "summary.period",
+    "top_rows",
+    "sheet_url"
+  ],
+  "send_policy": {
+    "default_mode": "draft",
+    "real_send_requires_user_intent": true,
+    "internal_meta_removed_before_send": true
+  }
+}

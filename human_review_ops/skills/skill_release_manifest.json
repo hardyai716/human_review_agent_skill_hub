@@ -163,6 +163,13 @@
           "outputs": ["card_hash_check.json"]
         },
         {
+          "path": "notification/scripts/sheet_importer.py",
+          "entrypoint": "module:import_xlsx_as_feishu_sheet",
+          "smoke_command": "python3 scripts/selfcheck.py",
+          "side_effects": ["none"],
+          "outputs": ["sheet_import_result.json", "sheet_url"]
+        },
+        {
           "path": "notification/scripts/selfcheck.py",
           "entrypoint": "python3 scripts/selfcheck.py",
           "smoke_command": "python3 scripts/selfcheck.py",
@@ -185,6 +192,7 @@
         "notification/scripts/render_label_rate_grading_card.py",
         "notification/scripts/resolve_label_rate_poc_routing.py",
         "notification/scripts/card_hash.py",
+        "notification/scripts/sheet_importer.py",
         "notification/scripts/selfcheck.py"
       ]
     },
@@ -228,6 +236,127 @@
         "resolution/assets/README.md",
         "resolution/scripts/build_label_rate_manual_tracking.py",
         "resolution/scripts/selfcheck.py"
+      ]
+    },
+    "efficiency-label-rate-ops": {
+      "skill_md": "efficiency-label-rate-ops/SKILL.md",
+      "test_prompts": "efficiency-label-rate-ops/assets/test-prompts.json",
+      "references": [
+        "efficiency-label-rate-ops/references/common.md",
+        "efficiency-label-rate-ops/references/scenario-index.md",
+        "efficiency-label-rate-ops/references/scenarios/efficiency-label-rate.md",
+        "efficiency-label-rate-ops/references/scenario_manifest.md",
+        "efficiency-label-rate-ops/references/metric_contract.md",
+        "efficiency-label-rate-ops/references/dataset_reference.md",
+        "efficiency-label-rate-ops/references/analysis.md",
+        "efficiency-label-rate-ops/references/notification_templates.md",
+        "efficiency-label-rate-ops/references/owner_routing.md",
+        "efficiency-label-rate-ops/references/state_machine.md",
+        "efficiency-label-rate-ops/references/sla.md",
+        "efficiency-label-rate-ops/references/examples.md"
+      ],
+      "assets": [
+        "efficiency-label-rate-ops/assets/README.md",
+        "efficiency-label-rate-ops/assets/test-prompts.json",
+        "efficiency-label-rate-ops/assets/efficiency-label-rate/card_schema_notes.md",
+        "efficiency-label-rate-ops/assets/efficiency-label-rate/low_efficiency_grading_card_template.json",
+        "efficiency-label-rate-ops/assets/efficiency-label-rate/mach_root_label_poc_mapping.json"
+      ],
+      "scripts": [
+        {
+          "path": "efficiency-label-rate-ops/scripts/label_rate_perception.py",
+          "entrypoint": "python3 scripts/label_rate_perception.py --dry-run --request <request>",
+          "smoke_command": "python3 scripts/selfcheck.py",
+          "side_effects": ["none"],
+          "outputs": ["scenario_key", "task_type", "run_mode", "readiness"]
+        },
+        {
+          "path": "efficiency-label-rate-ops/scripts/label_rate_analysis.py",
+          "entrypoint": "python3 scripts/label_rate_analysis.py --dry-run --levels notice,P2,P1,P0",
+          "smoke_command": "python3 scripts/selfcheck.py",
+          "side_effects": ["none"],
+          "outputs": ["QueryPlan", "source_footer", "analysis_result", "provenance"]
+        },
+        {
+          "path": "efficiency-label-rate-ops/scripts/label_rate_notification_artifacts.py",
+          "entrypoint": "python3 scripts/label_rate_notification_artifacts.py --source <analysis_result.jsonl> --output-dir <output>",
+          "smoke_command": "python3 scripts/selfcheck.py",
+          "side_effects": ["none"],
+          "outputs": ["notification_draft.json", "send_plan.json", "poc_routing_plan.json", "CSV/XLSX report", "Card JSON"]
+        },
+        {
+          "path": "efficiency-label-rate-ops/scripts/render_label_rate_grading_card.py",
+          "entrypoint": "module:render_grading_card",
+          "smoke_command": "python3 scripts/selfcheck.py",
+          "side_effects": ["none"],
+          "outputs": ["Card JSON"]
+        },
+        {
+          "path": "efficiency-label-rate-ops/scripts/resolve_label_rate_poc_routing.py",
+          "entrypoint": "module:build_poc_routing_plan",
+          "smoke_command": "python3 scripts/selfcheck.py",
+          "side_effects": ["none"],
+          "outputs": ["poc_routing_plan.json"]
+        },
+        {
+          "path": "efficiency-label-rate-ops/scripts/card_hash.py",
+          "entrypoint": "module:verify_card_hash",
+          "smoke_command": "python3 scripts/selfcheck.py",
+          "side_effects": ["none"],
+          "outputs": ["card_hash_check.json"]
+        },
+        {
+          "path": "efficiency-label-rate-ops/scripts/sheet_importer.py",
+          "entrypoint": "module:import_xlsx_as_feishu_sheet",
+          "smoke_command": "python3 scripts/selfcheck.py",
+          "side_effects": ["none"],
+          "outputs": ["sheet_import_result.json", "sheet_url"]
+        },
+        {
+          "path": "efficiency-label-rate-ops/scripts/build_label_rate_manual_tracking.py",
+          "entrypoint": "python3 scripts/build_label_rate_manual_tracking.py --notification-draft <draft.json> --send-plan <send_plan.json> --output <tracking.json>",
+          "smoke_command": "python3 scripts/selfcheck.py",
+          "side_effects": ["none"],
+          "outputs": ["manual_tracking.json"]
+        },
+        {
+          "path": "efficiency-label-rate-ops/scripts/selfcheck.py",
+          "entrypoint": "python3 scripts/selfcheck.py",
+          "smoke_command": "python3 scripts/selfcheck.py",
+          "side_effects": ["none"],
+          "outputs": ["selfcheck_ok"]
+        }
+      ],
+      "external_dependencies": ["openpyxl"],
+      "release_assets": [
+        "efficiency-label-rate-ops/SKILL.md",
+        "efficiency-label-rate-ops/package_manifest.json",
+        "efficiency-label-rate-ops/assets/README.md",
+        "efficiency-label-rate-ops/assets/test-prompts.json",
+        "efficiency-label-rate-ops/assets/efficiency-label-rate/card_schema_notes.md",
+        "efficiency-label-rate-ops/assets/efficiency-label-rate/low_efficiency_grading_card_template.json",
+        "efficiency-label-rate-ops/assets/efficiency-label-rate/mach_root_label_poc_mapping.json",
+        "efficiency-label-rate-ops/references/common.md",
+        "efficiency-label-rate-ops/references/scenario-index.md",
+        "efficiency-label-rate-ops/references/scenarios/efficiency-label-rate.md",
+        "efficiency-label-rate-ops/references/scenario_manifest.md",
+        "efficiency-label-rate-ops/references/metric_contract.md",
+        "efficiency-label-rate-ops/references/dataset_reference.md",
+        "efficiency-label-rate-ops/references/analysis.md",
+        "efficiency-label-rate-ops/references/notification_templates.md",
+        "efficiency-label-rate-ops/references/owner_routing.md",
+        "efficiency-label-rate-ops/references/state_machine.md",
+        "efficiency-label-rate-ops/references/sla.md",
+        "efficiency-label-rate-ops/references/examples.md",
+        "efficiency-label-rate-ops/scripts/label_rate_perception.py",
+        "efficiency-label-rate-ops/scripts/label_rate_analysis.py",
+        "efficiency-label-rate-ops/scripts/label_rate_notification_artifacts.py",
+        "efficiency-label-rate-ops/scripts/render_label_rate_grading_card.py",
+        "efficiency-label-rate-ops/scripts/resolve_label_rate_poc_routing.py",
+        "efficiency-label-rate-ops/scripts/card_hash.py",
+        "efficiency-label-rate-ops/scripts/sheet_importer.py",
+        "efficiency-label-rate-ops/scripts/build_label_rate_manual_tracking.py",
+        "efficiency-label-rate-ops/scripts/selfcheck.py"
       ]
     }
   }

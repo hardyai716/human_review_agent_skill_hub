@@ -6,6 +6,23 @@
 
 本方案不再把“架构展示页优化计划”或“早期路线图”作为开发依据。后续执行时，以本文作为开发主计划，其他文档只作为背景资料或专项规范引用。
 
+### 1.1 当前架构调整评估
+
+相对初版方案和 demo，当前结构已经完成以下实质调整：
+
+| 调整项 | 初版口径 | 当前结构 | 需要同步的内容 |
+| --- | --- | --- | --- |
+| 样板主线 | 以自动处置准确率作为架构占位，打标率未形成完整链路。 | 打标率已成为主线样板场景；自动处置准确率保留为相邻场景和误触发校验。 | 方案和 demo 必须把打标率作为当前基线，自动处置准确率仅作为扩展/反例。 |
+| Skill 形态 | 四类 Skill 以模板和参考资料为主。 | 感知、分析、通知、解决均已具备可执行 `SKILL.md`、`scripts/`、`assets/test-prompts.json`、发布清单和 standalone smoke 门禁。 | 将“建设模板”改为“维护可发布 Skill 基线”。 |
+| 查询链路 | 以 QueryPlan 和 mock/只读预检验证为主。 | 已接入 Aeolus 数据集 `3888816` 的真实只读查询，输出 `analysis_result`、`source_footer`、`provenance` 和分级结果。 | 后续计划聚焦口径治理、查询稳定性和异常样例，不再把真实只读接入列为待办。 |
+| 通知产物 | 以固定人/群测试通知和草稿为主。 | 通知 Skill 已生成 POC 路由、Card、分级 CSV/XLSX、`send_plan`，并在缺少 `sheet_url` 时通过 `sheet_importer.py` 自动导入飞书表格。 | 方案、demo、发布清单必须体现“报表自动上传 + sheet_url 回填”能力。 |
+| 处理闭环 | 仅描述人工跟进。 | resolution Skill 已支持本地 `manual_tracking.json`，仍禁止线上写状态。 | 后续计划转向状态表、回复回收、幂等写入和回滚策略设计。 |
+| 编排入口 | 文档中存在阶段脚本和演示脚本混用。 | 已形成正式 Skill-first 入口 `run_label_rate_formal_flow.py`：`Perception -> Analysis -> Notification -> external_executor`，真实发送只由外部执行环境显式确认。 | 对外方案使用 `external_executor`、`calling_agent` 等产品化词汇；内部脚本名只作为工程附录。 |
+| 发布治理 | 早期只校验文件结构。 | 已有 AgentBuddy restricted 发布、产品化 strict、standalone smoke、脚本级 validator、`skill_release_manifest.json`。 | 后续开发必须先跑发布前校验，再进入发布或 demo 更新。 |
+| 下一阶段方向 | 四类横向能力 Skill 是主要目标形态。 | 最新评估提出新增场景级 Skill `efficiency-label-rate-ops`，四类能力 Skill 保留为 legacy compatibility path。 | 方案和 demo 需把“四 Skill 产品化”定位为当前基线，把“场景 Skill 迁移”定位为后续主线。 |
+
+因此，本轮文档和 demo 更新的原则是：历史阶段记录保留用于追溯，但下一阶段主计划不再围绕“阶段 1/阶段 2”扩写；对外表述收敛为“当前基线、场景化迁移、真实通知确认链路、状态闭环治理、扩场景复制”五条主线。
+
 ## 2. 开发成功标准
 
 第一阶段成功不以“页面展示完整”为标准，而以一个可运行样板场景通过评估为标准。
@@ -13,7 +30,7 @@
 必须证明：
 
 - Agent 能根据任务识别场景、任务类型和运行模式。
-- Agent 能安装并调用感知、分析、触达、解决四类 Skill。
+- Agent 能安装并调用感知、分析、通知、解决四类 Skill。
 - TRAE 自定义调试智能体「人审运营智能体」能作为前期开发入口，完成 Agent 路由、Skill 调用、场景包读取和工具边界验证。
 - Skill 能通过一级索引加载正确场景包，而不是深层链式查找。
 - 打标率主线场景能完成查询计划、字段选择、趋势 / 排序 / 分级 / 维度拆解计划、来源脚注和结果输出。
@@ -40,7 +57,7 @@
 ### 3.2 第一阶段不纳入范围
 
 - 全量运营模块覆盖。
-- 动态 Owner 路由线上自动触达。
+- 动态 Owner 路由线上自动通知。
 - 自动催办、自动升级和完整 SLA 闭环。
 - 自动修改业务配置或替代审批。
 - 全量 Lark Base 或数据库工程化建设。
@@ -233,7 +250,7 @@ human_review_ops/
 | --- | --- | --- | --- |
 | 感知 Skill | `human_review_ops/skills/perception/references/scenario-index.md` | `references/scenarios/*.manifest.md`、`*.metric_contract.md`、`*.dataset_reference.md`、`*.examples.md` | 识别场景、指标、任务类型、数据就绪。 |
 | 分析 Skill | `human_review_ops/skills/analysis/references/scenario-index.md` | `references/scenarios/*.metric_contract.md`、`*.dataset_reference.md`、`*.analysis.md`、`*.examples.md` | 生成 QueryPlan、选择字段、归因分析。 |
-| 通知 Skill | `human_review_ops/skills/notification/references/scenario-index.md` | `references/scenarios/*.owner_routing.md`、`*.notification_templates.md`、`*.sla.md` | 生成通知、POC / 触达对象路由、判断升级。 |
+| 通知 Skill | `human_review_ops/skills/notification/references/scenario-index.md` | `references/scenarios/*.owner_routing.md`、`*.notification_templates.md`、`*.sla.md` | 生成通知、POC / 通知对象路由、判断升级。 |
 | 解决 Skill | `human_review_ops/skills/resolution/references/scenario-index.md` | `references/scenarios/*.state_machine.md`、`*.sla.md`、`*.owner_routing.md`、`*.examples.md` | 推进状态、回收结论、关闭或复查。 |
 
 示例索引：
@@ -434,12 +451,12 @@ partial_workflow
 
 - 基于分析结果生成 AI Summary 卡片。
 - MVP 阶段只发送固定人/群。
-- 输出 POC / 触达对象路由计划和升级对象。
+- 输出 POC / 通知对象路由计划和升级对象。
 
 禁止：
 
 - 未经确认扩大通知范围。
-- 未带来源脚注进入自动触达。
+- 未带来源脚注进入自动通知。
 
 ### 7.4 解决 Skill
 
@@ -673,12 +690,12 @@ human_review_ops/evals/efficiency-label-rate/eval_samples.jsonl
 3. 使用 Skill 内 `human_review_ops/skills/{skill}/references/scenarios/` 调试快照跑通最小流程。
 4. 验证是否能稳定读取根目录 `human_review_ops/references/scenarios/`。
 5. 逐步接入只读 Tool/MCP/CLI。
-6. 查询类任务优先跑通 QueryPlan 后的只读执行与依据记录；通知草稿、POC / 触达对象路由和人工处理记录只在用户明确要求，或分析结果触发治理/升级条件时生成，不发送真实通知、不写线上状态。
+6. 查询类任务优先跑通 QueryPlan 后的只读执行与依据记录；通知草稿、POC / 通知对象路由和人工处理记录只在用户明确要求，或分析结果触发治理/升级条件时生成，不发送真实通知、不写线上状态。
 
 验收：
 
 - 查询类任务能进入 `query_only` 或 `partial_workflow`。
-- 找人类任务能进入 `owner_lookup_only`，并输出 POC / 触达对象路由依据和置信度。
+- 找人类任务能进入 `owner_lookup_only`，并输出 POC / 通知对象路由依据和置信度。
 - 通知类任务只能生成草稿或测试卡片，不能绕过人工确认。
 - 解决类任务只能记录人工状态、结论、证据和是否继续观察。
 - 若根目录 `human_review_ops/references/scenarios/` 跨目录读取失败，必须明确记录失败原因，并继续使用 Skill 内调试快照。
@@ -701,7 +718,7 @@ human_review_ops/evals/efficiency-label-rate/eval_samples.jsonl
 - 混淆字段拒绝率达到标准。
 - QueryPlan 校验通过后，Agent 应按用户问题执行可用的 mock / 只读查询链路。
 - 输出包含 QueryPlan、tool_call_record、source_footer、数据来源、指标口径和分析依据。
-- 不把通知草稿、POC / 触达对象路由或人工处理状态作为查询类任务的默认产出。
+- 不把通知草稿、POC / 通知对象路由或人工处理状态作为查询类任务的默认产出。
 - 只有覆盖样本池、未治理字段、权限不足、真实通知、线上写入或高风险动作才要求人工确认。
 
 执行原则：
@@ -710,7 +727,7 @@ human_review_ops/evals/efficiency-label-rate/eval_samples.jsonl
 - 当用户问题明确、场景命中、QueryPlan 通过断言、数据源属于允许来源、工具权限为只读时，Agent 应直接执行可用的只读查询或 mock 查询链路。
 - 执行后必须记录依据，包括数据来源、指标口径、时间窗口、过滤条件、质量检查、tool_call_record、source_footer 和 provenance。
 - 只有信息不足、字段无法确认、用户要求覆盖标准样本池、命中禁止来源、权限不足、真实通知、线上写入或高风险动作时，才进入澄清或人工确认。
-- POC / 触达对象路由不是查询类任务的前置步骤；只有结果需要治理跟进、通知、升级或用户明确询问“找谁”时才生成。
+- POC / 通知对象路由不是查询类任务的前置步骤；只有结果需要治理跟进、通知、升级或用户明确询问“找谁”时才生成。
 
 ### 阶段 2：局部调度能力
 
@@ -848,7 +865,7 @@ human_review_ops/evals/efficiency-label-rate/eval_samples.jsonl
 | --- | --- | --- |
 | POC 映射 | 已接入 `mach_root_label_name -> POC 姓名` 映射；分级结果可生成姓名级 POC 列。表格富文本 @ 可读取 mention token；`党和国家形象负面` 已按用户确认设置为 `李中涛`。 | 定义 open_id 安全存储策略，并决定是否申请 `contact:user:search` 做姓名补全。 |
 | 分析粒度 | notice/P2/P1/P0 已升级为 `机审一级标签 × strategy_id × strategy_name × reason` 四维粒度，指标包含日均进审、日均完审、日均打标和打标率。 | 后续如需更细拆解，再按场景新增维度，不回退到单 reason 粒度。 |
-| 触达身份 | 开发验证阶段仍默认本人预览；姓名级 POC 已可审计，完整 open_id 暂不落 Git。 | 真实 POC 身份字段、open_id 解析方式和权限边界确认。 |
+| 通知身份 | 开发验证阶段仍默认本人预览；姓名级 POC 已可审计，完整 open_id 暂不落 Git。 | 真实 POC 身份字段、open_id 解析方式和权限边界确认。 |
 | 群推送 | 已生成 `send_plan.json` 门禁，默认阻断正式群发；用户明确授权下已完成私有验证群 Card 发送、bot 群内 @ 用户验证，以及 P2/P1/P0 对应 POC @ 验证；未拉人进群。 | 真实 POC 群推送仍需人工确认目标群 / POC 收件人、发送身份和卡片内容。 |
 | 回收闭环 | 当前仅记录本地 `manual_tracking.json`。 | 明确联系人回复收集、卡片按钮回调或 Lark Base 状态表设计。 |
 | 状态存储 | 开发阶段仅本地存储，不写线上状态。 | 状态表 schema、权限、写入幂等和回滚策略确认。 |
@@ -859,8 +876,12 @@ human_review_ops/evals/efficiency-label-rate/eval_samples.jsonl
 
 | 优先级 | 任务 | 要做什么 | 预期产物 | 验收标准 | 状态 |
 | --- | --- | --- | --- | --- | --- |
-| P1 | 接入 POC 联系人身份解析 | 基于当前 `mach_root_label_name -> POC 姓名` 映射，决定 open_id 安全存储方式，并保留姓名级 fallback。 | POC open_id 映射配置、联系人解析 runner、validator、脱敏样例。 | 能输出可触达 POC 或明确 fallback 原因；不泄露敏感身份；映射缺失可解释。 | 待开始 |
-| P1 | 固化触达对象解析 | 将角色范围、POC 身份、open_id 解析和置信度写入路由计划。 | 增强版 `poc_routing_plan.json`。 | notice/P2/P1/P0 均有可审计收件人来源、置信度、升级关系和人工确认状态。 | 待开始 |
+| P0 | 冻结四能力 Skill 产品化基线 | 先记录当前 perception / analysis / notification / resolution 的发布版本、validator 结果和关键产物，作为迁移前回滚基线。 | 基线记录、发布版本、校验结果摘要。 | 旧四能力 Skill 的 productization、standalone smoke、脚本级 validator 可复跑；`notification/scripts/sheet_importer.py` 已纳入发布清单。 | 进行中 |
+| P0 | 启动打标率场景 Skill 迁移 | 新增 `efficiency-label-rate-ops`，把打标率强绑定 references、assets、scripts 复制到场景级 Skill，旧四能力路径保留兼容。 | `human_review_ops/skills/efficiency-label-rate-ops/`、场景级 `SKILL.md`、场景级 `test-prompts.json`。 | 新 Skill 能独立完成 perception、analysis、notification、resolution 四段 dry-run；旧路径不破坏。 | 待开始 |
+| P0 | 建立路径注册表和解析器 | 新建 `skill_path_registry.json` 和 `skill_path_resolver.py`，让 runner、validator 和 packager 通过 `auto/canonical/legacy` 三种模式解析路径。 | 路径注册表、解析器、registry validator。 | `HRO_SKILL_PATH_MODE=legacy` 与当前结果一致；`canonical` 在新 Skill 完成后可独立通过；`auto` 默认优先新路径。 | 待开始 |
+| P1 | 改造发布与校验门禁 | 让 `validate_skill_productization.py`、`validate_skill_standalone_smoke.py`、`validate_skill_package.py` 和 AgentBuddy 发布配置从 manifest / registry 读取 Skill 列表。 | 支持 `legacy_core`、`scenario_label_rate`、`all_releaseable` 的校验 profile。 | 四能力 Skill 和 `efficiency-label-rate-ops` 可分别或全量校验；发布清单、AgentBuddy manifest、Skill 包资产一致。 | 待开始 |
+| P1 | 接入 POC 联系人身份解析 | 基于当前 `mach_root_label_name -> POC 姓名` 映射，决定 open_id 安全存储方式，并保留姓名级 fallback。 | POC open_id 映射配置、联系人解析脚本、validator、脱敏样例。 | 能输出可通知 POC 或明确 fallback 原因；不泄露敏感身份；映射缺失可解释。 | 待开始 |
+| P1 | 固化通知对象解析 | 将角色范围、POC 身份、open_id 解析和置信度写入路由计划。 | 增强版 `poc_routing_plan.json`。 | notice/P2/P1/P0 均有可审计收件人来源、置信度、升级关系和人工确认状态。 | 待开始 |
 | P1 | 建立群推送确认链路 | 在 `send_plan.json` 基础上增加人工确认状态和真实发送前检查。 | 确认记录、发送前 validator、群推送 dry-run 结果。 | 未确认不发送；确认后仅向指定群 / POC 发送；发送结果可追踪。 | 待开始 |
 | P1 | 建立 Skill 产品化基线评估 | 基于 `docs/skill_productization_assessment.md` 为四个 Skill 补齐 `test-prompts.json`、should-trigger / should-not-trigger 触发测试和 `SKILL.md` 必备章节校验。 | Skill 触发测试集、rubric 评分记录、增强版 `validate_agentbuddy_publish.py` 或独立 validator。 | 能识别 description 过弱、缺 workflow、缺失败分支、缺反例等问题；不改变现有运行行为。 | 已完成 |
 | P1 | 下沉 analysis Skill 核心脚本 | 从阶段 1 runner 中抽出 QueryPlan、source_footer、打标率 SQL 构造、分级规则和结果标准化能力，放入 `human_review_ops/skills/analysis/scripts/`。 | analysis scripts、runner 轻量改造、脚本级 smoke test。 | analysis Skill 脱离 Agent 后可生成 QueryPlan / SQL / 分级结果；现有阶段 1 validator 全部通过。 | 已完成 |

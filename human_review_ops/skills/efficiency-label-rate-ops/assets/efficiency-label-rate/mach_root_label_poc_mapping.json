@@ -1,0 +1,29 @@
+{
+  "schema_version": "label_rate_mach_root_label_poc_mapping.v1",
+  "scenario_key": "efficiency-label-rate",
+  "routing_key": "mach_root_label_name",
+  "source": {
+    "type": "lark_sheet",
+    "url": "https://bytedance.larkoffice.com/sheets/TpxwsA8zohUZkVtJ4J9cDcXUnbg?sheet=HKdm9w",
+    "confirmed_at": "2026-07-09",
+    "confirmation_method": "user_provided_mapping"
+  },
+  "contact_resolution_status": "name_only",
+  "entries": [
+    {"mach_root_label_name": "国家安全", "poc_name": "杜衡", "poc_open_id": null},
+    {"mach_root_label_name": "领导人", "poc_name": "宋诗慧", "poc_open_id": null},
+    {"mach_root_label_name": "指令舆情相关", "poc_name": "张发奇", "poc_open_id": null},
+    {"mach_root_label_name": "偏激社会情绪和涉外言论", "poc_name": "张发奇", "poc_open_id": null},
+    {"mach_root_label_name": "党和国家形象负面", "poc_name": "李中涛", "poc_open_id": null},
+    {"mach_root_label_name": "举报", "poc_name": "韩晶晶", "poc_open_id": null},
+    {"mach_root_label_name": "不良行为或争议价值观", "poc_name": "陈雅静", "poc_open_id": null},
+    {"mach_root_label_name": "色情性化", "poc_name": "刘小楷", "poc_open_id": null},
+    {"mach_root_label_name": "高热", "poc_name": "闫秦河", "poc_open_id": null},
+    {"mach_root_label_name": "侵犯未成年权益", "poc_name": "张宇轩", "poc_open_id": null},
+    {"mach_root_label_name": "引人不适", "poc_name": "陈思乔", "poc_open_id": null},
+    {"mach_root_label_name": "短期策略迁移", "poc_name": "陈思乔", "poc_open_id": null},
+    {"mach_root_label_name": "危险行为", "poc_name": "陈雅静", "poc_open_id": null},
+    {"mach_root_label_name": "政媒", "poc_name": "杜衡", "poc_open_id": null},
+    {"mach_root_label_name": "违法违规", "poc_name": "叶健", "poc_open_id": null}
+  ]
+}
