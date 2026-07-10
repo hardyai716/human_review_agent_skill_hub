@@ -1,0 +1,14 @@
+{
+  "schema_version": "agentbuddy_publish_summary.v1",
+  "published_at": "2026-07-10T23:52:24+08:00",
+  "git_commit": "20608d8",
+  "skill": "efficiency-label-rate-ops",
+  "source": "./human_review_ops/skills/efficiency-label-rate-ops",
+  "group": "skills.byted.org/lizhongtao/hunman_review_ops",
+  "access": "restricted",
+  "region": "cn",
+  "package_size_mb": 0.07,
+  "command": "NPM_CONFIG_REGISTRY=http://bnpm.byted.org npx -y agentbuddy@latest skill publish ./human_review_ops/skills/efficiency-label-rate-ops --group skills.byted.org/lizhongtao/hunman_review_ops --access restricted --region cn -y",
+  "status": "success",
+  "skill_id": "skills:skills.byted.org/lizhongtao/hunman_review_ops/efficiency-label-rate-ops:1.0.0"
+}
