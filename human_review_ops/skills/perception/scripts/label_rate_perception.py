@@ -38,6 +38,24 @@ LABEL_RATE_KEYWORDS = (
     "labelrate",
     "label_rate",
 )
+AMBIGUOUS_LABEL_RATE_KEYWORDS = (
+    "达标率",
+)
+HUMAN_REVIEW_CONTEXT_KEYWORDS = (
+    "人审",
+    "审核",
+    "完审",
+    "进审",
+    "策略",
+    "reason",
+    "送审",
+    "低效",
+    "分级",
+    "p0",
+    "p1",
+    "p2",
+    "notice",
+)
 GRADING_KEYWORDS = (
     "低打标",
     "低效",
@@ -51,7 +69,18 @@ SEVERITY_KEYWORDS = ("p0", "p1", "p2", "notice")
 GRADING_CONTEXT_KEYWORDS = ("策略", "reason", "低效", "分级", "打标")
 TREND_KEYWORDS = ("趋势", "环比", "同比", "波动", "变化")
 RANKING_KEYWORDS = ("最高", "最低", "top", "排序", "排行", "排名", "高打标")
-NOTIFICATION_KEYWORDS = ("通知", "卡片", "飞书", "群发", "发送", "触达", "poc", "sendplan")
+NOTIFICATION_KEYWORDS = (
+    "通知",
+    "卡片",
+    "飞书",
+    "群发",
+    "发送",
+    "推送",
+    "测试群",
+    "触达",
+    "poc",
+    "sendplan",
+)
 RESOLUTION_KEYWORDS = ("闭环", "跟进", "状态", "已处理", "关闭", "tracking", "工单")
 TIME_WINDOW_PATTERNS = (
     r"近\s*\d+\s*(天|日|周|月)",
@@ -84,7 +113,15 @@ RISK_PATTERNS = {
         r"(跑|执行).*(线上)?\s*sql",
         r"真实查询",
     ),
-    "real_group_send_requested": (r"群发", r"真实发送", r"发到.*群"),
+    "real_group_send_requested": (
+        r"群发",
+        r"真实发送",
+        r"发到.*群",
+        r"发送.*群",
+        r"推送.*群",
+        r"飞书.*群",
+        r"测试群",
+    ),
     "auto_group_invite_requested": (r"拉.*入群", r"自动拉人"),
     "online_write_requested": (r"写.*线上.*状态", r"状态写成", r"关闭.*事件"),
     "sensitive_detail_export_requested": (r"手机号", r"open_id", r"审核员.*明细", r"个人明细"),
@@ -151,6 +188,11 @@ def detect_label_rate_perception(
     canonical = canonicalize(combined_text)
     excluded_scenario = detect_excluded_scenario(canonical)
     scenario_key = detect_scenario_key(canonical, scenario_hint, excluded_scenario)
+    scenario_candidates = detect_scenario_candidates(
+        canonical,
+        scenario_key,
+        excluded_scenario,
+    )
     task_type = detect_task_type(canonical, scenario_key)
     metrics = detect_metric_ids(canonical, scenario_key)
     dimensions = detect_dimensions(combined_text, dimension_hint or [])
@@ -171,10 +213,12 @@ def detect_label_rate_perception(
         risk_flags=risk_flags,
     )
 
+    handoff = build_handoff(task_type, scenario_key, readiness)
     return {
         "schema_version": SCHEMA_VERSION,
         "dry_run": True,
         "scenario_key": scenario_key,
+        "scenario_candidates": scenario_candidates,
         "task_type": task_type,
         "run_mode": run_mode or DEFAULT_RUN_MODE,
         "metric_ids": metrics,
@@ -183,7 +227,15 @@ def detect_label_rate_perception(
         "unsupported_dimensions": unsupported_dimensions,
         "retrieval_policy": build_retrieval_policy(),
         "readiness": readiness,
-        "handoff": build_handoff(task_type, scenario_key, readiness),
+        "handoff": handoff,
+        "workflow_plan": build_workflow_plan(
+            scenario_key=scenario_key,
+            scenario_candidates=scenario_candidates,
+            task_type=task_type,
+            readiness=readiness,
+            handoff=handoff,
+            risk_flags=risk_flags,
+        ),
         "reference_loading": {
             "skill_reference_root": "human_review_ops/skills/perception/references",
             "required_refs": REFERENCE_FILES,
@@ -228,6 +280,47 @@ def detect_scenario_key(
     ):
         return SCENARIO_KEY
     return "unknown"
+
+
+def detect_scenario_candidates(
+    canonical: str,
+    scenario_key: str,
+    excluded_scenario: str | None,
+) -> list[dict[str, Any]]:
+    if scenario_key == SCENARIO_KEY:
+        return [
+            {
+                "scenario_key": SCENARIO_KEY,
+                "confidence": "high",
+                "reason": "matched_label_rate_keywords",
+                "needs_confirmation": False,
+            }
+        ]
+    if contains_any(canonical, AMBIGUOUS_LABEL_RATE_KEYWORDS):
+        confidence = (
+            "medium"
+            if contains_any(canonical, HUMAN_REVIEW_CONTEXT_KEYWORDS)
+            else "low"
+        )
+        return [
+            {
+                "scenario_key": SCENARIO_KEY,
+                "confidence": confidence,
+                "reason": "possible_mistyped_label_rate_keyword:达标率",
+                "needs_confirmation": True,
+                "clarification_question": "这里的“达标率”是否指人审效率指标“打标率”？",
+            }
+        ]
+    if excluded_scenario:
+        return [
+            {
+                "scenario_key": excluded_scenario,
+                "confidence": "high",
+                "reason": "matched_excluded_adjacent_metric",
+                "needs_confirmation": False,
+            }
+        ]
+    return []
 
 
 def looks_like_label_rate_grading(canonical: str) -> bool:
@@ -459,6 +552,127 @@ def build_handoff(
         "required_refs": SCENARIO_REFERENCE_FILES if scenario_key == SCENARIO_KEY else [],
         "required_inputs": readiness.get("clarification_fields", []),
         "blocked_until": readiness.get("blocking_reasons", []),
+    }
+
+
+def build_workflow_plan(
+    *,
+    scenario_key: str,
+    scenario_candidates: list[dict[str, Any]],
+    task_type: str,
+    readiness: dict[str, Any],
+    handoff: dict[str, Any],
+    risk_flags: list[str],
+) -> dict[str, Any]:
+    steps: list[dict[str, Any]] = [
+        {
+            "step": 1,
+            "skill": "perception",
+            "task_type": "intent_routing",
+            "status": "completed",
+        }
+    ]
+    prerequisites: list[dict[str, Any]] = []
+    requires_host_send_confirmation = "real_group_send_requested" in risk_flags
+
+    if scenario_key == "unknown":
+        return {
+            "status": "blocked",
+            "intent_type": "unknown",
+            "steps": steps,
+            "prerequisites": [],
+            "requires_host_send_confirmation": requires_host_send_confirmation,
+            "candidate_scenarios": scenario_candidates,
+            "next_action": "clarify_scenario_or_metric",
+        }
+
+    if task_type == "notification_request":
+        prerequisites.append(
+            {
+                "skill": "analysis",
+                "task_type": "low_label_rate_grading",
+                "required_before": "notification",
+                "reason": "notification_requires_analysis_artifact",
+            }
+        )
+        steps.extend(
+            [
+                {
+                    "step": 2,
+                    "skill": "analysis",
+                    "task_type": "low_label_rate_grading",
+                    "status": "required",
+                },
+                {
+                    "step": 3,
+                    "skill": "notification",
+                    "task_type": "notification_request",
+                    "status": "blocked_until_analysis_artifact",
+                },
+            ]
+        )
+        return {
+            "status": "ready_with_prerequisite"
+            if "missing_analysis_artifact" in readiness.get("blocking_reasons", [])
+            else readiness.get("status"),
+            "intent_type": "analysis_then_notification",
+            "steps": steps,
+            "prerequisites": prerequisites,
+            "requires_host_send_confirmation": True,
+            "candidate_scenarios": scenario_candidates,
+            "next_action": "run_analysis_prerequisite",
+        }
+
+    if task_type == "resolution_tracking":
+        steps.append(
+            {
+                "step": 2,
+                "skill": "resolution",
+                "task_type": task_type,
+                "status": "ready"
+                if handoff.get("next_skill") == "resolution"
+                else "blocked",
+            }
+        )
+        return {
+            "status": readiness.get("status"),
+            "intent_type": "resolution",
+            "steps": steps,
+            "prerequisites": [],
+            "requires_host_send_confirmation": requires_host_send_confirmation,
+            "candidate_scenarios": scenario_candidates,
+            "next_action": handoff.get("next_skill") or "clarify_inputs",
+        }
+
+    if task_type in ANALYSIS_TASK_TYPES:
+        steps.append(
+            {
+                "step": 2,
+                "skill": "analysis",
+                "task_type": task_type,
+                "status": "ready"
+                if handoff.get("next_skill") == "analysis"
+                else "blocked",
+            }
+        )
+        return {
+            "status": readiness.get("status"),
+            "intent_type": "analysis",
+            "steps": steps,
+            "prerequisites": [],
+            "requires_host_send_confirmation": requires_host_send_confirmation,
+            "candidate_scenarios": scenario_candidates,
+            "next_action": handoff.get("next_skill") or "clarify_inputs",
+        }
+
+    return {
+        "status": readiness.get("status"),
+        "intent_type": "unknown",
+        "steps": steps,
+        "prerequisites": [],
+        "requires_host_send_confirmation": requires_host_send_confirmation,
+        "candidate_scenarios": scenario_candidates,
+        "next_action": "clarify_task_type",
     }
 
 
