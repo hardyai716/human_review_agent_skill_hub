@@ -17,7 +17,7 @@
 
 可选输入：
 
-- `sheet_url`：完整报表链接，用于 Card 按钮和通知草稿。
+- `sheet_url`：完整报表链接，用于 Card 按钮和通知草稿；未提供时，通知脚本会尝试将生成的 XLSX 报表导入为飞书在线表格并回填链接。
 - `top_n`：Card 每级展示 TopN，默认 10。
 - `title`：Card 标题。
 - `identity`：预览发送身份，仅用于输出计划；不代表真实群发授权。
@@ -191,7 +191,7 @@ TOP 低效组合：
 - 缺少 `mach_root_label_name`：生成低置信度路由，fallback 到 `self` 预览。
 - 标签未映射 POC：列入 `unmapped_labels`，不得真实发送。
 - 只有 POC 姓名、没有 open_id：保持 `requires_contact_resolution_before_real_send=true`。
-- 缺少 `sheet_url`：可以生成草稿和本地报表，但 Card 按钮为空；正式触达前必须补齐。
+- 缺少 `sheet_url`：优先尝试将 XLSX 报表导入为飞书在线表格；导入失败时仍生成草稿和本地报表，Card 按钮为空，正式触达前必须补齐。
 - Card hash 校验失败：阻断发送，重新生成 Card。
 - 用户要求绕过确认群发、拉群或写状态：拒绝执行，输出门禁失败原因。
 

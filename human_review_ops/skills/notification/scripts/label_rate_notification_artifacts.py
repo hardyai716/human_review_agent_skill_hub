@@ -22,6 +22,7 @@ from render_label_rate_grading_card import (
     render_grading_card,
 )
 from resolve_label_rate_poc_routing import build_poc_routing_plan, load_stage_1_sample
+from sheet_importer import import_xlsx_as_feishu_sheet
 
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -148,6 +149,7 @@ def build_label_rate_notification_artifacts(
     sent_payload: dict[str, Any] | None,
     target_user_id: str | None,
     target_chat_id: str | None,
+    auto_import_sheet: bool = True,
 ) -> NotificationArtifacts:
     """Build all safe notification artifacts; caller owns any real send action."""
 
@@ -161,6 +163,15 @@ def build_label_rate_notification_artifacts(
     execution = sample["readonly_execution"]
     period = derive_period(sample)
     report = write_report_artifacts(output_dir, execution, period)
+    if auto_import_sheet and not sheet_url:
+        sheet_url = import_xlsx_as_feishu_sheet(
+            workbook_path=report.workbook_path,
+            output_dir=output_dir,
+            sheet_name=(
+                f"低效打标全等级结果-{period['current_start']}-"
+                f"{period['current_end']}"
+            ),
+        )
     summary = build_summary(
         source_path=source_path,
         output_dir=output_dir,

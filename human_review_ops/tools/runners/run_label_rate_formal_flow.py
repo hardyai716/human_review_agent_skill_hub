@@ -99,19 +99,7 @@ def main() -> None:
         sheet_url=sheet_url,
         sent_payload=None,
     )
-    if args.send_chat_id and not sheet_url and not args.no_import_workbook:
-        sheet_url = import_workbook(
-            artifacts.report.workbook_path,
-            name=f"正规流程复跑-低效打标全等级结果-{args.run_id}",
-            base=base,
-        )
-        artifacts = build_notification(
-            args=args,
-            base=base,
-            stage1_path=stage1_path,
-            sheet_url=sheet_url,
-            sent_payload=None,
-        )
+    sheet_url = artifacts.summary.get("sheet_url") or sheet_url
 
     dispatch_record: dict[str, Any] | None = None
     if args.send_chat_id:
@@ -292,6 +280,7 @@ def build_notification(
         sent_payload=sent_payload,
         target_user_id=None,
         target_chat_id=args.send_chat_id,
+        auto_import_sheet=not args.no_import_workbook,
     )
 
 

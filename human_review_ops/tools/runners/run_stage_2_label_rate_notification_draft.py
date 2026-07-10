@@ -73,21 +73,7 @@ def main() -> None:
         self_send_requested=self_send_requested,
         sent_payload=None,
     )
-
-    if args.import_workbook and not sheet_url:
-        period = artifacts.summary["period"]
-        sheet_url = import_workbook(
-            artifacts.report.workbook_path,
-            name=f"低效打标全等级结果-{period['current_start']}-{period['current_end']}",
-        )
-        artifacts = build_artifacts(
-            args=args,
-            source_path=source_path,
-            output_dir=output_dir,
-            sheet_url=sheet_url,
-            self_send_requested=self_send_requested,
-            sent_payload=None,
-        )
+    sheet_url = artifacts.summary.get("sheet_url") or sheet_url
 
     sent_payload = send_preview_if_requested(args, artifacts.card.card_path)
     if sent_payload is not None:
@@ -128,6 +114,7 @@ def build_artifacts(
         sent_payload=sent_payload,
         target_user_id=args.send_user_id,
         target_chat_id=args.send_chat_id,
+        auto_import_sheet=args.import_workbook,
     )
 
 

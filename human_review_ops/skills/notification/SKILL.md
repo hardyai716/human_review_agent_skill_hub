@@ -37,7 +37,7 @@ allowed-tools:
 
 可选输入：
 
-- `sheet_url`：用户或外部执行环境提供的报表链接。
+- `sheet_url`：用户或外部执行环境提供的报表链接；未提供时，通知脚本会在 XLSX 报表生成后尝试导入为飞书在线表格并自动回填链接，导入失败时保持为空且不阻断草稿生成。
 - `recipient_candidates`：用户提供的触达对象候选。
 - `run_mode`：默认调试模式 (`debug_only`)。
 - `card_title`：卡片标题。
@@ -141,7 +141,8 @@ allowed-tools:
 
 可用脚本：
 
-- `scripts/label_rate_notification_artifacts.py`：从打标率分级 `analysis_result` JSONL 生成 `notification_draft.json`、`send_plan.json`、`poc_routing_plan.json`、分等级 CSV、`汇总统计.csv`、XLSX 报表和 Card JSON；默认不发送消息。
+- `scripts/label_rate_notification_artifacts.py`：从打标率分级 `analysis_result` JSONL 生成 `notification_draft.json`、`send_plan.json`、`poc_routing_plan.json`、分等级 CSV、`汇总统计.csv`、XLSX 报表和 Card JSON；未传入 `sheet_url` 时会尝试把 XLSX 导入为飞书在线表格，失败降级为空链接；默认不发送消息。
+- `scripts/sheet_importer.py`：通用 XLSX 到飞书电子表格导入工具，提供 `import_xlsx_as_feishu_sheet`，供需要在通知产物中回填 `sheet_url` 的场景复用。
 - `scripts/resolve_label_rate_poc_routing.py`：从 `analysis_result` JSONL 生成 `poc_routing_plan.json`。
 - `scripts/render_label_rate_grading_card.py`：作为 Python 模块导入，生成飞书 Card 2.0 JSON 和设计检查结果。
 - `scripts/card_hash.py`：计算和校验卡片数据哈希。

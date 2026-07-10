@@ -18,6 +18,8 @@ NOTIFICATION_SCRIPTS = ROOT / "skills" / "notification" / "scripts"
 sys.path.insert(0, str(NOTIFICATION_SCRIPTS))
 
 from card_hash import strip_internal_keys, verify_card_hash  # noqa: E402
+import label_rate_notification_artifacts as notification_artifacts  # noqa: E402
+import sheet_importer  # noqa: E402
 from label_rate_notification_artifacts import (  # noqa: E402
     build_card_summary_rows,
     build_label_rate_notification_artifacts,
@@ -274,7 +276,58 @@ def main() -> None:
             target_chat_id=None,
         )
         validate_artifacts(artifacts)
+    validate_auto_sheet_import()
     print("Label-rate notification scripts smoke OK.")
+
+
+def validate_auto_sheet_import() -> None:
+    with tempfile.TemporaryDirectory(prefix="label-rate-sheet-import-smoke-") as tmp:
+        tmp_path = Path(tmp)
+        source_path = tmp_path / "source.jsonl"
+        output_dir = tmp_path / "output"
+        write_source(source_path)
+        calls: list[list[str]] = []
+        expected_url = "https://bytedance.larkoffice.com/sheets/smoke-auto-import"
+
+        original_run_lark_cli = sheet_importer.run_lark_cli
+
+        def fake_run_lark_cli(
+            command: list[str],
+            *,
+            cwd: Path | None = None,
+        ) -> dict[str, Any]:
+            del cwd
+            calls.append(command)
+            return {"data": {"url": expected_url}}
+
+        sheet_importer.run_lark_cli = fake_run_lark_cli
+        try:
+            artifacts = notification_artifacts.build_label_rate_notification_artifacts(
+                source_path=source_path,
+                output_dir=output_dir,
+                top_n=2,
+                sheet_url=None,
+                identity="bot",
+                title="近7天低效打标策略全等级结果",
+                self_send_requested=False,
+                sent_payload=None,
+                target_user_id=None,
+                target_chat_id=None,
+            )
+        finally:
+            sheet_importer.run_lark_cli = original_run_lark_cli
+
+        if not calls:
+            raise AssertionError("sheet import was not attempted when sheet_url missing.")
+        if "+workbook-import" not in calls[0]:
+            raise AssertionError("sheet import command mismatch.")
+        if artifacts.summary.get("sheet_url") != expected_url:
+            raise AssertionError("summary sheet_url was not filled by auto import.")
+        if artifacts.publish_summary.get("sheet_url") != expected_url:
+            raise AssertionError("publish_summary sheet_url was not filled by auto import.")
+        import_result = read_json(output_dir / "sheet_import_result.json")
+        if import_result.get("status") != "success":
+            raise AssertionError("sheet import result must record success.")
 
 
 if __name__ == "__main__":
