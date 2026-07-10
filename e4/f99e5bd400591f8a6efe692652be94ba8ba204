@@ -1,0 +1,60 @@
+.trae/specs/converge-skill-self-containment/tasks.md
+  s_0b906cd0c9708a::t_6c40015c4c1d1b 38 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a5087695c52a9d25cecd41b","tool_type":"agent","tool_id":"Edit","line_ranges":[{"Single":38}]}]}
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "e4f99e5bd400591f8a6efe692652be94ba8ba204",
+  "prompts": {},
+  "sessions": {
+    "s_0b906cd0c9708a": {
+      "agent_id": {
+        "tool": "trae",
+        "id": "6a5078a65c52a9d25cecd1de",
+        "model": "openrouter-3o__max"
+      },
+      "human_author": "hardyai716 <hardyai716@users.noreply.github.com>"
+    }
+  },
+  "attestation_metadata": {
+    ".trae/specs/converge-skill-self-containment/tasks.md": [
+      {
+        "hash": "s_0b906cd0c9708a::t_6c40015c4c1d1b",
+        "line_ranges": [
+          {
+            "Single": 38
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a5087695c52a9d25cecd41b",
+            "tool_type": "agent",
+            "tool_id": "Edit",
+            "line_ranges": [
+              {
+                "Single": 38
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "remote_transcripts": {
+    "s_0b906cd0c9708a": {
+      "tool": "trae",
+      "conversation_id": "6a5078a65c52a9d25cecd1de",
+      "session_id": "6a5078a65c52a9d25cecd1de",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_0b906cd0c9708a::t_6c40015c4c1d1b": {
+      "tool": "trae",
+      "conversation_id": "6a5078a65c52a9d25cecd1de",
+      "session_id": "6a5078a65c52a9d25cecd1de",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    }
+  }
+}
