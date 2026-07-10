@@ -64,17 +64,21 @@
   "dynamic_eval": {
     "target_latest_eval_url": "https://skills.bytedance.net/skill/skills:skills.byted.org/lizhongtao/hunman_review_ops/analyzing-ops-metrics/-/eval",
     "target_published_skill_id": "skills:skills.byted.org/lizhongtao/hunman_review_ops/analyzing-ops-metrics:1.0.8",
-    "status": "blocked_not_started",
-    "new_eval_task_link": null,
-    "new_eval_task_status": null,
-    "blocked_reason": "Could not inspect or operate the current Chrome AgentBuddy eval page through Computer Use. The first get_app_state call for Google Chrome failed with app-level approval timeout: 'The app-level approval request for \"Google Chrome\" failed: Request timed out. This is NOT a system permission issue.' A second get_app_state retry was cancelled because the user requested immediate status and no further waiting.",
+    "status": "started",
+    "new_eval_id": "ev_aabd4f797fce",
+    "new_eval_task_link": "https://skills.bytedance.net/skill/skills:skills.byted.org/lizhongtao/hunman_review_ops/analyzing-ops-metrics/-/eval",
+    "new_eval_task_status": "running",
+    "started_at_display": "2026/7/11 01:16:07",
+    "blocked_reason": null,
     "attempted_paths": [
       "Loaded the Computer Use workflow instructions.",
       "Read MCP tool descriptors for list_apps, get_app_state, click, type_text, and press_key.",
       "Called list_apps and confirmed Google Chrome was running.",
       "Called get_app_state for com.google.Chrome; it timed out at the app-level approval request.",
       "Retried get_app_state for com.google.Chrome; the call was interrupted by the user's immediate status request.",
-      "Did not fabricate an eval task link or status."
+      "Reloaded the AgentBuddy latest eval page through the integrated browser.",
+      "Clicked 发起评测, selected dataset perceiving-ops-events-1_0_4-ai-gen, and clicked 开始评测.",
+      "Confirmed AgentBuddy shows V2 评测中 and captured eval_id ev_aabd4f797fce from network status requests."
     ]
   }
 }
