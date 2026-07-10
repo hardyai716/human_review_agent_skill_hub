@@ -76,8 +76,21 @@
       ],
       "scripts": [
         {
+          "path": "analysis/scripts/analyzing_ops_metrics.py",
+          "entrypoint": "python3 scripts/analyzing_ops_metrics.py lowest-reason --days 7 --execute never --output-dir <output_dir> --format both",
+          "smoke_command": "python3 scripts/selfcheck.py",
+          "side_effects": ["none"],
+          "outputs": [
+            "query_plan.json",
+            "source_footer.json",
+            "analysis_result.json",
+            "analysis_summary.md",
+            "handoff"
+          ]
+        },
+        {
           "path": "analysis/scripts/label_rate_analysis.py",
-          "entrypoint": "python3 scripts/label_rate_analysis.py --dry-run --levels notice,P2,P1,P0",
+          "entrypoint": "module:internal_library",
           "smoke_command": "python3 scripts/selfcheck.py",
           "side_effects": ["none"],
           "outputs": [
@@ -108,6 +121,7 @@
         "analysis/references/scenarios/efficiency-label-rate.md",
         "analysis/references/scenarios/efficiency-auto-disposal-accuracy.md",
         "analysis/assets/README.md",
+        "analysis/scripts/analyzing_ops_metrics.py",
         "analysis/scripts/label_rate_analysis.py",
         "analysis/scripts/selfcheck.py"
       ]

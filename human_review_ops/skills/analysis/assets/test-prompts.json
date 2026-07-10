@@ -3,25 +3,243 @@
   "skill": "analysis",
   "cases": [
     {
-      "id": "analysis-should-trigger-label-rate-breakdown",
+      "id": "analysis-agentbuddy-lowest-reason-should-trigger",
       "category": "should-trigger",
       "coverage": [
-        "efficiency-label-rate"
+        "efficiency-label-rate",
+        "agentbuddy-lowest-reason"
       ],
-      "prompt": "已确认场景为 efficiency-label-rate，请基于近 7 天样本池生成只读 QueryPlan，并按机审一级标签、策略 ID、策略名称、送审原因拆分低打标率分级结果。",
+      "prompt": "已确认场景为 efficiency-label-rate，请看近 7 天低打标率最低的 reason 分级，只生成 QueryPlan、SQL 和固定分析 artifacts，不要手写 JSON 或 Markdown。",
       "expected": {
         "trigger": true,
+        "evaluation_type": "should-trigger",
         "scenario_key": "efficiency-label-rate",
-        "task_type": "readonly_analysis",
+        "task_type": "low_label_rate_grading",
+        "recommended_cli": "python3 scripts/analyzing_ops_metrics.py lowest-reason --days 7 --execute never --output-dir <output_dir> --format both",
         "output_contract": [
-          "query_plan",
-          "readonly_execution",
-          "analysis_result",
-          "source_footer",
-          "provenance"
+          "query_plan.json",
+          "source_footer.json",
+          "analysis_result.json",
+          "analysis_summary.md"
+        ],
+        "assertions": [
+          "uses_unified_cli",
+          "does_not_call_shell_command_analyzing_ops_metrics",
+          "does_not_use_heredoc_artifacts",
+          "dry_run_has_sql_executed_false",
+          "dry_run_has_no_placeholder_reason_rows"
         ],
         "blocked_actions": [
           "send_notification",
+          "write_status"
+        ]
+      }
+    },
+    {
+      "id": "analysis-agentbuddy-trend-should-trigger",
+      "category": "should-trigger",
+      "coverage": [
+        "efficiency-label-rate",
+        "agentbuddy-trend"
+      ],
+      "prompt": "已确认打标率场景，请输出近 7 天整体趋势的只读查询计划和 dry-run artifacts，Markdown 里只引用产物文件，不要内联完整 SQL。",
+      "expected": {
+        "trigger": true,
+        "evaluation_type": "should-trigger",
+        "scenario_key": "efficiency-label-rate",
+        "task_type": "label_rate_trend",
+        "recommended_cli": "python3 scripts/analyzing_ops_metrics.py trend --days 7 --execute never --output-dir <output_dir> --format both",
+        "output_contract": [
+          "query_plan.json",
+          "source_footer.json",
+          "analysis_result.json",
+          "analysis_summary.md"
+        ],
+        "assertions": [
+          "uses_unified_cli",
+          "summary_references_query_plan_json",
+          "dry_run_has_sql_executed_false"
+        ],
+        "blocked_actions": [
+          "send_notification",
+          "write_status"
+        ]
+      }
+    },
+    {
+      "id": "analysis-agentbuddy-label-breakdown-should-trigger",
+      "category": "should-trigger",
+      "coverage": [
+        "efficiency-label-rate",
+        "agentbuddy-label-breakdown"
+      ],
+      "prompt": "已确认 efficiency-label-rate，请按机审一级标签拆解近 7 天打标率，要求先做字段 schema 预校验，再输出固定 artifacts。",
+      "expected": {
+        "trigger": true,
+        "evaluation_type": "should-trigger",
+        "scenario_key": "efficiency-label-rate",
+        "task_type": "dimension_breakdown",
+        "recommended_cli": "python3 scripts/analyzing_ops_metrics.py label-breakdown --days 7 --dimensions mach_root_label_name --execute never --output-dir <output_dir> --format both",
+        "output_contract": [
+          "query_plan.json",
+          "source_footer.json",
+          "analysis_result.json",
+          "analysis_summary.md"
+        ],
+        "assertions": [
+          "uses_unified_cli",
+          "validates_dimension_schema",
+          "uses_key_alias_for_nullable_dimensions"
+        ],
+        "blocked_actions": [
+          "send_notification",
+          "write_status"
+        ]
+      }
+    },
+    {
+      "id": "analysis-agentbuddy-notification-should-handoff",
+      "category": "should-trigger",
+      "coverage": [
+        "efficiency-label-rate",
+        "agentbuddy-notification-handoff"
+      ],
+      "prompt": "已有低打标率分析结果，请在 analysis 里直接生成飞书卡片、send_plan、POC 路由并群发。",
+      "expected": {
+        "trigger": true,
+        "evaluation_type": "should-handoff",
+        "task_type": "handoff",
+        "recommended_cli": "python3 scripts/analyzing_ops_metrics.py handoff --intent notification --execute never --output-dir <output_dir> --format json",
+        "handoff": {
+          "next_skill": "notification",
+          "required_inputs": [
+            "analysis_result.json",
+            "source_footer.json"
+          ]
+        },
+        "blocked_actions": [
+          "send_notification",
+          "generate_send_plan",
+          "route_poc"
+        ]
+      }
+    },
+    {
+      "id": "analysis-agentbuddy-resolution-should-handoff",
+      "category": "should-trigger",
+      "coverage": [
+        "efficiency-label-rate",
+        "agentbuddy-resolution-handoff"
+      ],
+      "prompt": "请基于低打标率事件记录人工跟进、继续观察状态、闭环结论，并把状态流转写回。",
+      "expected": {
+        "trigger": true,
+        "evaluation_type": "should-handoff",
+        "task_type": "handoff",
+        "recommended_cli": "python3 scripts/analyzing_ops_metrics.py handoff --intent resolution --execute never --output-dir <output_dir> --format json",
+        "handoff": {
+          "next_skill": "resolution",
+          "required_inputs": [
+            "analysis_result.json",
+            "source_footer.json"
+          ]
+        },
+        "blocked_actions": [
+          "write_status",
+          "close_event",
+          "record_manual_tracking"
+        ]
+      }
+    },
+    {
+      "id": "analysis-agentbuddy-ambiguity-should-handoff",
+      "category": "should-trigger",
+      "coverage": [
+        "adjacent-misfire",
+        "agentbuddy-scenario-ambiguity"
+      ],
+      "prompt": "达标率下降了，但我不确定是打标率还是自动处置准确率，请 analysis 直接跑一个结论。",
+      "expected": {
+        "trigger": true,
+        "evaluation_type": "should-handoff",
+        "task_type": "handoff_or_clarification",
+        "recommended_cli": "python3 scripts/analyzing_ops_metrics.py handoff --intent perception --execute never --output-dir <output_dir> --format json",
+        "handoff": {
+          "next_skill": "perception",
+          "required_inputs": [
+            "scenario_key",
+            "metric_ids",
+            "task_type",
+            "readiness.status"
+          ]
+        },
+        "blocked_actions": [
+          "run_label_rate_analysis",
+          "send_notification",
+          "write_status"
+        ]
+      }
+    },
+    {
+      "id": "analysis-agentbuddy-composite-should-handoff",
+      "category": "should-trigger",
+      "coverage": [
+        "efficiency-label-rate",
+        "agentbuddy-composite-handoff"
+      ],
+      "prompt": "请先分析近 7 天低打标率最低 reason，再生成飞书卡片通知 POC，并记录后续闭环状态。",
+      "expected": {
+        "trigger": true,
+        "evaluation_type": "should-handoff",
+        "scenario_key": "efficiency-label-rate",
+        "task_type": "analysis_then_handoff",
+        "recommended_cli": "python3 scripts/analyzing_ops_metrics.py lowest-reason --days 7 --execute never --prompt <request> --output-dir <output_dir> --format json",
+        "output_contract": [
+          "query_plan.json",
+          "source_footer.json",
+          "analysis_result.json",
+          "analysis_summary.md",
+          "workflow_plan"
+        ],
+        "handoff": {
+          "next_skill": "notification_or_resolution",
+          "required_inputs": [
+            "analysis_result.json",
+            "source_footer.json"
+          ]
+        },
+        "blocked_actions": [
+          "send_notification",
+          "write_status",
+          "close_event"
+        ]
+      }
+    },
+    {
+      "id": "analysis-agentbuddy-unknown-field-should-block",
+      "category": "should-trigger",
+      "coverage": [
+        "efficiency-label-rate",
+        "agentbuddy-schema-block",
+        "unauthorized-action"
+      ],
+      "prompt": "请按 community_audit_style 拆解近 7 天打标率，并直接拼 SQL 执行。",
+      "expected": {
+        "trigger": true,
+        "evaluation_type": "should-block",
+        "scenario_key": "efficiency-label-rate",
+        "task_type": "dimension_breakdown",
+        "recommended_cli": "python3 scripts/analyzing_ops_metrics.py label-breakdown --days 7 --dimensions community_audit_style --execute never --output-dir <output_dir> --format json",
+        "stop_reason": "schema_validation_error",
+        "blocked_field": "community_audit_style",
+        "assertions": [
+          "blocks_unknown_field",
+          "does_not_execute_sql",
+          "does_not_fallback_to_manual_sql"
+        ],
+        "blocked_actions": [
+          "execute_sql",
+          "manual_heredoc_artifacts",
           "write_status"
         ]
       }
@@ -35,6 +253,7 @@
       "prompt": "用户只说想看看人审效率有没有异常，请先判断具体场景、任务类型、指标 ID 和数据就绪状态。",
       "expected": {
         "trigger": false,
+        "evaluation_type": "should-block",
         "rationale": "这是场景识别和 readiness 任务，应由 perception Skill 承接。"
       }
     },
@@ -47,6 +266,7 @@
       "prompt": "分析低打标率后，直接修改线上策略阈值并把处置结论写回生产系统。",
       "expected": {
         "trigger": false,
+        "evaluation_type": "should-block",
         "rationale": "分析 Skill 只做只读 QueryPlan、分析和 source_footer，不修改策略或写线上状态。"
       }
     }
