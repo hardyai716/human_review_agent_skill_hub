@@ -171,17 +171,13 @@ python3 human_review_ops/skills/notification/scripts/resolve_label_rate_poc_rout
 
 ## 验证
 
-运行产品化严格校验：
+运行 Skill 内自包含 smoke 校验：
 
 ```bash
-PYTHONDONTWRITEBYTECODE=1 python3 human_review_ops/tools/validators/validate_skill_productization.py --strict
+python3 scripts/selfcheck.py
 ```
 
-运行通知脚本 smoke 校验：
-
-```bash
-PYTHONDONTWRITEBYTECODE=1 python3 human_review_ops/tools/validators/validate_label_rate_notification_scripts.py
-```
+该脚本用内置 smoke 分级数据在临时目录生成通知产物，只调用本 Skill 内脚本，不引用 Skill 外部路径、不发送飞书消息、不写线上状态。
 
 人工验证点：
 

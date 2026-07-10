@@ -1,0 +1,14 @@
+- [x] 当前工作区改动已提交并成功推送到 origin/main（建立基线）
+- [x] analysis/perception/notification/resolution 四个 Skill 均存在 `scripts/selfcheck.py`
+- [x] 每个 selfcheck.py 独立运行退出码 0，且仅引用 skill 内部相对路径、无 SQL/通知/写状态副作用
+- [x] 四个 SKILL.md「验证」章节不再出现 `human_review_ops/tools/`，改为 `python3 scripts/selfcheck.py`
+- [x] 四个 SKILL.md 仍保留 strict 产品化校验所需的全部章节标题（含「验证」）
+- [x] `skill_release_manifest.json` 的 `standalone_smoke_validator` 与各 `smoke_command` 不再指向外部 tools 绝对路径
+- [x] 每个 skill 的 scripts[] 与 release_assets 均包含 selfcheck.py
+- [x] `build_skill_package.py` 能把根 references 的 POC 映射同步到 skill assets，且两份内容一致
+- [x] `validate_skill_standalone_smoke.py` 新增门禁能在 SKILL.md 出现 `human_review_ops/tools/` 时报错
+- [x] productization(--strict) 与 standalone smoke validator 全部通过
+- [x] perception/analysis/notification 脚本 validator 与 resolution smoke 全部通过
+- [x] Stage 1 grading validator、Stage 2 notification/poc validator、POC 映射 validator 全部通过
+- [x] `run_stage_1_real_readonly_label_rate_grading.py` 仍能成功 import skill 脚本（现有流程不回退）
+- [x] `git diff --check` 无问题，收敛改动已提交并推送到 origin/main

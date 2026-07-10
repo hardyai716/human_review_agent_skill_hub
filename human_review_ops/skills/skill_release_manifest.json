@@ -3,7 +3,7 @@
   "package_root": "human_review_ops/skills",
   "runtime": ["python>=3.9"],
   "release_policy": {
-    "standalone_smoke_validator": "human_review_ops/tools/validators/validate_skill_standalone_smoke.py",
+    "standalone_smoke_command": "python3 scripts/selfcheck.py",
     "side_effects": "dry-run only; no SQL execution, no notification send, no online state write",
     "forbid_absolute_paths": true,
     "forbid_real_tokens": true
@@ -26,7 +26,7 @@
         {
           "path": "perception/scripts/label_rate_perception.py",
           "entrypoint": "python3 scripts/label_rate_perception.py --dry-run --request <request>",
-          "smoke_command": "python3 human_review_ops/tools/validators/validate_label_rate_perception_scripts.py",
+          "smoke_command": "python3 scripts/selfcheck.py",
           "side_effects": ["none"],
           "outputs": [
             "scenario_key",
@@ -36,6 +36,13 @@
             "retrieval_policy",
             "readiness"
           ]
+        },
+        {
+          "path": "perception/scripts/selfcheck.py",
+          "entrypoint": "python3 scripts/selfcheck.py",
+          "smoke_command": "python3 scripts/selfcheck.py",
+          "side_effects": ["none"],
+          "outputs": ["selfcheck_ok"]
         }
       ],
       "external_dependencies": [],
@@ -47,7 +54,8 @@
         "perception/references/scenarios/efficiency-label-rate.md",
         "perception/references/scenarios/efficiency-auto-disposal-accuracy.md",
         "perception/assets/README.md",
-        "perception/scripts/label_rate_perception.py"
+        "perception/scripts/label_rate_perception.py",
+        "perception/scripts/selfcheck.py"
       ]
     },
     "analysis": {
@@ -70,7 +78,7 @@
         {
           "path": "analysis/scripts/label_rate_analysis.py",
           "entrypoint": "python3 scripts/label_rate_analysis.py --dry-run --levels notice,P2,P1,P0",
-          "smoke_command": "python3 human_review_ops/tools/validators/validate_label_rate_analysis_scripts.py",
+          "smoke_command": "python3 scripts/selfcheck.py",
           "side_effects": ["none"],
           "outputs": [
             "QueryPlan",
@@ -79,6 +87,13 @@
             "analysis_result",
             "provenance"
           ]
+        },
+        {
+          "path": "analysis/scripts/selfcheck.py",
+          "entrypoint": "python3 scripts/selfcheck.py",
+          "smoke_command": "python3 scripts/selfcheck.py",
+          "side_effects": ["none"],
+          "outputs": ["selfcheck_ok"]
         }
       ],
       "external_dependencies": [],
@@ -93,7 +108,8 @@
         "analysis/references/scenarios/efficiency-label-rate.md",
         "analysis/references/scenarios/efficiency-auto-disposal-accuracy.md",
         "analysis/assets/README.md",
-        "analysis/scripts/label_rate_analysis.py"
+        "analysis/scripts/label_rate_analysis.py",
+        "analysis/scripts/selfcheck.py"
       ]
     },
     "notification": {
@@ -115,7 +131,7 @@
         {
           "path": "notification/scripts/label_rate_notification_artifacts.py",
           "entrypoint": "python3 scripts/label_rate_notification_artifacts.py --source <stage1.jsonl> --output-dir <output>",
-          "smoke_command": "python3 human_review_ops/tools/validators/validate_label_rate_notification_scripts.py",
+          "smoke_command": "python3 scripts/selfcheck.py",
           "side_effects": ["none"],
           "outputs": [
             "notification_draft.json",
@@ -128,23 +144,30 @@
         {
           "path": "notification/scripts/render_label_rate_grading_card.py",
           "entrypoint": "module:render_grading_card",
-          "smoke_command": "python3 human_review_ops/tools/validators/validate_label_rate_notification_scripts.py",
+          "smoke_command": "python3 scripts/selfcheck.py",
           "side_effects": ["none"],
           "outputs": ["Card JSON"]
         },
         {
           "path": "notification/scripts/resolve_label_rate_poc_routing.py",
           "entrypoint": "module:build_poc_routing_plan",
-          "smoke_command": "python3 human_review_ops/tools/validators/validate_label_rate_notification_scripts.py",
+          "smoke_command": "python3 scripts/selfcheck.py",
           "side_effects": ["none"],
           "outputs": ["poc_routing_plan.json"]
         },
         {
           "path": "notification/scripts/card_hash.py",
           "entrypoint": "module:verify_card_hash",
-          "smoke_command": "python3 human_review_ops/tools/validators/validate_label_rate_notification_scripts.py",
+          "smoke_command": "python3 scripts/selfcheck.py",
           "side_effects": ["none"],
           "outputs": ["card_hash_check.json"]
+        },
+        {
+          "path": "notification/scripts/selfcheck.py",
+          "entrypoint": "python3 scripts/selfcheck.py",
+          "smoke_command": "python3 scripts/selfcheck.py",
+          "side_effects": ["none"],
+          "outputs": ["selfcheck_ok"]
         }
       ],
       "external_dependencies": ["openpyxl"],
@@ -161,7 +184,8 @@
         "notification/scripts/label_rate_notification_artifacts.py",
         "notification/scripts/render_label_rate_grading_card.py",
         "notification/scripts/resolve_label_rate_poc_routing.py",
-        "notification/scripts/card_hash.py"
+        "notification/scripts/card_hash.py",
+        "notification/scripts/selfcheck.py"
       ]
     },
     "resolution": {
@@ -181,9 +205,16 @@
         {
           "path": "resolution/scripts/build_label_rate_manual_tracking.py",
           "entrypoint": "python3 scripts/build_label_rate_manual_tracking.py --notification-draft <draft.json> --send-plan <send_plan.json> --output <tracking.json>",
-          "smoke_command": "python3 human_review_ops/tools/validators/validate_skill_standalone_smoke.py --skills resolution",
+          "smoke_command": "python3 scripts/selfcheck.py",
           "side_effects": ["none"],
           "outputs": ["manual_tracking.json"]
+        },
+        {
+          "path": "resolution/scripts/selfcheck.py",
+          "entrypoint": "python3 scripts/selfcheck.py",
+          "smoke_command": "python3 scripts/selfcheck.py",
+          "side_effects": ["none"],
+          "outputs": ["selfcheck_ok"]
         }
       ],
       "external_dependencies": [],
@@ -195,7 +226,8 @@
         "resolution/references/scenarios/efficiency-label-rate.md",
         "resolution/references/scenarios/efficiency-auto-disposal-accuracy.md",
         "resolution/assets/README.md",
-        "resolution/scripts/build_label_rate_manual_tracking.py"
+        "resolution/scripts/build_label_rate_manual_tracking.py",
+        "resolution/scripts/selfcheck.py"
       ]
     }
   }

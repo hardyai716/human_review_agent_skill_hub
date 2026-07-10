@@ -57,6 +57,11 @@ FORBIDDEN_RUNTIME_REFERENCE_PATTERNS = {
         r"notification_templates|owner_routing|sla|state_machine)\.md\b"
     ),
 }
+# SKILL.md must stay self-contained: it may not point at dev-time tooling that
+# is not shipped with the Skill package.
+SKILL_MD_FORBIDDEN_PATTERNS = {
+    "external_tools_reference_in_skill_md": re.compile(r"human_review_ops/tools/"),
+}
 SECRET_PATTERNS = {
     "bearer_token": re.compile(r"Bearer\s+[A-Za-z0-9._-]{24,}"),
     "assigned_secret": re.compile(
@@ -276,6 +281,20 @@ def validate_skill_layout(skill: str, issues: list[str]) -> None:
     scripts = list((skill_dir / "scripts").rglob("*.py"))
     if not scripts:
         issues.append(f"{rel(skill_dir / 'scripts')} must contain Python entry scripts.")
+
+
+def validate_skill_md_self_containment(skill: str, issues: list[str]) -> None:
+    skill_md = SKILLS_ROOT / skill / "SKILL.md"
+    if not skill_md.exists():
+        return
+    text = skill_md.read_text(encoding="utf-8", errors="ignore")
+    for line_number, line in enumerate(text.splitlines(), start=1):
+        for pattern_name, pattern in SKILL_MD_FORBIDDEN_PATTERNS.items():
+            if pattern.search(line):
+                issues.append(
+                    f"{rel(skill_md)}:{line_number} contains forbidden external "
+                    f"reference: {pattern_name}"
+                )
 
 
 def validate_python_compilation(skill: str, issues: list[str]) -> int:
@@ -552,6 +571,7 @@ def main() -> None:
 
     for skill in selected_skills:
         validate_skill_layout(skill, issues)
+        validate_skill_md_self_containment(skill, issues)
         script_counts[skill] = validate_python_compilation(skill, issues)
         validate_external_dependencies(skill, manifest, issues)
         validate_text_risks(skill, issues)

@@ -170,11 +170,13 @@ python3 human_review_ops/skills/resolution/scripts/build_label_rate_manual_track
 
 ## 验证
 
-运行产品化严格校验：
+运行 Skill 内自包含 smoke 校验：
 
 ```bash
-PYTHONDONTWRITEBYTECODE=1 python3 human_review_ops/tools/validators/validate_skill_productization.py --strict
+python3 scripts/selfcheck.py
 ```
+
+该脚本用内置 smoke 通知草稿和 send_plan 生成本地人工跟踪记录，只调用本 Skill 内脚本，不引用 Skill 外部路径、不发送通知、不写线上状态。
 
 人工验证点：
 

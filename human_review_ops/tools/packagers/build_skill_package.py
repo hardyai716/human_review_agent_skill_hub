@@ -4,10 +4,17 @@
 from __future__ import annotations
 
 import argparse
+import shutil
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
+
+# Structured scenario assets that must be synced verbatim (not merged into
+# Markdown) from the root scenario package into a Skill's assets directory.
+SKILL_ASSET_SYNC = {
+    "notification": ["mach_root_label_poc_mapping.json"],
+}
 
 SKILL_COMBINED_SOURCES = {
     "perception": [
@@ -105,32 +112,62 @@ def build_skill_scenario_doc(skill: str, scenario_dir: Path, scenario_key: str) 
     return "\n".join(sections).rstrip() + "\n"
 
 
-def build_snapshots(scenario_key: str, dry_run: bool) -> None:
+def sync_skill_assets(scenario_dir: Path, scenario_key: str, dry_run: bool) -> None:
+    """Copy structured scenario assets verbatim into each Skill's assets dir."""
+    for skill, asset_names in SKILL_ASSET_SYNC.items():
+        for asset_name in asset_names:
+            source = scenario_dir / asset_name
+            if not source.exists():
+                continue
+            target_dir = ROOT / "skills" / skill / "assets" / scenario_key
+            target = target_dir / asset_name
+            print(
+                f"{source.relative_to(ROOT)} -> {target.relative_to(ROOT)}"
+            )
+            if not dry_run:
+                target_dir.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(source, target)
+
+
+def build_snapshots(scenario_key: str, dry_run: bool, assets_only: bool = False) -> None:
     scenario_dir = ROOT / "references" / "scenarios" / scenario_key
     if not scenario_dir.exists():
         raise FileNotFoundError(f"Scenario package not found: {scenario_dir}")
 
-    for skill, combined_sources in SKILL_COMBINED_SOURCES.items():
-        target_dir = ROOT / "skills" / skill / "references" / "scenarios"
-        if not dry_run:
-            target_dir.mkdir(parents=True, exist_ok=True)
+    if not assets_only:
+        for skill, combined_sources in SKILL_COMBINED_SOURCES.items():
+            target_dir = ROOT / "skills" / skill / "references" / "scenarios"
+            if not dry_run:
+                target_dir.mkdir(parents=True, exist_ok=True)
 
-        target = target_dir / f"{scenario_key}.md"
-        source_summary = " + ".join(name for _, name in combined_sources)
-        print(f"{scenario_dir.relative_to(ROOT)}/[{source_summary}] -> {target.relative_to(ROOT)}")
-        if not dry_run:
-            target.write_text(
-                build_skill_scenario_doc(skill, scenario_dir, scenario_key),
-                encoding="utf-8",
-            )
+            target = target_dir / f"{scenario_key}.md"
+            source_summary = " + ".join(name for _, name in combined_sources)
+            print(f"{scenario_dir.relative_to(ROOT)}/[{source_summary}] -> {target.relative_to(ROOT)}")
+            if not dry_run:
+                target.write_text(
+                    build_skill_scenario_doc(skill, scenario_dir, scenario_key),
+                    encoding="utf-8",
+                )
+
+    sync_skill_assets(scenario_dir, scenario_key, dry_run)
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("scenario_key")
     parser.add_argument("--write", action="store_true", help="Write files instead of dry-run.")
+    parser.add_argument(
+        "--assets-only",
+        action="store_true",
+        help="Only sync structured scenario assets (e.g. POC mapping); "
+        "do not regenerate scenario Markdown docs.",
+    )
     args = parser.parse_args()
-    build_snapshots(args.scenario_key, dry_run=not args.write)
+    build_snapshots(
+        args.scenario_key,
+        dry_run=not args.write,
+        assets_only=args.assets_only,
+    )
 
 
 if __name__ == "__main__":

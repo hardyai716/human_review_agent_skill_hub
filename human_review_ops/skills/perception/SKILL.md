@@ -132,17 +132,13 @@ PYTHONDONTWRITEBYTECODE=1 python3 human_review_ops/skills/perception/scripts/lab
 
 ## 验证
 
-运行脚本级 smoke 校验：
+运行 Skill 内自包含 smoke 校验：
 
 ```bash
-PYTHONDONTWRITEBYTECODE=1 python3 human_review_ops/tools/validators/validate_label_rate_perception_scripts.py
+python3 scripts/selfcheck.py
 ```
 
-运行产品化严格校验：
-
-```bash
-PYTHONDONTWRITEBYTECODE=1 python3 human_review_ops/tools/validators/validate_skill_productization.py --strict --skills perception
-```
+该脚本只调用本 Skill 内脚本，不引用 Skill 外部路径、不执行 SQL、不发送通知、不写线上状态。
 
 人工验证点：
 

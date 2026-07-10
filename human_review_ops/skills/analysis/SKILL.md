@@ -200,10 +200,10 @@ allowed-tools:
 python3 human_review_ops/skills/analysis/scripts/label_rate_analysis.py --dry-run --levels notice,P2,P1,P0
 ```
 
-脚本与阶段 1 runner 的分工：
+脚本与宿主阶段 1 runner 的分工：
 
 - `label_rate_analysis.py` 负责 QueryPlan、source_footer、打标率 SQL 构造、分级规则、结果标准化和 smoke 样例。
-- `human_review_ops/tools/runners/run_stage_1_real_readonly_label_rate_grading.py` 保留阶段 1 编排、Aeolus 只读查询、POC 名称补充和 eval 文件写入；它通过 `label_rate_analysis.parse_levels()`、`label_rate_analysis.sql_by_level()` 和 `label_rate_analysis.build_records(...)` 复用分析脚本。
+- 宿主 Agent 或阶段 1 runner 保留阶段 1 编排、Aeolus 只读查询、POC 名称补充和 eval 文件写入；它通过 `label_rate_analysis.parse_levels()`、`label_rate_analysis.sql_by_level()` 和 `label_rate_analysis.build_records(...)` 复用本 Skill 脚本。
 - 宿主 Agent 无只读执行权限时，只输出 QueryPlan 或只读执行请求，不绕过 runner 或工具权限门禁执行真实查询。
 
 ## 失败处理
@@ -218,13 +218,13 @@ python3 human_review_ops/skills/analysis/scripts/label_rate_analysis.py --dry-ru
 
 ## 验证
 
-运行产品化、脚本级和独立运行校验：
+运行 Skill 内自包含 smoke 校验：
 
 ```bash
-python3 human_review_ops/tools/validators/validate_skill_productization.py --strict
-python3 human_review_ops/tools/validators/validate_label_rate_analysis_scripts.py
-python3 human_review_ops/tools/validators/validate_skill_standalone_smoke.py
+python3 scripts/selfcheck.py
 ```
+
+该脚本只调用本 Skill 内 `label_rate_analysis.py`，不引用 Skill 外部路径、不执行 SQL、不发送通知、不写线上状态。
 
 人工验证点：
 
