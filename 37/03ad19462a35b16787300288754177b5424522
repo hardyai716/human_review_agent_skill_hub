@@ -1,0 +1,21 @@
+human_review_ops/evals/quality-inspection-accuracy/quality_inspection_accuracy_2026-07-08.sql
+  s_25c8d02eef0976::t_e4f0bd17b7473f 1-44
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "3703ad19462a35b16787300288754177b5424522",
+  "prompts": {},
+  "sessions": {
+    "s_25c8d02eef0976": {
+      "agent_id": {
+        "tool": "trae",
+        "id": "6a51cbe65c52a9d25cecfe0d",
+        "model": "gpt-5.5__max"
+      },
+      "human_author": "hardyai716 <hardyai716@users.noreply.github.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
