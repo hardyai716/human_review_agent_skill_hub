@@ -1,0 +1,127 @@
+human_review_ops/skills/analysis/references/scenario-index.md
+  s_25c8d02eef0976::t_dfde623ab25e64 17
+  s_25c8d02eef0976::t_c5c538e1594c83 18
+human_review_ops/tools/validators/README.md
+  s_25c8d02eef0976::t_8efbbccba444ff 12,34-35
+human_review_ops/tools/validators/validate_aeolus_field_contracts.py
+  s_25c8d02eef0976::t_53c63405670ad1 128,140
+  s_25c8d02eef0976::t_e538d1dedfbd34 1-20,22-127,129-132,145-280,282-329,331-423
+  s_25c8d02eef0976::t_97adc510b90969 281,330
+  s_25c8d02eef0976::t_4570388547978d 21,133-139,141-144
+human_review_ops/tools/validators/aeolus_dataset_fields_cache.json
+  s_25c8d02eef0976::t_e7119587d61562 1-62
+human_review_ops/skills/skill_release_manifest.json
+  s_25c8d02eef0976::t_3d1aa152ba9049 19-20,57,73-74,94-105,125,128
+human_review_ops/skills/analysis/references/scenarios/efficiency-auto-disposal-accuracy.md
+  s_25c8d02eef0976::t_a87a887f3936cd 153,160-161,168,181,425,435,437
+  s_25c8d02eef0976::t_de27f2e9f3f591 144
+  s_25c8d02eef0976::t_046b66d5fbc102 148-152,154-159,162-167,169,179,259-311,313-321,324-352,354-374
+  s_25c8d02eef0976::t_f8e652e92fa39d 105,107
+  s_25c8d02eef0976::t_4a6652656c93de 12,23,182,190
+  s_25c8d02eef0976::t_e7ef9843c6435c 93
+  s_25c8d02eef0976::t_7199dcae018dcd 145,389,396
+  s_25c8d02eef0976::t_9c0528782bd3a2 58-59,61,63
+  s_25c8d02eef0976::t_1ff7029b2d1046 72,312,322-323,353,415
+  s_25c8d02eef0976::t_ef62188a0652ae 111,115-118
+  s_25c8d02eef0976::t_3e73d166a39382 10,13-14,22,70,73,78-83,85,87,89-92,94-100,102-104,106,108-110,112-114,119-120,134-141,143,146,180,188-189,193-258,393-394,397,423-424
+  s_25c8d02eef0976::t_b66a6d4aded2ad 48
+  s_25c8d02eef0976::t_d42638f78c1d21 8-9
+  s_25c8d02eef0976::t_6a50ce726457d7 33-47,50-57,60,62,64,68-69,71,101,132,172
+  s_25c8d02eef0976::t_09ede95fc7cd63 170-171
+  s_25c8d02eef0976::t_953f5450dc1693 375
+human_review_ops/skills/analysis/references/scenarios/quality-inspection-accuracy.md
+  s_25c8d02eef0976::t_0c0bfe8992b51a 120
+  s_25c8d02eef0976::t_b7f4a8660856cb 14,108-110,124-125,160-193,244,274-275
+  s_25c8d02eef0976::t_fb8a93919f8940 151-153,158
+  s_25c8d02eef0976::t_9711f62637d730 9-11,73
+  s_25c8d02eef0976::t_5fd3069c53fbff 35-46,48-66
+  s_25c8d02eef0976::t_1759418326390e 94-96,159,223
+  s_25c8d02eef0976::t_d8feb58e545208 197,207
+  s_25c8d02eef0976::t_73c450c3fdc233 126-150,154-157
+  s_25c8d02eef0976::t_183e4638ce7676 47
+  s_25c8d02eef0976::t_e34177db3ce8fe 122
+  s_25c8d02eef0976::t_6354ae4809888a 205,214,224,245-249
+  s_25c8d02eef0976::t_5a48edc172d274 121
+  s_25c8d02eef0976::t_59ef47c7aa3d59 1-8,12-13,15-34,67-72,74-93,97-107,111-115,117-119,123,194-196,198-204,206,208-213,215-222,225-243,250-257,259,261-273,276-297
+  s_25c8d02eef0976::t_4a2c91f06a42d2 258,260
+  s_25c8d02eef0976::t_13568a892b5d30 116
+human_review_ops/skills/perception/references/scenarios/quality-inspection-accuracy.md
+  s_25c8d02eef0976::t_67842f01ec1cae 1-129
+human_review_ops/skills/efficiency-label-rate-ops/references/dataset_reference.md
+  s_25c8d02eef0976::t_c463796c774b7e 92
+  s_25c8d02eef0976::t_4fcf9cb2218641 98-99
+  s_25c8d02eef0976::t_960e6a2c2ee047 25
+  s_25c8d02eef0976::t_13acfc41bdde23 53-65,85
+  s_25c8d02eef0976::t_be4a178fadcb49 91,93-94,102,118
+human_review_ops/skills/perception/references/scenario-index.md
+  s_25c8d02eef0976::t_e0b83122fe4167 18-24
+  s_25c8d02eef0976::t_dc6dd15ae78a1d 15
+  s_25c8d02eef0976::t_8a21a1b57a5ac7 16
+human_review_ops/skills/efficiency-label-rate-ops/references/scenarios/efficiency-label-rate.md
+  s_25c8d02eef0976::t_baea93669616f3 261,263-264,272,288
+  s_25c8d02eef0976::t_e9546538ba2a09 268-269
+  s_25c8d02eef0976::t_3ecd7a1552df64 262,408
+  s_25c8d02eef0976::t_b821b92aacd1b7 62-64,66-69,127-135,223-235,255
+  s_25c8d02eef0976::t_eeb5ee819c0168 195
+human_review_ops/skills/analysis/scripts/quality_inspection_accuracy_query.py
+  s_25c8d02eef0976::t_ed9af2844cadef 1,8-17,19-28,48,50-67,69,85-136,138-143,145-161
+  s_25c8d02eef0976::t_e4e7cf2215b056 68,144
+  s_25c8d02eef0976::t_40365a06f338d3 49
+  s_25c8d02eef0976::t_ef7f2c1fc8db8c 2-7,18,29-47,70-84,137
+human_review_ops/skills/analysis/scripts/selfcheck.py
+  s_25c8d02eef0976::t_c87d810070fd98 40,44-45
+  s_25c8d02eef0976::t_4617a45f53fc8d 14,38-39,41-43,46
+  s_25c8d02eef0976::t_c589c079b4aaf7 47
+human_review_ops/skills/analysis/references/scenarios/efficiency-label-rate.md
+  s_25c8d02eef0976::t_af3b7c7ec7c907 80
+  s_25c8d02eef0976::t_b18cb757d68aeb 91-92
+  s_25c8d02eef0976::t_cfcb344110d1a2 33-49,51-54,60-61,87,145
+  s_25c8d02eef0976::t_774f0bbaec0e09 9
+human_review_ops/skills/efficiency-label-rate-ops/references/metric_contract.md
+  s_25c8d02eef0976::t_03cf9d74d4eb59 13-15,17-20,78-86
+human_review_ops/tools/validators/validate_skill_productization.py
+  s_25c8d02eef0976::t_ddca3ebaa384d3 10-11,20-22,379-394,415-416
+human_review_ops/skills/analysis/references/common.md
+  s_25c8d02eef0976::t_2253c63455052f 3-10,49-50
+  s_25c8d02eef0976::t_0bc84e8b06877f 40-48
+  s_25c8d02eef0976::t_16f7e706b47013 11-39
+human_review_ops/skills/perception/references/scenarios/efficiency-auto-disposal-accuracy.md
+  s_25c8d02eef0976::t_8bca6672b9ff76 8-9,44
+  s_25c8d02eef0976::t_062043310bb0a1 62,118
+  s_25c8d02eef0976::t_2dc6d7de7b917c 35
+  s_ef4becdd56ebea::t_55136181df0db2 7
+  s_25c8d02eef0976::t_87bfa5e76984bc 11,19,37,65
+  s_25c8d02eef0976::t_488d8defcec091 55
+  s_25c8d02eef0976::t_47df712a5f8917 54
+  s_25c8d02eef0976::t_d715f958a3517d 76,83
+  s_25c8d02eef0976::t_6934c038b2387c 50-53,121
+  s_25c8d02eef0976::t_243086254ff8f6 10,18,33,36,45,49,56,63,119-120
+human_review_ops/skills/efficiency-label-rate-ops/references/analysis.md
+  s_25c8d02eef0976::t_5c7d1ba0fc1754 95
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "a3743d6c276f19949024e108a9453ec73eb0c036",
+  "prompts": {},
+  "sessions": {
+    "s_25c8d02eef0976": {
+      "agent_id": {
+        "tool": "trae",
+        "id": "6a51cbe65c52a9d25cecfe0d",
+        "model": "gpt-5.5__max"
+      },
+      "human_author": "hardyai716 <hardyai716@users.noreply.github.com>"
+    },
+    "s_ef4becdd56ebea": {
+      "agent_id": {
+        "tool": "trae-cue",
+        "id": "ai_tab-icr-60ad0d41-89d2-438c-9741-aeca24a59ba4",
+        "model": "default"
+      },
+      "human_author": "hardyai716 <hardyai716@users.noreply.github.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
