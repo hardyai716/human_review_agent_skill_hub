@@ -1,0 +1,48 @@
+{
+  "schema_version": "agentbuddy_publish_summary.v1",
+  "published_at": "2026-07-12T00:32:42+08:00",
+  "git_commit": "3703ad1",
+  "group": "skills.byted.org/lizhongtao/hunman_review_ops",
+  "space_url": "https://skills.bytedance.net/space/skills.byted.org%2Flizhongtao%2Fhunman_review_ops",
+  "access": "restricted",
+  "region": "cn",
+  "ok": true,
+  "skills": [
+    {
+      "local_item": "perception",
+      "skill_name": "perceiving-ops-events",
+      "publish_method": "directory",
+      "id": "skills:skills.byted.org/lizhongtao/hunman_review_ops/perceiving-ops-events:1.0.5"
+    },
+    {
+      "local_item": "analysis",
+      "skill_name": "analyzing-ops-metrics",
+      "publish_method": "directory",
+      "id": "skills:skills.byted.org/lizhongtao/hunman_review_ops/analyzing-ops-metrics:1.0.9"
+    },
+    {
+      "local_item": "notification",
+      "skill_name": "routing-ops-notifications",
+      "publish_method": "directory",
+      "id": "skills:skills.byted.org/lizhongtao/hunman_review_ops/routing-ops-notifications:1.0.12"
+    },
+    {
+      "local_item": "resolution",
+      "skill_name": "tracking-ops-resolution",
+      "publish_method": "directory",
+      "id": "skills:skills.byted.org/lizhongtao/hunman_review_ops/tracking-ops-resolution:1.0.7"
+    },
+    {
+      "local_item": "efficiency-label-rate-ops",
+      "skill_name": "efficiency-label-rate-ops",
+      "publish_method": "directory",
+      "id": "skills:skills.byted.org/lizhongtao/hunman_review_ops/efficiency-label-rate-ops:1.0.1"
+    }
+  ],
+  "command_template": "NPM_CONFIG_REGISTRY=http://bnpm.byted.org npx -y agentbuddy@latest skill publish ./human_review_ops/skills/<item> --group skills.byted.org/lizhongtao/hunman_review_ops --access restricted --region cn -y",
+  "notes": [
+    "Republish after darwin-review hardening (commit e3f8733) and the quality-inspection-accuracy scenario addition (commit a3743d6).",
+    "All 5 registered skills published via directory upload; CLI auto-incremented patch/minor versions.",
+    "publish.yaml manifest and validate_agentbuddy_publish.py both passed before publishing."
+  ]
+}
