@@ -187,32 +187,25 @@ allowed-tools:
 
 ## 脚本
 
-统一推荐入口是 `scripts/analyzing_ops_metrics.py`。调用方只运行这个 Python 脚本，由脚本生成固定 artifacts；不要调用不存在的 `analyzing-ops-metrics` shell 命令，不要用 heredoc 临场手写 JSON/Markdown，不要在摘要 Markdown 内联完整 SQL。
-
-从 Skill 根目录运行：
-
-```bash
-python3 scripts/analyzing_ops_metrics.py lowest-reason --days 7 --execute never --output-dir <output_dir> --format both
-python3 scripts/analyzing_ops_metrics.py trend --days 7 --execute never --output-dir <output_dir> --format both
-python3 scripts/analyzing_ops_metrics.py label-breakdown --days 7 --dimensions mach_root_label_name --execute never --output-dir <output_dir> --format both
-python3 scripts/analyzing_ops_metrics.py handoff --intent notification --execute never --output-dir <output_dir> --format json
-```
-
-`scripts/analyzing_ops_metrics.py` 负责：
-
-- 子命令路由：`lowest-reason`、`trend`、`label-breakdown`、`handoff`。
-- 只读执行策略：`--execute auto|never|required`；`never` 只生成 QueryPlan 和 SQL，不回填伪造业务结果。
-- 固定产物输出：`query_plan.json`、`source_footer.json`、`analysis_result.json`、`analysis_summary.md`。
-- 字段 schema 预校验、禁用写 SQL 关键词检查、权限不可用时的 blocked 结构。
-- 边界 handoff：通知、闭环、场景歧义和复合任务按 `next_skill` 停止，不在 analysis 内继续承接。
-
-`scripts/label_rate_analysis.py` 是内部可复用库，不是推荐运行入口。它无副作用，不执行 SQL、不发送通知、不写线上状态；由统一 CLI 和自检脚本复用以下函数：
+`human_review_ops/skills/analysis/scripts/label_rate_analysis.py` 是打标率低效分级的可复用分析入口。该脚本无副作用，不执行 SQL、不发送通知、不写线上状态；它负责生成和标准化分析资产：
 
 - `parse_levels()`：解析 `notice`、`P2`、`P1`、`P0` 等级参数。
 - `sql_by_level()`：生成各等级只读 SQL，复用指标契约中的样本池过滤、四维粒度和低打标率分级规则。
 - `build_query_plan(levels, sql_map)`：生成 QueryPlan，包含来源优先级、允许/禁止来源、质量检查和 `sql_by_level`。
 - `build_records(payloads, levels, sql_map, row_enricher=None)`：把只读查询返回 payload 标准化为 `environment`/`sample` 记录，包含 `readonly_execution`、`analysis_result`、`source_footer` 和 `provenance`。
 - `build_source_footer(...)`、`build_readonly_execution(...)`、`build_analysis_result(...)`：生成来源页脚、只读执行摘要和标准化分析结果。
+
+可用 dry-run 验证脚本输出结构：
+
+```bash
+python3 human_review_ops/skills/analysis/scripts/label_rate_analysis.py --dry-run --levels notice,P2,P1,P0
+```
+
+脚本与外部执行环境的分工：
+
+- `label_rate_analysis.py` 负责 QueryPlan、source_footer、打标率 SQL 构造、分级规则、结果标准化和 smoke 样例。
+- 外部执行环境负责调用只读数据工具、回填查询结果、补充 POC 名称和保存分析产物；它通过 `label_rate_analysis.parse_levels()`、`label_rate_analysis.sql_by_level()` 和 `label_rate_analysis.build_records(...)` 复用本 Skill 脚本。
+- 调用方 Agent 无只读执行权限时，只输出 QueryPlan 或只读执行请求，不绕过工具权限门禁执行真实查询。
 
 ## 失败处理
 
@@ -232,15 +225,12 @@ python3 scripts/analyzing_ops_metrics.py handoff --intent notification --execute
 python3 scripts/selfcheck.py
 ```
 
-该脚本只调用本 Skill 内脚本，不引用 Skill 外部路径；它覆盖 `scripts/analyzing_ops_metrics.py --execute never` dry-run、handoff 分支和内部库结构校验，不执行 SQL、不发送通知、不写线上状态。
+该脚本只调用本 Skill 内 `label_rate_analysis.py`，不引用 Skill 外部路径、不执行 SQL、不发送通知、不写线上状态。
 
 人工验证点：
 
-- `analyzing_ops_metrics.py lowest-reason --execute never --output-dir <output_dir>` 稳定生成 `query_plan.json`、`source_footer.json`、`analysis_result.json` 和 `analysis_summary.md`。
-- `analysis_summary.md` 只引用产物文件，不内联完整 SQL。
-- dry-run 的 `analysis_result.safety.sql_executed=false`，且不包含会被误认为真实结论的占位 reason 清单。
-- handoff 任务输出 `next_skill`、前置产物要求和 blocked action，不生成通知、闭环或感知产物。
-- 低打标率 CLI 通过内部库复用 `label_rate_analysis.parse_levels()`、`label_rate_analysis.sql_by_level()` 和 `label_rate_analysis.build_records(...)`。
+- `label_rate_analysis.py --dry-run` 输出 JSON，且包含 `QueryPlan`、`source_footer`、`readonly_execution`、`analysis_result` 和 `provenance`。
+- 低打标率只读执行方复用 `label_rate_analysis.parse_levels()`、`label_rate_analysis.sql_by_level()` 和 `label_rate_analysis.build_records(...)`。
 - 每次查询前都有查询计划 (QueryPlan)。
 - SQL 只读，且未出现写入、建表、删表或线上状态更新。
 - 打标率按 `SUM(label_cnt) / SUM(review_done_cnt)` 重算。
