@@ -101,18 +101,26 @@ def main() -> None:
     payloads = build_smoke_payloads(levels)
     records = build_records(payloads, levels, sql_map)
     sample = records[1]
+    source_footer = dict(sample["source_footer"])
+    readonly_execution = dict(sample["readonly_execution"])
+    if args.dry_run:
+        # This CLI path only emits deterministic smoke fixtures; relabel the
+        # real-run markers so the output never claims a real query happened.
+        source_footer["review_status"] = "dry_run_smoke_fixture_not_executed"
+        readonly_execution["execution_mode"] = "dry_run_smoke_fixture"
     payload = {
         "schema_version": SCHEMA_VERSION,
         "dry_run": bool(args.dry_run),
         "QueryPlan": sample["QueryPlan"],
-        "source_footer": sample["source_footer"],
-        "readonly_execution": sample["readonly_execution"],
+        "source_footer": source_footer,
+        "readonly_execution": readonly_execution,
         "analysis_result": sample["analysis_result"],
         "provenance": sample["provenance"],
         "safety": {
             "sql_executed": False,
             "notification_sent": False,
             "online_write_executed": False,
+            "real_query_executed": False,
         },
     }
     print(json.dumps(payload, ensure_ascii=False, indent=2))

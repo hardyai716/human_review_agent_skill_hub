@@ -276,15 +276,14 @@ def main() -> None:
             target_chat_id=None,
         )
         validate_artifacts(artifacts)
-    validate_auto_sheet_import()
+    validate_sheet_import_optin()
     print("Label-rate notification scripts smoke OK.")
 
 
-def validate_auto_sheet_import() -> None:
+def validate_sheet_import_optin() -> None:
     with tempfile.TemporaryDirectory(prefix="label-rate-sheet-import-smoke-") as tmp:
         tmp_path = Path(tmp)
         source_path = tmp_path / "source.jsonl"
-        output_dir = tmp_path / "output"
         write_source(source_path)
         calls: list[list[str]] = []
         expected_url = "https://bytedance.larkoffice.com/sheets/smoke-auto-import"
@@ -302,30 +301,66 @@ def validate_auto_sheet_import() -> None:
 
         sheet_importer.run_lark_cli = fake_run_lark_cli
         try:
-            artifacts = notification_artifacts.build_label_rate_notification_artifacts(
-                source_path=source_path,
-                output_dir=output_dir,
-                top_n=2,
-                sheet_url=None,
-                identity="bot",
-                title="近7天低效打标策略全等级结果",
-                self_send_requested=False,
-                sent_payload=None,
-                target_user_id=None,
-                target_chat_id=None,
+            # Default (opt-out): no sheet_url and no opt-in must NOT import.
+            default_output_dir = tmp_path / "output_default"
+            default_artifacts = (
+                notification_artifacts.build_label_rate_notification_artifacts(
+                    source_path=source_path,
+                    output_dir=default_output_dir,
+                    top_n=2,
+                    sheet_url=None,
+                    identity="bot",
+                    title="近7天低效打标策略全等级结果",
+                    self_send_requested=False,
+                    sent_payload=None,
+                    target_user_id=None,
+                    target_chat_id=None,
+                )
+            )
+            if calls:
+                raise AssertionError(
+                    "sheet import must not run without explicit opt-in."
+                )
+            if default_artifacts.publish_summary.get("sheet_url") not in (None, ""):
+                raise AssertionError(
+                    "default run must not fill an online sheet_url."
+                )
+            if (default_output_dir / "sheet_import_result.json").exists():
+                raise AssertionError(
+                    "default run must not write a sheet import result."
+                )
+
+            # Opt-in: auto_import_sheet=True must import and fill the url.
+            optin_output_dir = tmp_path / "output_optin"
+            artifacts = (
+                notification_artifacts.build_label_rate_notification_artifacts(
+                    source_path=source_path,
+                    output_dir=optin_output_dir,
+                    top_n=2,
+                    sheet_url=None,
+                    identity="bot",
+                    title="近7天低效打标策略全等级结果",
+                    self_send_requested=False,
+                    sent_payload=None,
+                    target_user_id=None,
+                    target_chat_id=None,
+                    auto_import_sheet=True,
+                )
             )
         finally:
             sheet_importer.run_lark_cli = original_run_lark_cli
 
         if not calls:
-            raise AssertionError("sheet import was not attempted when sheet_url missing.")
+            raise AssertionError("sheet import was not attempted when opted in.")
         if "+workbook-import" not in calls[0]:
             raise AssertionError("sheet import command mismatch.")
         if artifacts.summary.get("sheet_url") != expected_url:
-            raise AssertionError("summary sheet_url was not filled by auto import.")
+            raise AssertionError("summary sheet_url was not filled by opt-in import.")
         if artifacts.publish_summary.get("sheet_url") != expected_url:
-            raise AssertionError("publish_summary sheet_url was not filled by auto import.")
-        import_result = read_json(output_dir / "sheet_import_result.json")
+            raise AssertionError(
+                "publish_summary sheet_url was not filled by opt-in import."
+            )
+        import_result = read_json(optin_output_dir / "sheet_import_result.json")
         if import_result.get("status") != "success":
             raise AssertionError("sheet import result must record success.")
 

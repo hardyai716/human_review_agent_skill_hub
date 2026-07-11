@@ -180,6 +180,35 @@ def run_checks() -> None:
             "send_plan must require confirmation"
         )
         assert send_plan["sent"] is False, "send_plan must not mark real send as sent"
+        assert send_plan.get("group_send_blocked") is True, (
+            "send_plan must block group send by default"
+        )
+        assert send_plan.get("online_write_executed") is False, (
+            "send_plan must not mark online write executed"
+        )
+
+        # Default path must not import a Feishu online sheet: no sheet_url given
+        # and auto_import_sheet off means the local draft has an empty link and
+        # no online write happens.
+        default_output_dir = tmp_path / "output_no_import"
+        artifacts = build_label_rate_notification_artifacts(
+            source_path=source_path,
+            output_dir=default_output_dir,
+            top_n=2,
+            sheet_url=None,
+            identity="bot",
+            title="近7天低效打标策略全等级结果",
+            self_send_requested=False,
+            sent_payload=None,
+            target_user_id=None,
+            target_chat_id=None,
+        )
+        assert artifacts.publish_summary.get("sheet_url") in (None, ""), (
+            "default run must not produce an online sheet_url without opt-in"
+        )
+        assert not (default_output_dir / "sheet_import_result.json").exists(), (
+            "default run must not attempt a Feishu sheet import"
+        )
 
 
 def main() -> None:

@@ -26,6 +26,15 @@ allowed-tools:
 - 不解析或猜测 open_id；只有姓名级负责人 (POC) 时必须保持 `requires_contact_resolution_before_real_send=true`。
 - 不绕过人工确认发送 P0/P1/P2/notice 预警。
 
+## 🔴 CHECKPOINT · 通知阶段红线
+
+命中以下任一情况时，🛑 STOP：只输出草稿和门禁失败原因，不执行真实动作，直到用户人工确认。
+
+- 用户要求真实群发、拉群、创建群、短信/电话加急，或绕过人工确认 → 拒绝执行，输出门禁失败原因，`send_plan` 保持 `group_send_blocked=true`、`sent=false`。
+- 请求把 XLSX 导入为飞书在线表格（`--import-sheet` / `auto_import_sheet=true`）→ 这是真实在线写入；默认关闭，只有用户明确同意后才启用，并在输出中标注 `online_write_executed=true`。
+- POC 只解析到姓名级、缺少无歧义 open_id → 保持 `requires_contact_resolution_before_real_send=true`，不生成可执行群发动作。
+- 卡片哈希与当前数据不一致 → 阻断发送，要求重新生成卡片。
+
 ## 输入
 
 必需输入：
@@ -37,7 +46,7 @@ allowed-tools:
 
 可选输入：
 
-- `sheet_url`：用户或外部执行环境提供的报表链接；未提供时，通知脚本会在 XLSX 报表生成后尝试导入为飞书在线表格并自动回填链接，导入失败时保持为空且不阻断草稿生成。
+- `sheet_url`：用户或外部执行环境提供的报表链接；未提供时默认保持为空，通知草稿照常生成。只有显式传入 `--import-sheet` 时，脚本才会把 XLSX 报表导入为飞书在线表格并回填链接（属于真实在线写入，见 CHECKPOINT）。
 - `recipient_candidates`：用户提供的触达对象候选。
 - `run_mode`：默认调试模式 (`debug_only`)。
 - `card_title`：卡片标题。
@@ -141,7 +150,7 @@ allowed-tools:
 
 可用脚本：
 
-- `scripts/label_rate_notification_artifacts.py`：从打标率分级 `analysis_result` JSONL 生成 `notification_draft.json`、`send_plan.json`、`poc_routing_plan.json`、分等级 CSV、`汇总统计.csv`、XLSX 报表和 Card JSON；未传入 `sheet_url` 时会尝试把 XLSX 导入为飞书在线表格，失败降级为空链接；默认不发送消息。
+- `scripts/label_rate_notification_artifacts.py`：从打标率分级 `analysis_result` JSONL 生成 `notification_draft.json`、`send_plan.json`、`poc_routing_plan.json`、分等级 CSV、`汇总统计.csv`、XLSX 报表和 Card JSON；默认只写本地文件、不发送消息、不导入在线表格。只有显式传入 `--import-sheet`（或调用方传 `auto_import_sheet=True`）时才把 XLSX 导入为飞书在线表格，导入失败降级为空链接。
 - `scripts/sheet_importer.py`：通用 XLSX 到飞书电子表格导入工具，提供 `import_xlsx_as_feishu_sheet`，供需要在通知产物中回填 `sheet_url` 的场景复用。
 - `scripts/resolve_label_rate_poc_routing.py`：从 `analysis_result` JSONL 生成 `poc_routing_plan.json`。
 - `scripts/render_label_rate_grading_card.py`：作为 Python 模块导入，生成飞书 Card 2.0 JSON 和设计检查结果。

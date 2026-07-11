@@ -29,6 +29,14 @@ allowed-tools:
 - 不导出审核员个人明细、手机号、open_id 等敏感明细。
 - 不自动覆盖样本池、使用未治理字段、触发真实通知、创建群或写线上状态。
 
+## 🔴 CHECKPOINT · 感知阶段红线
+
+命中以下任一情况时，🛑 STOP：只输出结构化路由和阻断原因，不下发任何下游 Skill，直到用户人工确认。
+
+- 用户要求真实发送、群发、拉群、跑线上 SQL、写线上状态或导出敏感明细 → `readiness.status=blocked`、`human_confirmation_required=true`，`handoff.next_skill=null`。
+- 场景无法唯一识别 → `scenario_key=unknown`，列出候选与澄清项，不猜测。
+- 通知或解决诉求缺少已落地的分析产物 → 保持阻断，`workflow_plan` 写出先补 analysis，不直接交接 notification/resolution。
+
 ## 输入
 
 必需输入：
@@ -113,6 +121,10 @@ allowed-tools:
 相邻自动处置准确率场景只读取：
 
 - `references/scenarios/efficiency-auto-disposal-accuracy.md`
+
+相邻质量领域质检准确率场景只读取：
+
+- `references/scenarios/quality-inspection-accuracy.md`
 
 只读取当前问题需要的单场景文件，不批量加载无关场景；不从旧目录、临时文档或记忆中猜测核心口径。
 
@@ -203,7 +215,8 @@ python3 scripts/selfcheck.py
     "human_confirmation_required": true
   },
   "handoff": {
-    "next_skill": "notification"
+    "next_skill": null,
+    "candidate_next_skill": "notification"
   }
 }
 ```

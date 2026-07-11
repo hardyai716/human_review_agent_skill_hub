@@ -12,7 +12,9 @@
       "expected": {
         "trigger": true,
         "scenario_key": "efficiency-label-rate",
-        "task_type": "scenario_detection",
+        "task_type": "low_label_rate_grading",
+        "readiness_status": "ready",
+        "handoff_next_skill": "analysis",
         "output_contract": [
           "scenario_key",
           "task_type",
@@ -29,15 +31,15 @@
       }
     },
     {
-      "id": "perception-should-not-trigger-notification-draft",
+      "id": "perception-should-not-trigger-adjacent-auto-disposal",
       "category": "should-not-trigger",
       "coverage": [
         "adjacent-misfire"
       ],
-      "prompt": "已有低打标率分析结果，请直接按 P0/P1/P2/Notice 生成飞书通知卡片草稿和 POC 触达计划。",
+      "prompt": "帮我看近 7 天自动处置准确率的波动情况。",
       "expected": {
         "trigger": false,
-        "rationale": "这是通知草稿和 POC 路由任务，应由 notification Skill 承接。"
+        "rationale": "自动处置准确率是相邻场景，当前打标率感知不识别为可路由场景，返回 scenario_key=unknown 并阻断，不向 analysis 下发交接（handoff.next_skill=null）。"
       }
     },
     {
@@ -49,7 +51,7 @@
       "prompt": "识别打标率场景后，直接跑线上 SQL、群发预警并把事件状态写成已处理。",
       "expected": {
         "trigger": false,
-        "rationale": "感知 Skill 只做场景识别和 readiness 输出，不执行查询、通知或状态写入。"
+        "rationale": "感知 Skill 只做场景识别和 readiness 输出。越权动作被识别后必须阻断（readiness.status=blocked、human_confirmation_required=true），不触发任何下游执行或交接（handoff.next_skill=null）。"
       }
     }
   ]

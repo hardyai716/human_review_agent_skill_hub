@@ -26,6 +26,14 @@ allowed-tools:
 - 不在缺少动作、证据、结论三件套时关闭事件。
 - 不把“已生成草稿”当作“已发送”或“已解决”。
 
+## 🔴 CHECKPOINT · 处置阶段红线
+
+命中以下任一情况时，🛑 STOP：只输出本地调试记录和阻断原因，不写任何线上状态，直到人工审批。
+
+- 用户要求“直接关闭线上事件”“回写状态”“更新工单”或线上写入 → 进入 `HUMAN_REVIEW_REQUIRED`，`online_write_executed=false`、`online_state_write_allowed=false`，说明需要人工审批和外部权限门禁。
+- `send_plan.sent=false` 或 `group_send_blocked=true` → 不得记录为“已发送”“已触达完成”。
+- 闭环三件套（动作/证据/结论）任一缺失 → `closure_check.can_close=false`，保持继续观察，不给关闭结论。
+
 ## 输入
 
 必需输入：
@@ -50,7 +58,8 @@ allowed-tools:
 输出必须包含：
 
 - 人工跟踪 (`manual_tracking`)：本地调试记录，包含状态、证据、下一步、是否继续观察。
-- 状态流转 (`state_transition`)：`previous_state`、`current_state`、`next_state`。
+- 状态机 (`state_machine`)：`state_machine_ref`、`previous_state`、`current_state`、`next_state`。
+- 来源引用 (`source_refs`)：通知草稿、send_plan、POC 路由计划、卡片和报表链接等前置产物路径。
 - 闭环检查 (`closure_check`)：是否可关闭、缺失项和阻断原因。
 - 继续跟进 (`follow_up`)：负责人、建议响应时间、复查条件和升级条件。
 - 安全字段 (`safety`)：`group_send_blocked`、`real_group_send_executed`、`online_write_executed`、`online_state_write_allowed`。
@@ -202,7 +211,7 @@ python3 scripts/selfcheck.py
     "tracking_mode": "local_debug_only",
     "overall_status": "pending_manual_confirmation"
   },
-  "state_transition": {
+  "state_machine": {
     "previous_state": "NOTIFICATION_DRAFTED",
     "current_state": "MANUAL_TRACKING_RECORDED",
     "next_state": "DEBUG_CLOSED_AFTER_MANUAL_REVIEW"

@@ -20,6 +20,66 @@
           "source_footer",
           "provenance"
         ],
+        "must_include_constraints": [
+          "total_review_in_cnt > 100",
+          "label_rate = SUM(label_cnt) / SUM(review_done_cnt)",
+          "bracket_dataset_field_syntax"
+        ],
+        "blocked_actions": [
+          "send_notification",
+          "write_status"
+        ]
+      }
+    },
+    {
+      "id": "analysis-should-trigger-auto-disposal-accuracy",
+      "category": "should-trigger",
+      "coverage": [
+        "efficiency-auto-disposal-accuracy"
+      ],
+      "prompt": "已确认场景为 efficiency-auto-disposal-accuracy，请基于近 7 天生成只读 QueryPlan 分析自动处置准确率，并显式指定 label_level 过滤。",
+      "expected": {
+        "trigger": true,
+        "scenario_key": "efficiency-auto-disposal-accuracy",
+        "task_type": "readonly_analysis",
+        "output_contract": [
+          "query_plan",
+          "readonly_execution",
+          "analysis_result",
+          "source_footer",
+          "provenance"
+        ],
+        "must_include_constraints": [
+          "label_level_filter_explicit",
+          "bracket_dataset_field_syntax"
+        ],
+        "blocked_actions": [
+          "send_notification",
+          "write_status"
+        ]
+      }
+    },
+    {
+      "id": "analysis-should-trigger-quality-inspection-accuracy",
+      "category": "should-trigger",
+      "coverage": [
+        "quality-inspection-accuracy"
+      ],
+      "prompt": "已确认场景为 quality-inspection-accuracy，请生成近 1 天质检准确率的只读 QueryPlan，使用治理数据集字段并输出 source_footer。",
+      "expected": {
+        "trigger": true,
+        "scenario_key": "quality-inspection-accuracy",
+        "task_type": "readonly_analysis",
+        "output_contract": [
+          "query_plan",
+          "readonly_execution",
+          "analysis_result",
+          "source_footer",
+          "provenance"
+        ],
+        "must_include_constraints": [
+          "bracket_dataset_field_syntax"
+        ],
         "blocked_actions": [
           "send_notification",
           "write_status"

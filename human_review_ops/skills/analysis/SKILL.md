@@ -29,6 +29,15 @@ allowed-tools:
 - 不把查询失败、权限失败、分区未就绪解释为业务“无异常”。
 - 不读取 `human_review_ops/references/`、旧 Skill、历史 SQL 或未确认记忆来补运行态口径。
 
+## 🔴 CHECKPOINT · 分析阶段红线
+
+命中以下任一情况时，🛑 STOP：只输出 `stop_reason`、QueryPlan、source_footer，不下业务结论，不生成通知或写状态，直到条件满足或用户人工确认。
+
+- 用户要求覆盖默认样本池或使用未治理新维度 → `QueryPlan.review_required=true`，人工确认前不执行查询。
+- 权限不足、分区未就绪、字段映射失败或命中 `forbidden_sources` → 停止并输出阻断原因，不写“0 条”“无异常”。
+- 只读执行失败或分母为 0 → 保留工具错误和 QueryPlan，不给强结论。
+- 调用方无只读执行权限 → 只输出 QueryPlan 或只读执行请求，不绕过工具权限门禁执行真实查询。
+
 ## 输入
 
 必需输入：
@@ -91,6 +100,7 @@ allowed-tools:
 | --- | --- | --- |
 | `efficiency-label-rate` | `references/scenarios/efficiency-label-rate.md` | `label_rate`、`review_in_cnt`、`review_done_cnt`、`label_cnt` |
 | `efficiency-auto-disposal-accuracy` | `references/scenarios/efficiency-auto-disposal-accuracy.md` | `auto_disposal_accuracy` |
+| `quality-inspection-accuracy` | `references/scenarios/quality-inspection-accuracy.md` | `quality_inspection_accuracy`、`pass_accuracy`、`label_accuracy` |
 
 场景文档必须自包含以下章节：
 
@@ -105,6 +115,8 @@ allowed-tools:
 - 输出要求
 - 失败处理
 - 正反例
+
+场景文档中的指标口径、数据源字段、支持维度和筛选字段，必须优先采用 `references/common.md#业务概念字段映射表格式`。`metric_id`、`sub_metric_id` 等运行态路由字段不得混入 Aeolus 字段映射表。
 
 ## QueryPlan 与 SQL
 
@@ -132,6 +144,7 @@ allowed-tools:
 - 按维度字段聚合前，必须先用 `ifNull(...)` 把可空维度转换为稳定 key；内部 key 不得与底表物理字段同名，统一使用 `mach_root_label_key`、`strategy_id_key`、`strategy_name_key`、`reason_key` 这类 `*_key` 别名，并在 `GROUP BY` 中使用这些转换后的 key。外层再映射回标准输出字段名，避免 ClickHouse / Aeolus 把 `GROUP BY mach_root_label_name` 解析到同名物理字段，漏掉 NULL 维度记录。
 - 跨天、跨 reason、跨标签聚合时，必须分别 `SUM(label_cnt)` 和 `SUM(review_done_cnt)` 后重算 `label_rate`。
 - 用户指定新维度时，先通过语义层或数据集字段发现确认字段含义、粒度和权限；未确认前不得拼接字段名。
+- 使用 `aeolus query` 查询时，按传入的数据集 ID 编译字段；优先使用 `` `[数据集字段名]` `` 语义字段写法，非必要时不手写底层字段逻辑。
 - SQL 只能是只读 `SELECT` 或公共表达式 (CTE)，不得包含写入、建表或状态更新语句。
 
 ## 分级

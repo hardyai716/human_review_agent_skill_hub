@@ -159,9 +159,14 @@ def validate_cli_dry_run() -> None:
         "sql_executed": False,
         "notification_sent": False,
         "online_write_executed": False,
+        "real_query_executed": False,
     }
     if payload.get("safety") != expected_safety:
         raise AssertionError(f"Unexpected CLI dry-run safety: {payload.get('safety')}")
+    if payload.get("source_footer", {}).get("review_status") == "real_readonly_query_executed":
+        raise AssertionError("CLI dry-run must not claim a real readonly query was executed.")
+    if payload.get("readonly_execution", {}).get("execution_mode") == "real_readonly_query":
+        raise AssertionError("CLI dry-run must not label execution_mode as real_readonly_query.")
 
 
 def assert_query_plan(query_plan: dict[str, Any], levels: list[str]) -> None:

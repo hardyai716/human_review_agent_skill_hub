@@ -90,7 +90,7 @@ TIME_WINDOW_PATTERNS = (
 )
 EXCLUDED_SCENARIOS = {
     "efficiency-auto-disposal-accuracy": ("自动处置准确率", "自动处置"),
-    "quality-accuracy": ("质检准确率", "质量准确率"),
+    "quality-inspection-accuracy": ("质检准确率", "质量准确率"),
     "baseline-incident": ("底线事故", "事故数"),
 }
 DIMENSION_KEYWORDS = {
@@ -612,9 +612,13 @@ def build_workflow_plan(
             ]
         )
         return {
-            "status": "ready_with_prerequisite"
-            if "missing_analysis_artifact" in readiness.get("blocking_reasons", [])
-            else readiness.get("status"),
+            "status": "blocked"
+            if readiness.get("status") == "blocked"
+            else (
+                "ready_with_prerequisite"
+                if "missing_analysis_artifact" in readiness.get("blocking_reasons", [])
+                else readiness.get("status")
+            ),
             "intent_type": "analysis_then_notification",
             "steps": steps,
             "prerequisites": prerequisites,
