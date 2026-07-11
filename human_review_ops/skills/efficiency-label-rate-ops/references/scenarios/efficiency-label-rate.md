@@ -59,15 +59,14 @@
 
 ## 相关指标
 
-| 业务概念 | `metric_id` | 口径 | 默认粒度 |
+指标字段与口径：
+
+| 概念 | aeolus query 使用字段 | 口径 | 说明 |
 | --- | --- | --- | --- |
-| 打标率 | `label_rate` | `SUM(label_cnt) / SUM(review_done_cnt)` | `day × reason` |
-| 进审量 | `review_in_cnt` | 进入人审的审核量 | `day × reason` |
-| 完审量 | `review_done_cnt` | 完成人审的审核量 | `day × reason` |
-| 打标量 | `label_cnt` | 被打标的审核量 | `day × reason` |
-| 日均进审量 | `avg_daily_review_in_cnt` | `SUM(review_in_cnt) / COUNT(DISTINCT p_date)` | `reason` |
-| 日均完审量 | `avg_daily_review_done_cnt` | `SUM(review_done_cnt) / COUNT(DISTINCT p_date)` | `reason` |
-| 日均打标量 | `avg_daily_label_cnt` | `SUM(label_cnt) / COUNT(DISTINCT p_date)` | `reason` |
+| 打标率 | `[打标率__reviewid]` | `[打标量__reviewid] / [完审量_reviewid]` | 可展示或校验；跨粒度聚合时必须用量级字段重算。 |
+| 进审量 | `[进审量_reviewid]` | 数据集标准指标 | 规模判断、排序和治理优先级字段。 |
+| 完审量 | `[完审量_reviewid]` | 数据集标准指标 | 打标率分母字段；日均完审量由该字段按查询窗口派生。 |
+| 打标量 | `[打标量__reviewid]` | 数据集标准指标 | 打标率分子字段；日均打标量由该字段按查询窗口派生。 |
 
 ## 核心口径
 
@@ -125,14 +124,15 @@ AND (
 
 ## 支持维度
 
-- `reason`：送审原因。
-- `p_date`：日期分区。
-- `mach_root_label_name`：机审一级标签。
-- `strategy_id`：策略 / 规则 ID，2026-07-09 经 `dataset-fields` 与真实只读查询确认。
-- `strategy_name`：策略名称，2026-07-09 经 `dataset-fields` 与真实只读查询确认。
-- `scene`：审核场景。
-- `project_title`：项目标题。
-- `time_window`：时间窗口。
+| 概念 | aeolus query 使用字段 | 说明 |
+| --- | --- | --- |
+| 日期分区 | `[p_date]` | 时间窗口和分区字段。 |
+| 送审原因 | `[reason]` | 打标率分析主实体。 |
+| 机审一级标签 | `[机审一级标签]` | 常用拆解维度；空值必须保留。 |
+| 策略 ID | `[strategy_id]` | 策略 / 规则 ID，2026-07-09 经 `dataset-fields` 与真实只读查询确认。 |
+| 策略名称 | `[strategy_name]` | 策略名称，2026-07-09 经 `dataset-fields` 与真实只读查询确认。 |
+| 审核场景 | `[scene]` | 默认样本池筛选字段。 |
+| 项目标题 | `[project_title]` | 默认样本池排除字段。 |
 
 未列举维度处理规则：
 
@@ -192,6 +192,7 @@ AND (
 - App ID：`1128`
 - Dataset ID：`3888816`
 - Dataset 名称：`[重点模型]-社区_人工审核明细数据`
+- Dataset 白皮书：`https://data.bytedance.net/aeolus/pages/dataManage/larkDoc?appId=1128&dataSetId=3888816&demoUrl=https%3A%2F%2Fbytedance.larkoffice.com%2Fdocx%2FCynjdVMrPoAI5cxvnjXc0ndanFe`
 - 查询命令：`bytedcli -j aeolus query -r cn 3888816 "<SQL>" --limit 1000`
 - 查字段命令：`bytedcli -j aeolus dataset-fields -r cn 3888816`
 - `label_rate` 对应风神指标：`打标率__reviewid`
@@ -219,19 +220,19 @@ AND (
 
 ## 字段映射
 
-| 概念 | 逻辑字段 | 默认 Name | 说明 |
-| --- | --- | --- | --- |
-| 送审原因 / reason | `reason` | `reason` | 打标率分析主实体。 |
-| 策略 ID | `strategy_id` | `strategy_id` | 规则 ID；2026-07-09 通过 `bytedcli -j aeolus dataset-fields -r cn 3888816` 确认。 |
-| 策略名称 | `strategy_name` | `strategy_name` | 策略名称；2026-07-09 通过 `bytedcli -j aeolus dataset-fields -r cn 3888816` 确认。 |
-| 日期分区 | `date` | `p_date` | 用于时间窗口和分区就绪检查。 |
-| 项目标题 | `project_title` | `project_title` | 用于排除测试、质检、离线等项目。 |
-| 审核场景 | `scene` | `scene` | 默认保留社区审核三类场景。 |
-| 机审一级标签 | `mach_root_label_name` | `机审一级标签` | 空值必须保留，维度拆解使用。 |
-| 进审量 | `review_in_cnt` | `进审量_reviewid` | 聚合字段。 |
-| 完审量 | `review_done_cnt` | `完审量_reviewid` | 打标率分母。 |
-| 打标量 | `label_cnt` | `打标量__reviewid` | 双下划线，打标率分子。 |
-| 打标率 | `label_rate` | `打标率__reviewid` | 不直接跨粒度聚合，应重算。 |
+| 概念 | aeolus query 使用字段 | 说明 |
+| --- | --- | --- |
+| 日期分区 | `[p_date]` | 时间窗口和分区字段。 |
+| 送审原因 / reason | `[reason]` | 打标率分析主实体。 |
+| 机审一级标签 | `[机审一级标签]` | 维度拆解字段；空值必须保留。 |
+| 策略 ID | `[strategy_id]` | 规则 ID；2026-07-09 通过 `bytedcli -j aeolus dataset-fields -r cn 3888816` 确认。 |
+| 策略名称 | `[strategy_name]` | 策略名称；2026-07-09 通过 `bytedcli -j aeolus dataset-fields -r cn 3888816` 确认。 |
+| 审核场景 | `[scene]` | 默认样本池筛选字段。 |
+| 项目标题 | `[project_title]` | 默认样本池排除字段。 |
+| 进审量 | `[进审量_reviewid]` | 聚合字段。 |
+| 完审量 | `[完审量_reviewid]` | 打标率分母。 |
+| 打标量 | `[打标量__reviewid]` | 打标率分子。 |
+| 打标率 | `[打标率__reviewid]` | 可展示或校验；跨粒度聚合时必须用量级字段重算。 |
 
 ## 扩展维度发现
 
@@ -251,23 +252,24 @@ AND (
 
 1. 字段必须来自受控来源，例如 `bytedcli -j aeolus dataset-fields -r cn 3888816` 或已保存的治理数据集字段说明。
 2. 字段必须在小样本查询或真实只读查询中成功使用。
-3. 回填内容至少包含：逻辑字段、默认 Name、业务含义、字段来源命令、确认日期。
+3. 回填内容至少包含：业务概念、aeolus query 使用字段、业务含义、字段来源命令、确认日期。
 4. 若字段用于 runner / validator，必须同步更新对应 `DIMENSION_SPECS`、validator 断言和 eval 产物。
 5. 若字段属于场景常用维度，必须同步更新根场景包与 Skill 内 `*.dataset_reference.md` 快照。
 
 本轮已回填字段：
 
-| 逻辑字段 | 默认 Name | Aeolus 字段 ID | 字段说明 | expr | dataType | 确认方式 |
-| --- | --- | --- | --- | --- | --- | --- |
-| `strategy_id` | `strategy_id` | `1700075931415` | 规则ID | `` `strategy_id` `` | `string` | `dataset-fields` + `2026-06-29~2026-07-05` 多维低打标率查询验证 |
-| `strategy_name` | `strategy_name` | `1700075931446` | 策略名称 | `` `strategy_name` `` | `string` | `dataset-fields` + `2026-06-29~2026-07-05` 多维低打标率查询验证 |
+| 业务概念 | aeolus query 使用字段 | Aeolus 字段 ID | 字段说明 | dataType | 确认方式 |
+| --- | --- | --- | --- | --- | --- |
+| 策略 ID | `[strategy_id]` | `1700075931415` | 规则ID | `string` | `dataset-fields` + `2026-06-29~2026-07-05` 多维低打标率查询验证 |
+| 策略名称 | `[strategy_name]` | `1700075931446` | 策略名称 | `string` | `dataset-fields` + `2026-06-29~2026-07-05` 多维低打标率查询验证 |
 
 ## SQL 写法约束
 
-- ClickHouse 语义字段使用反引号包方括号：`` `[Name]` ``。
+- 使用 `aeolus query` 查询时，Aeolus 会按传入的数据集 ID 编译字段；数据集字段使用反引号包方括号：`` `[数据集字段名]` ``。
+- 非必要时不手写底层字段逻辑；优先让 Aeolus 语义层编译数据集字段，保持查询口径和数据集一致。
 - 禁止裸 `[Name]`。
 - 禁止在最终聚合中 `SUM(rate)`。
-- 打标率必须用 `SUM(label_cnt) / SUM(review_done_cnt)` 重算。
+- 打标率必须用 `[打标量__reviewid] / [完审量_reviewid]` 口径重算，跨粒度聚合时先聚合量级字段再重算。
 - 使用风神语义指标时，可用 `` `[打标率__reviewid]` ``，但必须同时输出 `` `[完审量_reviewid]` `` 和 `` `[打标量__reviewid]` `` 作为 evidence。
 - 日均量必须用 `COUNT(DISTINCT p_date)`，不得硬编码 `/7`。
 - NULL 机审标签必须用 `field IS NULL OR field IN (...)`，不得写 `IN (NULL, ...)`。
@@ -283,7 +285,7 @@ AND (
 ## 数据质量检查
 
 - 目标分区是否就绪。
-- 分母 `review_done_cnt` 是否为 0。
+- 分母 `[完审量_reviewid]` 是否为 0。
 - 目标时间窗口是否与已就绪分区一致。
 - 维度粒度是否与用户问题一致。
 - 查询结果为空时，是否已排除权限失败、字段错误、分区缺失和过滤过严。
@@ -403,7 +405,7 @@ AND (
 
 - `dimensions × reason` 分组跨日 SUM。
 - `dimensions` 分组跨日 SUM。
-- 打标率重算：`SUM(label_cnt) / SUM(review_done_cnt)`。
+- 打标率重算：按 `[打标量__reviewid] / [完审量_reviewid]` 口径，跨日先聚合量级字段再重算。
 - 日均量使用该组合实际有数据天数。
 - NULL 维度值输出为 `（空/<维度名>）`。
 

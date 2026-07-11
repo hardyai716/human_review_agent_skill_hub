@@ -11,6 +11,7 @@ SCRIPTS_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPTS_DIR))
 
 import label_rate_analysis as analysis  # noqa: E402
+import quality_inspection_accuracy_query as quality_accuracy  # noqa: E402
 
 
 REQUIRED_SAMPLE_KEYS = (
@@ -33,6 +34,16 @@ def run_checks() -> None:
     assert sample.get("record_type") == "sample", "records[1] must be the sample record"
     for key in REQUIRED_SAMPLE_KEYS:
         assert key in sample, f"sample record missing key: {key}"
+
+    quality_payload = quality_accuracy.build_payload("2026-07-08", "2026-07-07")
+    quality_sql = quality_payload["sql"]
+    assert quality_sql.startswith("WITH agg AS"), "quality SQL must start with CTE"
+    assert "aeolus_data_db_cqc_core_202509" in quality_sql
+    assert "queue_category_summary" in quality_sql
+    assert "audit_accuracy_diff_1d" in quality_sql
+    assert "`[审核准确率]`" in quality_sql
+    assert "`[队列分类汇总]`" in quality_sql
+    assert "FORMAT JSONCompact" not in quality_sql
 
 
 def main() -> None:

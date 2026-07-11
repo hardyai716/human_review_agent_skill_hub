@@ -7,6 +7,8 @@ import argparse
 import json
 import py_compile
 import re
+import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -15,6 +17,9 @@ HUMAN_REVIEW_OPS_ROOT = Path(__file__).resolve().parents[2]
 REPO_ROOT = HUMAN_REVIEW_OPS_ROOT.parent
 SKILLS_ROOT = HUMAN_REVIEW_OPS_ROOT / "skills"
 MANIFEST_PATH = SKILLS_ROOT / "skill_release_manifest.json"
+AEOLUS_FIELD_CONTRACT_VALIDATOR = (
+    HUMAN_REVIEW_OPS_ROOT / "tools" / "validators" / "validate_aeolus_field_contracts.py"
+)
 SKILLS = ("perception", "analysis", "notification", "resolution")
 TEXT_SUFFIXES = {".md", ".py", ".json", ".yaml", ".yml", ".toml", ".txt"}
 ALLOWED_CATEGORIES = {"should-trigger", "should-not-trigger"}
@@ -371,6 +376,22 @@ def validate_skill(skill: str, strict: bool, issues: list[str]) -> dict[str, int
     return {"skill": skill, "test_prompts": case_count, "scripts": script_count}
 
 
+def validate_aeolus_field_contracts(issues: list[str]) -> None:
+    if not AEOLUS_FIELD_CONTRACT_VALIDATOR.exists():
+        issues.append(f"Missing Aeolus field validator: {rel(AEOLUS_FIELD_CONTRACT_VALIDATOR)}")
+        return
+    result = subprocess.run(
+        [sys.executable, str(AEOLUS_FIELD_CONTRACT_VALIDATOR)],
+        cwd=REPO_ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        output = (result.stdout + result.stderr).strip()
+        issues.append("Aeolus field contract validation failed:\n" + output)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -391,6 +412,8 @@ def main() -> None:
     summaries = [validate_skill(skill, args.strict, issues) for skill in args.skills]
     if args.strict:
         validate_release_manifest(args.skills, issues)
+        if "analysis" in args.skills:
+            validate_aeolus_field_contracts(issues)
 
     if issues:
         print("Skill productization baseline FAILED")

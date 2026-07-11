@@ -92,7 +92,7 @@
 
 - `dimensions × reason` 分组跨日 SUM。
 - `dimensions` 分组跨日 SUM。
-- 打标率重算：`SUM(label_cnt) / SUM(review_done_cnt)`。
+- 打标率重算：按 `[打标量__reviewid] / [完审量_reviewid]` 口径，跨日先聚合量级字段再重算。
 - 日均量使用该组合实际有数据天数。
 - NULL 维度值输出为 `（空/<维度名>）`。
 

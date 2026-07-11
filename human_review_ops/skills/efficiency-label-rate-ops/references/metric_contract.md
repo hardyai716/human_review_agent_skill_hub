@@ -10,15 +10,14 @@
 
 ## 相关指标
 
-| 业务概念 | `metric_id` | 口径 | 默认粒度 |
+指标字段与口径：
+
+| 概念 | aeolus query 使用字段 | 口径 | 说明 |
 | --- | --- | --- | --- |
-| 打标率 | `label_rate` | `SUM(label_cnt) / SUM(review_done_cnt)` | `day × reason` |
-| 进审量 | `review_in_cnt` | 进入人审的审核量 | `day × reason` |
-| 完审量 | `review_done_cnt` | 完成人审的审核量 | `day × reason` |
-| 打标量 | `label_cnt` | 被打标的审核量 | `day × reason` |
-| 日均进审量 | `avg_daily_review_in_cnt` | `SUM(review_in_cnt) / COUNT(DISTINCT p_date)` | `reason` |
-| 日均完审量 | `avg_daily_review_done_cnt` | `SUM(review_done_cnt) / COUNT(DISTINCT p_date)` | `reason` |
-| 日均打标量 | `avg_daily_label_cnt` | `SUM(label_cnt) / COUNT(DISTINCT p_date)` | `reason` |
+| 打标率 | `[打标率__reviewid]` | `[打标量__reviewid] / [完审量_reviewid]` | 可展示或校验；跨粒度聚合时必须用量级字段重算。 |
+| 进审量 | `[进审量_reviewid]` | 数据集标准指标 | 规模判断、排序和治理优先级字段。 |
+| 完审量 | `[完审量_reviewid]` | 数据集标准指标 | 打标率分母字段；日均完审量由该字段按查询窗口派生。 |
+| 打标量 | `[打标量__reviewid]` | 数据集标准指标 | 打标率分子字段；日均打标量由该字段按查询窗口派生。 |
 
 ## 核心口径
 
@@ -76,14 +75,15 @@ AND (
 
 ## 支持维度
 
-- `reason`：送审原因。
-- `p_date`：日期分区。
-- `mach_root_label_name`：机审一级标签。
-- `strategy_id`：策略 / 规则 ID，2026-07-09 经 `dataset-fields` 与真实只读查询确认。
-- `strategy_name`：策略名称，2026-07-09 经 `dataset-fields` 与真实只读查询确认。
-- `scene`：审核场景。
-- `project_title`：项目标题。
-- `time_window`：时间窗口。
+| 概念 | aeolus query 使用字段 | 说明 |
+| --- | --- | --- |
+| 日期分区 | `[p_date]` | 时间窗口和分区字段。 |
+| 送审原因 | `[reason]` | 打标率分析主实体。 |
+| 机审一级标签 | `[机审一级标签]` | 常用拆解维度；空值必须保留。 |
+| 策略 ID | `[strategy_id]` | 策略 / 规则 ID，2026-07-09 经 `dataset-fields` 与真实只读查询确认。 |
+| 策略名称 | `[strategy_name]` | 策略名称，2026-07-09 经 `dataset-fields` 与真实只读查询确认。 |
+| 审核场景 | `[scene]` | 默认样本池筛选字段。 |
+| 项目标题 | `[project_title]` | 默认样本池排除字段。 |
 
 未列举维度处理规则：
 

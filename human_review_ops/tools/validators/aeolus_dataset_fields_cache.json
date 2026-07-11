@@ -1,0 +1,62 @@
+{
+  "schema_version": "aeolus_dataset_fields_cache.v1",
+  "datasets": {
+    "3888816": {
+      "region": "cn",
+      "fields": [
+        "p_date",
+        "project_title",
+        "reason",
+        "scene",
+        "strategy_id",
+        "strategy_name",
+        "打标率__reviewid",
+        "打标量__reviewid",
+        "完审量_reviewid",
+        "机审一级标签",
+        "进审量_reviewid"
+      ]
+    },
+    "3945965": {
+      "region": "cn",
+      "fields": [
+        "date",
+        "label_id",
+        "mach_label_injury_cnt_1d",
+        "mach_rlabel_injury_cnt_1d",
+        "root_label_id",
+        "一级标签准确率",
+        "一级标签准确量",
+        "一级风险标签",
+        "三级标签准确率",
+        "三级标签准确量",
+        "三级风险标签",
+        "是否安全治理域",
+        "权重类型",
+        "标注量(周期总量)",
+        "标签等级"
+      ]
+    },
+    "3533559": {
+      "region": "cn",
+      "fields": [
+        "p_date",
+        "审核准确率",
+        "审核准确量",
+        "审核错误量",
+        "抽检质量-是否剔除",
+        "抽检量",
+        "打标准确率",
+        "打标抽检量",
+        "打标错误量",
+        "质检模式",
+        "视频质量_队列范围",
+        "通过准确率",
+        "通过抽检量",
+        "通过错误量",
+        "队列分类 (上游+群组)",
+        "队列分类汇总"
+      ]
+    }
+  }
+}

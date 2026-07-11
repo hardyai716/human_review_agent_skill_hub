@@ -14,7 +14,8 @@
 | `scenario_key` | 场景文档 | 指标 | 主要任务类型 | 脚本 |
 | --- | --- | --- | --- | --- |
 | `efficiency-label-rate` | `scenarios/efficiency-label-rate.md` | `label_rate`、`review_in_cnt`、`review_done_cnt`、`label_cnt` | `label_rate_trend`、`label_rate_ranking`、`low_label_rate_grading`、`dimension_breakdown`、`weighted_attribution` | `../scripts/label_rate_analysis.py` |
-| `efficiency-auto-disposal-accuracy` | `scenarios/efficiency-auto-disposal-accuracy.md` | `auto_disposal_accuracy` | `accuracy_trend`、`accuracy_ranking`、`dimension_breakdown` | 待补充 |
+| `efficiency-auto-disposal-accuracy` | `scenarios/efficiency-auto-disposal-accuracy.md` | `auto_disposal_accuracy`、`root_label_accuracy` | `auto_disposal_alert_grading`、`auto_disposal_root_label_accuracy_breakdown`、`accuracy_trend`、`accuracy_ranking`、`dimension_breakdown` | 待补充；当前维度限 Aeolus `3945965` 已支持字段 |
+| `quality-inspection-accuracy` | `scenarios/quality-inspection-accuracy.md` | `quality_inspection_accuracy`、`pass_accuracy`、`label_accuracy` | `quality_market_no_report_accuracy`、`quality_inspection_trend`、`dimension_breakdown` | `../scripts/quality_inspection_accuracy_query.py` |
 
 ## 公共方法
 

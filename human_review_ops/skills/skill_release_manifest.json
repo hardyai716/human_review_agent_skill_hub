@@ -16,7 +16,8 @@
         "perception/references/common.md",
         "perception/references/scenario-index.md",
         "perception/references/scenarios/efficiency-label-rate.md",
-        "perception/references/scenarios/efficiency-auto-disposal-accuracy.md"
+        "perception/references/scenarios/efficiency-auto-disposal-accuracy.md",
+        "perception/references/scenarios/quality-inspection-accuracy.md"
       ],
       "assets": [
         "perception/assets/README.md",
@@ -53,6 +54,7 @@
         "perception/references/scenario-index.md",
         "perception/references/scenarios/efficiency-label-rate.md",
         "perception/references/scenarios/efficiency-auto-disposal-accuracy.md",
+        "perception/references/scenarios/quality-inspection-accuracy.md",
         "perception/assets/README.md",
         "perception/scripts/label_rate_perception.py",
         "perception/scripts/selfcheck.py"
@@ -68,7 +70,8 @@
         "analysis/references/methods/source_footer.md",
         "analysis/references/methods/weighted_attribution.md",
         "analysis/references/scenarios/efficiency-label-rate.md",
-        "analysis/references/scenarios/efficiency-auto-disposal-accuracy.md"
+        "analysis/references/scenarios/efficiency-auto-disposal-accuracy.md",
+        "analysis/references/scenarios/quality-inspection-accuracy.md"
       ],
       "assets": [
         "analysis/assets/README.md",
@@ -86,6 +89,18 @@
             "readonly_execution",
             "analysis_result",
             "provenance"
+          ]
+        },
+        {
+          "path": "analysis/scripts/quality_inspection_accuracy_query.py",
+          "entrypoint": "python3 scripts/quality_inspection_accuracy_query.py --format sql",
+          "smoke_command": "python3 scripts/selfcheck.py",
+          "side_effects": ["none"],
+          "outputs": [
+            "SQL",
+            "dataset",
+            "filters",
+            "execution_hint"
           ]
         },
         {
@@ -107,8 +122,10 @@
         "analysis/references/methods/weighted_attribution.md",
         "analysis/references/scenarios/efficiency-label-rate.md",
         "analysis/references/scenarios/efficiency-auto-disposal-accuracy.md",
+        "analysis/references/scenarios/quality-inspection-accuracy.md",
         "analysis/assets/README.md",
         "analysis/scripts/label_rate_analysis.py",
+        "analysis/scripts/quality_inspection_accuracy_query.py",
         "analysis/scripts/selfcheck.py"
       ]
     },

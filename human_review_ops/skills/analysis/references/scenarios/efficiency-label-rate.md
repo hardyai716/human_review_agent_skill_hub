@@ -6,7 +6,7 @@
 | --- | --- |
 | `scenario_key` | `efficiency-label-rate` |
 | 主指标 | `label_rate` / 打标率 |
-| 相关指标 | `review_in_cnt`、`review_done_cnt`、`label_cnt` |
+| 相关指标字段 | `[进审量_reviewid]`、`[完审量_reviewid]`、`[打标量__reviewid]` |
 | 模块 | 效率模块 |
 | 运营对象 | 送审原因 / reason、策略、机审一级标签在不同维度下的打标率表现 |
 | 默认运行模式 | `debug_only` / readonly |
@@ -30,22 +30,35 @@
 
 ## 指标口径
 
-| 业务概念 | `metric_id` | 口径 | 默认粒度 |
+本节只维护 Aeolus 数据集标准字段及其 `` `[数据集字段名]` `` 查询写法；`metric_id`、内部 alias 和脚本变量不进入字段表。
+
+支持维度字段：
+
+| 概念 | aeolus query 使用字段 | 说明 |
+| --- | --- | --- |
+| 日期分区 | `[p_date]` | 时间窗口和分区字段。 |
+| 送审原因 | `[reason]` | 打标率分析主实体。 |
+| 机审一级标签 | `[机审一级标签]` | 默认支持拆解维度；空值必须保留。 |
+| 策略 ID | `[strategy_id]` | 稳定主键；策略维度分析优先使用。 |
+| 策略名称 | `[strategy_name]` | 展示字段；历史改名时不得替代策略 ID。 |
+| 审核场景 | `[scene]` | 默认样本池筛选字段。 |
+| 项目标题 | `[project_title]` | 默认样本池排除测试、质检、离线等项目。 |
+
+指标字段与口径：
+
+| 概念 | aeolus query 使用字段 | 口径 | 说明 |
 | --- | --- | --- | --- |
-| 打标率 | `label_rate` | `SUM(label_cnt) / SUM(review_done_cnt)` | `day × reason` |
-| 进审量 | `review_in_cnt` | 进入人审的审核量 | `day × reason` |
-| 完审量 | `review_done_cnt` | 完成人审的审核量 | `day × reason` |
-| 打标量 | `label_cnt` | 被打标的审核量 | `day × reason` |
-| 日均进审量 | `avg_daily_review_in_cnt` | `SUM(review_in_cnt) / COUNT(DISTINCT p_date)` | `reason` |
-| 日均完审量 | `avg_daily_review_done_cnt` | `SUM(review_done_cnt) / COUNT(DISTINCT p_date)` | `reason` |
-| 日均打标量 | `avg_daily_label_cnt` | `SUM(label_cnt) / COUNT(DISTINCT p_date)` | `reason` |
+| 打标率 | `[打标率__reviewid]` | `[打标量__reviewid] / [完审量_reviewid]` | 可展示或校验；跨粒度聚合时必须用量级字段重算。 |
+| 进审量 | `[进审量_reviewid]` | 数据集标准指标 | 规模判断、排序和治理优先级字段。 |
+| 完审量 | `[完审量_reviewid]` | 数据集标准指标 | 打标率分母字段；日均完审量由该字段按查询窗口派生。 |
+| 打标量 | `[打标量__reviewid]` | 数据集标准指标 | 打标率分子字段；日均打标量由该字段按查询窗口派生。 |
 
 规则：
 
 - 打标率分子是打标量，分母是完审量。
 - 进审量只用于规模判断、排序和治理优先级，不作为打标率分母。
-- 跨天、跨 reason、跨标签或跨策略聚合时，必须先 `SUM(label_cnt)` 和 `SUM(review_done_cnt)`，再重算打标率。
-- 日均量必须用 `COUNT(DISTINCT p_date)`，不得硬编码 `/7`。
+- 跨天、跨 reason、跨标签或跨策略聚合时，必须先聚合 `[打标量__reviewid]` 和 `[完审量_reviewid]`，再重算打标率。
+- 日均量必须用 `COUNT(DISTINCT [p_date])`，不得硬编码 `/7`；日均量不写入字段清单。
 - 分母为 0 时输出质量风险，不给强结论。
 
 ## 数据源与字段
@@ -64,31 +77,19 @@
 | Region | `cn` |
 | App ID | `1128` |
 | Dataset ID | `3888816` |
+| Dataset 白皮书 | `https://data.bytedance.net/aeolus/pages/dataManage/larkDoc?appId=1128&dataSetId=3888816&demoUrl=https%3A%2F%2Fbytedance.larkoffice.com%2Fdocx%2FCynjdVMrPoAI5cxvnjXc0ndanFe` |
 | Dataset 名称 | `[重点模型]-社区_人工审核明细数据` |
 | 物理表 | `olap_content_security_community.dws_sft_tcs_review_task_detail_di` |
 | 引擎 | ClickHouse |
 | 分区 | `p_date` |
 | 新鲜度 | 默认 T+1，查询前必须确认最新完整分区 |
 
-字段映射：
-
-| 概念 | 逻辑字段 | 默认 Name | 说明 |
-| --- | --- | --- | --- |
-| 送审原因 | `reason` | `reason` | 打标率分析主实体。 |
-| 策略 ID | `strategy_id` | `strategy_id` | 稳定主键，2026-07-09 已通过字段发现和真实只读查询确认。 |
-| 策略名称 | `strategy_name` | `strategy_name` | 展示字段，历史改名时不得替代策略 ID。 |
-| 日期分区 | `date` | `p_date` | 用于时间窗口和分区就绪检查。 |
-| 项目标题 | `project_title` | `project_title` | 用于排除测试、质检、离线等项目。 |
-| 审核场景 | `scene` | `scene` | 默认保留社区审核三类场景。 |
-| 机审一级标签 | `mach_root_label_name` | `机审一级标签` | 空值必须保留。 |
-| 进审量 | `review_in_cnt` | `进审量_reviewid` | 聚合字段。 |
-| 完审量 | `review_done_cnt` | `完审量_reviewid` | 打标率分母。 |
-| 打标量 | `label_cnt` | `打标量__reviewid` | 双下划线，打标率分子。 |
-| 打标率 | `label_rate` | `打标率__reviewid` | 只可展示或校验，不跨粒度聚合。 |
+字段清单基于 `bytedcli -j aeolus dataset-fields -r cn 3888816` 的真实返回。运行态可用字段、指标口径、默认维度和默认筛选项统一维护在上方“指标口径”章节；本节不重复维护字段表，未出现在该数据集中的字段不得写入默认查询口径。
 
 字段写法：
 
-- Aeolus / ClickHouse 语义字段使用反引号包方括号：`` `[Name]` ``。
+- 遵循 `references/common.md#Aeolus 字段引用快速参考`：通过 `aeolus query` 按数据集 ID 编译 `` `[数据集字段名]` ``，非必要时不手写底层字段逻辑。
+- 例如 `` `[进审量_reviewid]` ``、`` `[完审量_reviewid]` ``、`` `[打标量__reviewid]` `` 均由 Aeolus 按数据集字段定义编译。
 - 禁止裸 `[Name]`。
 - 禁止在最终聚合中 `SUM(rate)`。
 - 使用风神语义指标时，可用 `` `[打标率__reviewid]` `` 展示，但 evidence 必须同时包含 `` `[完审量_reviewid]` `` 和 `` `[打标量__reviewid]` ``。
@@ -141,14 +142,7 @@ AND (
 
 ## 支持维度
 
-- `reason`
-- `p_date`
-- `mach_root_label_name`
-- `strategy_id`
-- `strategy_name`
-- `scene`
-- `project_title`
-- `time_window`
+默认支持维度和筛选字段已前置在“指标口径”章节。
 
 未列举维度处理规则：
 
