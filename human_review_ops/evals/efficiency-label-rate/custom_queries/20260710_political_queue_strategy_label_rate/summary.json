@@ -1,0 +1,21 @@
+{
+  "row_count": 375,
+  "truncated": false,
+  "columns": [
+    "p_date",
+    "review_project_id",
+    "review_project_title",
+    "mach_root_label_name",
+    "strategy_id",
+    "strategy_name",
+    "reason",
+    "review_in_cnt",
+    "review_done_cnt",
+    "label_cnt",
+    "label_rate"
+  ],
+  "output_dir": "human_review_ops/evals/efficiency-label-rate/custom_queries/20260710_political_queue_strategy_label_rate",
+  "csv": "human_review_ops/evals/efficiency-label-rate/custom_queries/20260710_political_queue_strategy_label_rate/result.csv",
+  "json": "human_review_ops/evals/efficiency-label-rate/custom_queries/20260710_political_queue_strategy_label_rate/result.json",
+  "sql": "human_review_ops/evals/efficiency-label-rate/custom_queries/20260710_political_queue_strategy_label_rate/query.sql"
+}

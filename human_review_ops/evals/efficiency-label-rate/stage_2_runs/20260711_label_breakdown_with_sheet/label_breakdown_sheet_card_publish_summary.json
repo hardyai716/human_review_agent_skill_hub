@@ -1,0 +1,34 @@
+{
+  "schema_version": "label_breakdown_sheet_card_publish.v1",
+  "scenario_key": "efficiency-label-rate",
+  "report_type": "mach_root_label_breakdown",
+  "period": {
+    "current_start": "2026-07-04",
+    "current_end": "2026-07-10",
+    "previous_start": "2026-06-27",
+    "previous_end": "2026-07-03"
+  },
+  "csv_path": "human_review_ops/evals/efficiency-label-rate/stage_2_runs/20260711_label_breakdown_with_sheet/label_rate_by_mach_root_label_20260704_20260710.csv",
+  "card_json_path": "human_review_ops/evals/efficiency-label-rate/stage_2_runs/20260711_label_breakdown_with_sheet/label_breakdown_card_with_sheet_link.json",
+  "sheet_url": "https://bytedance.larkoffice.com/sheets/LILTs0yLchs0iIt0Rn0cTeZInnc",
+  "sheet_token": "LILTs0yLchs0iIt0Rn0cTeZInnc",
+  "sheet_import": {
+    "identity": "user",
+    "row_count": 15,
+    "column_count": 12,
+    "sheet_id": "uxshtW"
+  },
+  "send_result": {
+    "ok": true,
+    "identity": "bot",
+    "target": "self",
+    "chat_id": "oc_4cbbc6965db25f473fc5be2b7367e53d",
+    "message_id": "om_x100b6a2a5bfcc4a0b25eda2978081bc",
+    "create_time": "2026-07-11 14:23:15"
+  },
+  "safety": {
+    "real_group_send_executed": false,
+    "poc_notified": false,
+    "online_write_executed": false
+  }
+}

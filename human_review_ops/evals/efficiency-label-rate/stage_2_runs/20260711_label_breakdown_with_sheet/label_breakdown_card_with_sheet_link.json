@@ -1,0 +1,327 @@
+{
+  "schema": "2.0",
+  "config": {
+    "update_multi": true,
+    "width_mode": "default",
+    "enable_forward": true,
+    "summary": {
+      "content": "人审效率｜机审一级标签打标率概览（含表格链接）"
+    },
+    "style": {
+      "text_size": {
+        "title": {
+          "default": "heading-2",
+          "pc": "heading-2",
+          "mobile": "heading-3"
+        },
+        "body": {
+          "default": "normal",
+          "pc": "normal",
+          "mobile": "normal"
+        },
+        "caption": {
+          "default": "notation",
+          "pc": "notation",
+          "mobile": "notation"
+        }
+      },
+      "color": {
+        "cus-primary": {
+          "light_mode": "rgba(30,120,255,1)",
+          "dark_mode": "rgba(80,150,255,1)"
+        },
+        "cus-primary-bg": {
+          "light_mode": "rgba(30,120,255,0.08)",
+          "dark_mode": "rgba(80,150,255,0.12)"
+        },
+        "cus-muted": {
+          "light_mode": "rgba(100,106,115,1)",
+          "dark_mode": "rgba(150,155,163,1)"
+        }
+      }
+    }
+  },
+  "header": {
+    "title": {
+      "tag": "plain_text",
+      "content": "人审效率｜机审一级标签打标率概览"
+    },
+    "subtitle": {
+      "tag": "plain_text",
+      "content": "2026-07-04 ~ 2026-07-10 · 已补充飞书表格链接"
+    },
+    "template": "blue",
+    "icon": {
+      "tag": "standard_icon",
+      "token": "chart_colorful"
+    },
+    "text_tag_list": [
+      {
+        "tag": "text_tag",
+        "text": {
+          "tag": "plain_text",
+          "content": "打标率"
+        },
+        "color": "blue"
+      },
+      {
+        "tag": "text_tag",
+        "text": {
+          "tag": "plain_text",
+          "content": "表格已上传"
+        },
+        "color": "green"
+      }
+    ]
+  },
+  "body": {
+    "direction": "vertical",
+    "padding": "12px 12px 20px 12px",
+    "vertical_spacing": "12px",
+    "elements": [
+      {
+        "tag": "column_set",
+        "flex_mode": "none",
+        "horizontal_spacing": "12px",
+        "columns": [
+          {
+            "tag": "column",
+            "width": "weighted",
+            "weight": 1,
+            "background_style": "blue-50",
+            "padding": "12px",
+            "vertical_spacing": "2px",
+            "elements": [
+              {
+                "tag": "markdown",
+                "content": "## <font color='blue'>25.37%</font>",
+                "text_align": "center"
+              },
+              {
+                "tag": "markdown",
+                "content": "<font color='grey'>整体打标率</font>",
+                "text_align": "center",
+                "text_size": "notation"
+              }
+            ]
+          },
+          {
+            "tag": "column",
+            "width": "weighted",
+            "weight": 1,
+            "background_style": "blue-50",
+            "padding": "12px",
+            "vertical_spacing": "2px",
+            "elements": [
+              {
+                "tag": "markdown",
+                "content": "## <font color='blue'>+0.97pp</font>",
+                "text_align": "center"
+              },
+              {
+                "tag": "markdown",
+                "content": "<font color='grey'>较前 7 天</font>",
+                "text_align": "center",
+                "text_size": "notation"
+              }
+            ]
+          },
+          {
+            "tag": "column",
+            "width": "weighted",
+            "weight": 1,
+            "background_style": "blue-50",
+            "padding": "12px",
+            "vertical_spacing": "2px",
+            "elements": [
+              {
+                "tag": "markdown",
+                "content": "## <font color='blue'>14</font>",
+                "text_align": "center"
+              },
+              {
+                "tag": "markdown",
+                "content": "<font color='grey'>标签/分组</font>",
+                "text_align": "center",
+                "text_size": "notation"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "tag": "markdown",
+        "content": "**核心判断**\n- 低位重点：`国家安全` 13.66%、`空/未映射标签` 16.91%、`领导人` 18.80%。\n- `领导人` 量最大且环比 -3.10pp，建议优先拆 reason / 策略明细。\n- `危险行为` 下滑 -5.87pp，但量级较小；`偏激社会情绪和涉外言论` 提升 +6.94pp。"
+      },
+      {
+        "tag": "table",
+        "columns": [
+          {
+            "name": "label",
+            "display_name": "机审一级标签",
+            "data_type": "text",
+            "width": "190px"
+          },
+          {
+            "name": "done",
+            "display_name": "完审量",
+            "data_type": "text",
+            "width": "90px",
+            "horizontal_align": "right"
+          },
+          {
+            "name": "rate",
+            "display_name": "打标率",
+            "data_type": "text",
+            "width": "80px",
+            "horizontal_align": "right"
+          },
+          {
+            "name": "delta",
+            "display_name": "环比",
+            "data_type": "text",
+            "width": "80px",
+            "horizontal_align": "right"
+          },
+          {
+            "name": "note",
+            "display_name": "备注",
+            "data_type": "text",
+            "width": "90px"
+          }
+        ],
+        "rows": [
+          {
+            "label": "领导人",
+            "done": "105.13万",
+            "rate": "18.80%",
+            "delta": "-3.10pp",
+            "note": "量大下滑"
+          },
+          {
+            "label": "空/未映射标签",
+            "done": "79.25万",
+            "rate": "16.91%",
+            "delta": "+1.37pp",
+            "note": "需看映射"
+          },
+          {
+            "label": "国家安全",
+            "done": "73.88万",
+            "rate": "13.66%",
+            "delta": "-0.20pp",
+            "note": "最低位"
+          },
+          {
+            "label": "党和国家形象负面",
+            "done": "55.83万",
+            "rate": "22.26%",
+            "delta": "+1.16pp",
+            "note": "改善"
+          },
+          {
+            "label": "指令舆情相关",
+            "done": "51.41万",
+            "rate": "19.64%",
+            "delta": "+1.21pp",
+            "note": "改善"
+          },
+          {
+            "label": "侵犯未成年权益",
+            "done": "44.85万",
+            "rate": "45.60%",
+            "delta": "+3.80pp",
+            "note": "较好"
+          },
+          {
+            "label": "色情性化",
+            "done": "43.76万",
+            "rate": "53.23%",
+            "delta": "+0.82pp",
+            "note": "最高"
+          },
+          {
+            "label": "违法违规",
+            "done": "31.40万",
+            "rate": "43.85%",
+            "delta": "-0.02pp",
+            "note": "稳定"
+          },
+          {
+            "label": "偏激社会情绪和涉外言论",
+            "done": "29.06万",
+            "rate": "26.84%",
+            "delta": "+6.94pp",
+            "note": "提升明显"
+          },
+          {
+            "label": "指令临时管控",
+            "done": "9.36万",
+            "rate": "23.97%",
+            "delta": "+1.44pp",
+            "note": "改善"
+          },
+          {
+            "label": "不良行为或争议价值观",
+            "done": "7.49万",
+            "rate": "37.46%",
+            "delta": "-1.39pp",
+            "note": "小幅下滑"
+          },
+          {
+            "label": "短期策略迁移",
+            "done": "4.77万",
+            "rate": "25.02%",
+            "delta": "+0.80pp",
+            "note": "稳定"
+          },
+          {
+            "label": "引人不适",
+            "done": "3.97万",
+            "rate": "43.89%",
+            "delta": "-1.21pp",
+            "note": "小幅下滑"
+          },
+          {
+            "label": "危险行为",
+            "done": "3.29万",
+            "rate": "25.58%",
+            "delta": "-5.87pp",
+            "note": "下滑明显"
+          }
+        ],
+        "page_size": 10,
+        "row_height": "low",
+        "freeze_first_column": true,
+        "header_style": {
+          "background_style": "grey",
+          "bold": true,
+          "lines": 1
+        }
+      },
+      {
+        "tag": "button",
+        "text": {
+          "tag": "plain_text",
+          "content": "查看完整飞书表格"
+        },
+        "type": "primary_filled",
+        "width": "fill",
+        "behaviors": [
+          {
+            "type": "open_url",
+            "default_url": "https://bytedance.larkoffice.com/sheets/LILTs0yLchs0iIt0Rn0cTeZInnc",
+            "pc_url": "https://bytedance.larkoffice.com/sheets/LILTs0yLchs0iIt0Rn0cTeZInnc",
+            "ios_url": "https://bytedance.larkoffice.com/sheets/LILTs0yLchs0iIt0Rn0cTeZInnc",
+            "android_url": "https://bytedance.larkoffice.com/sheets/LILTs0yLchs0iIt0Rn0cTeZInnc"
+          }
+        ]
+      },
+      {
+        "tag": "markdown",
+        "text_size": "notation",
+        "content": "<font color='grey'>数据源：Aeolus 3888816；口径：打标率 = 打标量 / 完审量；时间：最近 7 个已闭合分区。CSV 已导入为飞书表格：https://bytedance.larkoffice.com/sheets/LILTs0yLchs0iIt0Rn0cTeZInnc。本卡用于本人预览，不触达 POC、不群发、不写状态。</font>"
+      }
+    ]
+  }
+}
