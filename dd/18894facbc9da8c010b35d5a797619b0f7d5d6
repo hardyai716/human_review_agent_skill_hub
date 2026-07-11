@@ -1,0 +1,66 @@
+human_review_ops/evals/agentbuddy_publish/20260712_agentbuddy_darwin_fix_republish_summary.json
+  s_74040ee551cb90::t_c0bd067217dc50 1-48 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a5270385c52a9d25ced1bb6","tool_type":"agent","tool_id":"Write","line_ranges":[{"Range":[1,48]}]}]}
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "dd18894facbc9da8c010b35d5a797619b0f7d5d6",
+  "prompts": {},
+  "sessions": {
+    "s_74040ee551cb90": {
+      "agent_id": {
+        "tool": "trae",
+        "id": "6a5257985c52a9d25ced17b0",
+        "model": "openrouter-3o__max"
+      },
+      "human_author": "hardyai716 <hardyai716@users.noreply.github.com>"
+    }
+  },
+  "attestation_metadata": {
+    "human_review_ops/evals/agentbuddy_publish/20260712_agentbuddy_darwin_fix_republish_summary.json": [
+      {
+        "hash": "s_74040ee551cb90::t_c0bd067217dc50",
+        "line_ranges": [
+          {
+            "Range": [
+              1,
+              48
+            ]
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a5270385c52a9d25ced1bb6",
+            "tool_type": "agent",
+            "tool_id": "Write",
+            "line_ranges": [
+              {
+                "Range": [
+                  1,
+                  48
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "remote_transcripts": {
+    "s_74040ee551cb90": {
+      "tool": "trae",
+      "conversation_id": "6a5257985c52a9d25ced17b0",
+      "session_id": "6a5257985c52a9d25ced17b0",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_74040ee551cb90::t_c0bd067217dc50": {
+      "tool": "trae",
+      "conversation_id": "6a5257985c52a9d25ced17b0",
+      "session_id": "6a5257985c52a9d25ced17b0",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    }
+  }
+}
