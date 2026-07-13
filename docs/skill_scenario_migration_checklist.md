@@ -19,15 +19,26 @@
 
 当前 `perception`、`analysis`、`notification`、`resolution` 四个 Skill 的能力命名是横向的，但打标率 (`efficiency-label-rate`) 的脚本、参考资料、测试样例和发布资产已经深度嵌在四个能力 Skill 中。
 
-推荐迁移方案是：
+已采用的迁移方案是：
 
-1. 新建场景 Skill：`efficiency-label-rate-ops`。
-2. 将打标率强绑定资产复制到新场景 Skill，作为新 canonical path。
-3. 保留旧四能力 Skill 路径，作为 legacy compatibility path。
-4. Runner 和 validator 统一改为从路径注册表解析脚本和资产路径。
+1. 已新建场景 Skill：`efficiency-label-rate-ops`。
+2. 已将打标率强绑定 references、assets、scripts 复制到新场景 Skill，作为新 canonical path。
+3. 已保留旧四能力 Skill 路径，作为 legacy compatibility path。
+4. 已新增路径注册表和 resolver；正式入口已接入，历史 runner / validator 后续分批迁移。
 5. 默认采用 `auto` 模式：优先新路径，缺失时回退旧路径。
 
 注意：第一阶段不要直接删除旧四能力 Skill 下的打标率文件；先复制、注册、验证、发布，再逐步把旧路径改成 wrapper 或标记 deprecated。
+
+当前执行状态：
+
+| 阶段 | 状态 | 说明 |
+| --- | --- | --- |
+| 场景 Skill 目录与发布包 | 已完成 | `human_review_ops/skills/efficiency-label-rate-ops/` 已生成，并有 `package_manifest.json`。 |
+| 路径注册表与 resolver | 已完成 | `skill_path_registry.json`、`skill_path_resolver.py`、`validate_skill_path_registry.py` 已落地。 |
+| 正式 Skill-first runner | 已完成 | `run_label_rate_formal_flow.py` 已默认通过 `auto` 模式优先 canonical。 |
+| 产品化 / standalone profile | 已完成 | `validate_skill_productization.py` 和 `validate_skill_standalone_smoke.py` 已支持 `scenario_label_rate` 与 `all_releaseable`。 |
+| 历史 runner / validator 全量切换 | 待开始 | 阶段性 runner 和部分脚本级 validator 仍需分批改用 resolver。 |
+| AgentBuddy 场景 Skill 发布 | 待确认 | `.agentbuddy/publish.yaml` 已包含场景 Skill；真实发布和检索验证仍需执行。 |
 
 ## 迁移目标
 
@@ -36,7 +47,7 @@
 ```text
 human_review_ops/
 ├── skills/
-│   ├── efficiency-label-rate-ops/        # 新：打标率场景 Skill
+│   ├── efficiency-label-rate-ops/        # 当前 canonical：打标率场景 Skill
 │   │   ├── SKILL.md
 │   │   ├── scripts/
 │   │   ├── references/
@@ -47,10 +58,10 @@ human_review_ops/
 │   ├── resolution/
 │   └── skill_release_manifest.json
 ├── configs/
-│   └── skill_path_registry.json          # 新：新旧路径注册表
+│   └── skill_path_registry.json          # 新旧路径注册表
 └── tools/
     ├── compat/
-    │   └── skill_path_resolver.py        # 新：路径解析器
+│   └── skill_path_resolver.py        # 路径解析器
     ├── runners/
     └── validators/
 ```
@@ -752,53 +763,53 @@ NPM_CONFIG_REGISTRY=http://bnpm.byted.org npx -y agentbuddy@latest skill find la
 
 ### Phase 0：冻结旧路径基线
 
-- [ ] 确认当前 main 分支 clean。
-- [ ] 跑旧链路 validator，记录基线：
+- [x] 确认当前 main 分支 clean。
+- [x] 跑旧链路 validator，记录基线：
   - `validate_skill_productization.py --strict`
   - `validate_skill_standalone_smoke.py`
   - `validate_label_rate_perception_scripts.py`
   - `validate_label_rate_analysis_scripts.py`
   - `validate_label_rate_notification_scripts.py`
-- [ ] 记录当前四能力 Skill AgentBuddy 版本。
+- [x] 记录当前四能力 Skill AgentBuddy 版本。
 
 ### Phase 1：新增注册表和 resolver
 
-- [ ] 新建 `human_review_ops/configs/skill_path_registry.json`。
-- [ ] 新建 `human_review_ops/tools/compat/skill_path_resolver.py`。
-- [ ] 新建 `human_review_ops/tools/validators/validate_skill_path_registry.py`。
-- [ ] runner 暂不切换业务逻辑，只先接入 resolver 并保持 `HRO_SKILL_PATH_MODE=legacy` 结果一致。
+- [x] 新建 `human_review_ops/configs/skill_path_registry.json`。
+- [x] 新建 `human_review_ops/tools/compat/skill_path_resolver.py`。
+- [x] 新建 `human_review_ops/tools/validators/validate_skill_path_registry.py`。
+- [x] 正式入口 `run_label_rate_formal_flow.py` 已接入 resolver；历史 runner 后续分批迁移。
 
 ### Phase 2：新建场景 Skill
 
-- [ ] 新建 `human_review_ops/skills/efficiency-label-rate-ops/`。
-- [ ] 复制 references、assets、scripts。
-- [ ] 编写场景级 `SKILL.md`。
-- [ ] 编写场景级 `assets/test-prompts.json`。
-- [ ] 更新 `skill_release_manifest.json`。
-- [ ] 更新 `.agentbuddy/publish.yaml`。
+- [x] 新建 `human_review_ops/skills/efficiency-label-rate-ops/`。
+- [x] 复制 references、assets、scripts。
+- [x] 编写场景级 `SKILL.md`。
+- [x] 编写场景级 `assets/test-prompts.json`。
+- [x] 更新 `skill_release_manifest.json`。
+- [x] 更新 `.agentbuddy/publish.yaml`。
 
 ### Phase 3：Runner 切换到 auto 模式
 
-- [ ] 修改打标率 runner 的脚本路径解析。
-- [ ] 默认 `HRO_SKILL_PATH_MODE=auto`。
-- [ ] 分别验证：
+- [x] 修改正式打标率 runner `run_label_rate_formal_flow.py` 的脚本路径解析。
+- [x] 默认 `HRO_SKILL_PATH_MODE=auto`。
+- [ ] 分别验证历史 runner：
   - `HRO_SKILL_PATH_MODE=legacy`
   - `HRO_SKILL_PATH_MODE=canonical`
   - `HRO_SKILL_PATH_MODE=auto`
 
 ### Phase 4：Validator 支持新旧共存
 
-- [ ] `validate_skill_productization.py` 支持 `--profile`。
-- [ ] `validate_skill_standalone_smoke.py` 从 manifest 读取 smoke command。
+- [x] `validate_skill_productization.py` 支持 `--profile`。
+- [x] `validate_skill_standalone_smoke.py` 从 manifest 读取 smoke command。
 - [ ] 打标率脚本 validator 改用 resolver。
 - [ ] `validate_label_rate_poc_mapping.py` 改为三方一致校验。
-- [ ] 新增 `validate_efficiency_label_rate_ops_skill.py`。
+- [x] 新增 `validate_efficiency_label_rate_ops_skill.py`。
 
 ### Phase 5：发布和观察
 
 - [ ] 发布 `efficiency-label-rate-ops` 到 AgentBuddy restricted 空间。
 - [ ] 保留旧四能力 Skill，不立刻下线。
-- [ ] Agent 路由中将 `efficiency-label-rate` 优先指向新场景 Skill。
+- [x] 正式本地入口将 `efficiency-label-rate` 优先指向新场景 Skill；AgentBuddy 真实路由待发布后确认。
 - [ ] 观察至少一轮完整验证后，再评估旧四能力 Skill 是否降级为公共能力模板。
 
 ## 验收命令

@@ -17,6 +17,7 @@
 - 默认 runner 不连接真实 Aeolus / Hive / ClickHouse；名称带 `real_readonly` 的 runner 只允许连接治理后的只读数据源。
 - runner 不发送通知，不写线上状态。
 - runner 只读取场景包和 eval 样例，生成结构化调试结果。
+- 涉及可空维度聚合时，必须先生成内部 `*_key` 字段再 `GROUP BY`，例如 `mach_root_label_key`、`strategy_id_key`、`strategy_name_key`、`reason_key`；不要把 `ifNull(...)` 的别名写成底表字段名或输出字段名，否则 Aeolus / ClickHouse 可能解析到原始字段，漏掉 NULL 维度桶。
 
 ## 示例
 

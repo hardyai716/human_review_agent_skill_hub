@@ -10,3 +10,4 @@ build/
 __pycache__/
 *.pyc
 .trae/
+human_review_ops/evals/**/ad_hoc/

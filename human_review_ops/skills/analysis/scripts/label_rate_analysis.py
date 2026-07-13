@@ -24,6 +24,13 @@ APP_ID = "1128"
 REGION = "cn"
 DATASET_NAME = "[重点模型]-社区_人工审核明细数据"
 SOURCE_TABLE = "olap_content_security_community.dws_sft_tcs_review_task_detail_di"
+REPORT_FLOW_DATASET_ID = "3952594"
+REPORT_FLOW_APP_ID = "555137"
+REPORT_FLOW_DATASET_NAME = "举报流转任务明细数据集"
+REPORT_FLOW_PHYSICAL_TABLE = (
+    "`aeolus_data_db_aeolus_sagittarius_mini_202511`."
+    "`aeolus_data_table_22_3373535_migrate_v1_prod`"
+)
 QUERY_LIMIT = "50000"
 MIN_CURRENT_REVIEW_IN_CNT = 100
 METRIC_FORMULA = (
@@ -83,6 +90,39 @@ GRADING_COLUMNS = [
 ]
 RowEnricher = Callable[[dict[str, Any]], dict[str, Any]]
 
+REPORT_FLOW_LAST_QUEUE_NAMES = [
+    "【视频专项_举报】D-J-不良行为和争议价值观-B",
+    "【视频专项_举报】D-J-人工分流-B",
+    "【视频专项_举报】D-J-危险行为-B",
+    "【视频专项_举报】D-J-引人不适-B",
+    "【视频专项_举报】D-J-未成年-B",
+    "【视频专项_举报】D-J-色情低俗-B",
+    "【视频专项_举报】D-J-违法犯罪-B",
+    "【视频专项_举报】【众包-PC端】短视频-安全-举报-时政",
+    "【视频专项_举报】短视频-安全-举报-兜底",
+    "【视频专项_举报】短视频-安全-举报-时政",
+    "短视频-安全-疑难研判专审队列-涉政-举报",
+]
+REPORT_FLOW_FIRST_QUEUE_NAMES = [
+    "【众包-PC端】【视频专项_举报】短视频-安全-举报-兜底",
+    "【视频专项_举报】D-J-不良行为和争议价值观-B",
+    "【视频专项_举报】D-J-人工分流-B",
+    "【视频专项_举报】D-J-危险行为-B",
+    "【视频专项_举报】D-J-引人不适-B",
+    "【视频专项_举报】D-J-未成年-B",
+    "【视频专项_举报】D-J-短视频-兜底-2.0",
+    "【视频专项_举报】D-J-短视频特殊2.0",
+    "【视频专项_举报】D-J-色情低俗-B",
+    "【视频专项_举报】D-J-违法犯罪-B",
+    "【视频专项_举报】D-J-长视频特殊2.0",
+    "【视频专项_举报】D-J-音频-B",
+    "【视频专项_举报】D-J-高审",
+    "【视频专项_举报】D-J-高频",
+    "【视频专项_举报】【众包-PC端】短视频-安全-举报-时政",
+    "【视频专项_举报】短视频-安全-举报-兜底",
+    "【视频专项_举报】短视频-安全-举报-时政",
+]
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(
@@ -90,11 +130,21 @@ def main() -> None:
     )
     parser.add_argument("--levels", default=",".join(DEFAULT_LEVELS))
     parser.add_argument(
+        "--data-direction",
+        choices=["manual_review_detail", "report_flow"],
+        default="manual_review_detail",
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Emit deterministic smoke output. This script never executes SQL.",
     )
     args = parser.parse_args()
+
+    if args.data_direction == "report_flow":
+        payload = build_report_flow_dry_run_payload(dry_run=bool(args.dry_run))
+        print(json.dumps(payload, ensure_ascii=False, indent=2))
+        return
 
     levels = parse_levels(args.levels)
     sql_map = sql_by_level()
@@ -178,6 +228,230 @@ def base_filter_sql(indent: str = "    ") -> str:
     ))""",
     ]
     return "\n".join(f"{indent}AND {item}" for item in filters)
+
+
+def quote_sql_string(value: str) -> str:
+    return "'" + value.replace("'", "''") + "'"
+
+
+def sql_in_list(values: list[str], indent: str = "    ") -> str:
+    return (",\n" + indent).join(quote_sql_string(value) for value in values)
+
+
+def report_flow_filter_sql(indent: str = "  ") -> str:
+    return "\n".join(
+        [
+            f"{indent}AND `[终轮队列名称]` IN (",
+            f"{indent}  {sql_in_list(REPORT_FLOW_LAST_QUEUE_NAMES, indent + '  ')}",
+            f"{indent})",
+            f"{indent}AND `[一轮队列名称]` IN (",
+            f"{indent}  {sql_in_list(REPORT_FLOW_FIRST_QUEUE_NAMES, indent + '  ')}",
+            f"{indent})",
+            f"{indent}AND `[任务类型]` IN ('关注-【举报专项】任务链路流转')",
+            f"{indent}AND `[一轮队列名称]` NOT LIKE '%兜底%'",
+            f"{indent}AND `[一轮队列名称]` NOT LIKE '%海外%'",
+            f"{indent}AND `[一轮队列名称]` NOT LIKE '%特殊%'",
+        ]
+    )
+
+
+def build_report_flow_low_label_rate_sql(days: int = CURRENT_DAYS) -> str:
+    return f"""
+SELECT
+  ifNull(`[enpool_reason]`, '（空/enpool_reason）') AS enpool_reason,
+  `[人审完结量_report_id]` / count(distinct `[进审日期]`) AS avg_report_review_done_cnt,
+  `[打标量_report_id]` / count(distinct `[进审日期]`) AS avg_report_label_cnt,
+  `[打标率_report_id]` AS report_label_rate
+FROM {REPORT_FLOW_PHYSICAL_TABLE}
+WHERE `[进审日期]` >= today() - {days}
+  AND `[进审日期]` < today()
+{report_flow_filter_sql("  ")}
+GROUP BY enpool_reason
+HAVING `[人审完结量_report_id]` > 0
+   AND `[打标率_report_id]` < 0.1
+ORDER BY avg_report_review_done_cnt DESC
+LIMIT {QUERY_LIMIT}
+""".strip()
+
+
+def build_report_flow_query_plan(sql: str) -> dict[str, Any]:
+    return {
+        "query_plan_id": "QP-ELR-REPORT-FLOW-LOW-LABEL-RATE-7D",
+        "scenario_key": SCENARIO_KEY,
+        "task_type": "query_only",
+        "analysis_mode": "report_flow_low_label_rate",
+        "metric_id": "report_label_rate",
+        "data_direction": "report_flow",
+        "source_profile": "report_flow_review",
+        "metric_entities": [
+            {
+                "metric_id": "report_label_rate",
+                "definition_version": "draft",
+                "source_tier": "governed_dataset",
+                "aeolus_dataset_id": REPORT_FLOW_DATASET_ID,
+                "aeolus_metric_id": "10000001274387",
+            }
+        ],
+        "time_range": {
+            "type": "trailing_days",
+            "days": CURRENT_DAYS,
+            "date_field": "进审日期",
+            "where": "`[进审日期]` >= today() - 7 AND `[进审日期]` < today()",
+        },
+        "dimensions": ["enpool_reason"],
+        "filters": [
+            "report_flow_queue_scope",
+            "task_type_report_flow",
+            "first_queue_exclusion",
+            "report_label_rate_lt_0_1",
+            "report_review_done_cnt_gt_0",
+        ],
+        "required_hygiene_filters": [
+            "A_report_flow_last_queue_allowlist",
+            "B_report_flow_first_queue_allowlist",
+            "C_report_flow_task_type",
+            "D_report_flow_first_queue_exclusion",
+        ],
+        "source_priority": ["governed_dataset", "curated_raw_sql"],
+        "allowed_sources": [f"aeolus_dataset:{REPORT_FLOW_DATASET_ID}"],
+        "forbidden_sources": [
+            f"aeolus_dataset:{DATASET_ID}",
+            "temporary_table",
+            "ownerless_legacy_sql",
+            "deprecated_strategy_effect_table",
+            "pii_detail_table",
+        ],
+        "fallback_reason": "report_flow_source_profile",
+        "quality_checks": [
+            "field_mapping_check",
+            "freshness_gate",
+            "denominator_not_zero",
+            "grain_check_enpool_reason",
+            "forbidden_source_check",
+            "truncation_check",
+        ],
+        "review_required": False,
+        "execution_mode": "dry_run_sql_template",
+        "sql": sql,
+        "tool_calls": [],
+    }
+
+
+def build_report_flow_source_footer(query_plan: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "source_tier": "governed_dataset",
+        "metric_definition_version": "draft",
+        "data_freshness": "uses `[进审日期]` trailing 7 complete days; checked_at=dry_run",
+        "owner": "人审效率域数据 Owner",
+        "confidence_tier": "high",
+        "review_status": "dry_run_sql_template_not_executed",
+        "scenario_key": SCENARIO_KEY,
+        "metric_id": "report_label_rate",
+        "data_direction": "report_flow",
+        "source_profile": "report_flow_review",
+        "quality_checks": query_plan["quality_checks"],
+        "metric_contract_ref": METRIC_CONTRACT_PATH,
+        "dataset_reference_ref": DATASET_REFERENCE_PATH,
+        "analysis_ref": ANALYSIS_RULE_PATH,
+        "query_plan_id": query_plan["query_plan_id"],
+        "time_window": query_plan["time_range"],
+        "data_lag": "uses closed `进审日期` values where `进审日期` < today()",
+        "source_priority": query_plan["source_priority"],
+        "actual_source": f"aeolus_dataset:{REPORT_FLOW_DATASET_ID}",
+        "filters": query_plan["filters"],
+        "dimensions": query_plan["dimensions"],
+        "limitations": [
+            "This payload only builds the report-flow QueryPlan and SQL template; external execution owns real readonly query execution.",
+            "The physical table fallback is recorded in dataset_reference and should be kept in provenance when used.",
+        ],
+        "run_mode": "debug_only",
+    }
+
+
+def build_report_flow_dry_run_payload(*, dry_run: bool) -> dict[str, Any]:
+    sql = build_report_flow_low_label_rate_sql()
+    query_plan = build_report_flow_query_plan(sql)
+    source_footer = build_report_flow_source_footer(query_plan)
+    readonly_execution = {
+        "execution_id": f"ROE-{query_plan['query_plan_id']}",
+        "execution_mode": "dry_run_sql_template",
+        "analysis_mode": "report_flow_low_label_rate",
+        "status": "not_executed",
+        "source_tier": "governed_dataset",
+        "source_name": f"{REPORT_FLOW_DATASET_NAME} ({REPORT_FLOW_DATASET_ID})",
+        "data_freshness": source_footer["data_freshness"],
+        "row_count": 0,
+        "truncated": None,
+        "columns": [
+            "enpool_reason",
+            "avg_report_review_done_cnt",
+            "avg_report_label_cnt",
+            "report_label_rate",
+        ],
+        "rows": [],
+        "metric_formula": "`report_label_rate` = `[打标量_report_id]` / `[人审完结量_report_id]`",
+        "quality_checks": {
+            "field_mapping_check": "passed_static_contract",
+            "freshness_gate": "requires_external_execution",
+            "denominator_not_zero": "encoded_in_having",
+            "grain_check": "passed_enpool_reason",
+            "forbidden_source_check": "passed",
+        },
+    }
+    provenance = {
+        "provenance_id": f"PROV-{query_plan['query_plan_id']}",
+        "scenario_key": SCENARIO_KEY,
+        "query_plan_id": query_plan["query_plan_id"],
+        "execution_id": readonly_execution["execution_id"],
+        "execution_mode": "dry_run_sql_template",
+        "analysis_mode": "report_flow_low_label_rate",
+        "source_tier": "governed_dataset",
+        "source_name": readonly_execution["source_name"],
+        "region": REGION,
+        "app_id": REPORT_FLOW_APP_ID,
+        "dataset_id": REPORT_FLOW_DATASET_ID,
+        "metric_id": "report_label_rate",
+        "time_range": query_plan["time_range"],
+        "dimensions": query_plan["dimensions"],
+        "filters": query_plan["filters"],
+        "sql": sql,
+        "references": {
+            "metric_contract": METRIC_CONTRACT_PATH,
+            "dataset_reference": DATASET_REFERENCE_PATH,
+            "analysis_rule": ANALYSIS_RULE_PATH,
+        },
+        "source_footer": source_footer,
+    }
+    analysis_result = {
+        "analysis_id": "AN-ELR-REPORT-FLOW-LOW-LABEL-RATE-7D",
+        "event_id": "ELR-REPORT-FLOW-LOW-LABEL-RATE-7D",
+        "templates_used": ["report_flow_low_label_rate", "source_footer"],
+        "query_plan": query_plan,
+        "readonly_execution": readonly_execution,
+        "sop_decision": {
+            "severity_level": "none",
+            "next_action": "external_readonly_execute",
+            "required_confirmation": False,
+            "reason": "Dry-run generated QueryPlan and SQL only.",
+        },
+        "source_footer": source_footer,
+        "provenance": provenance,
+    }
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "dry_run": dry_run,
+        "QueryPlan": query_plan,
+        "source_footer": source_footer,
+        "readonly_execution": readonly_execution,
+        "analysis_result": analysis_result,
+        "provenance": provenance,
+        "safety": {
+            "sql_executed": False,
+            "notification_sent": False,
+            "online_write_executed": False,
+            "real_query_executed": False,
+        },
+    }
 
 
 def period_aggregate_sql(start_days_ago: int, end_days_ago: int) -> str:

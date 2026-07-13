@@ -32,6 +32,7 @@ REQUIRED_TOP_LEVEL_FIELDS = {
 
 def main() -> None:
     validate_ready_case()
+    validate_report_flow_case()
     validate_needs_clarification_case()
     print("Label-rate perception scripts OK")
 
@@ -98,6 +99,40 @@ def validate_ready_case() -> None:
         raise AssertionError("Ready case should not require clarification.")
     if payload.get("handoff", {}).get("next_skill") != "analysis":
         raise AssertionError("Ready case should hand off to analysis.")
+    assert_no_side_effects(payload)
+
+
+def validate_report_flow_case() -> None:
+    payload = run_dry_run(
+        "举报场景近七天打标率小于10%的enpool_reason有哪些？"
+        "输出日均人审完结量、日均打标量和打标率。"
+    )
+    assert_common_contract(payload)
+
+    if payload["scenario_key"] != "efficiency-label-rate":
+        raise AssertionError("Report-flow case scenario_key mismatch.")
+    if payload["task_type"] != "report_flow_low_label_rate":
+        raise AssertionError(f"Report-flow case task_type mismatch: {payload['task_type']}")
+    if payload.get("data_direction") != "report_flow":
+        raise AssertionError("Report-flow case must set data_direction=report_flow.")
+    if payload.get("source_profile") != "report_flow_review":
+        raise AssertionError("Report-flow case source_profile mismatch.")
+    if payload.get("time_window") != "近七天":
+        raise AssertionError("Report-flow case should support Chinese numeric time window.")
+    if set(payload.get("dimensions", [])) != {"enpool_reason"}:
+        raise AssertionError(f"Report-flow dimensions mismatch: {payload.get('dimensions')}")
+    expected_metrics = {
+        "report_label_rate",
+        "report_review_done_cnt",
+        "report_label_cnt",
+    }
+    if not expected_metrics.issubset(set(payload.get("metric_ids", []))):
+        raise AssertionError(f"Report-flow metric_ids mismatch: {payload.get('metric_ids')}")
+    readiness = payload["readiness"]
+    if readiness.get("status") != "ready":
+        raise AssertionError(f"Report-flow case status mismatch: {readiness}")
+    if payload.get("handoff", {}).get("next_skill") != "analysis":
+        raise AssertionError("Report-flow case should hand off to analysis.")
     assert_no_side_effects(payload)
 
 

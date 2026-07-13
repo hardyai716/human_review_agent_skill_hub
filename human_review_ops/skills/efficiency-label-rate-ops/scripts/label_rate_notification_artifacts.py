@@ -110,6 +110,14 @@ def main() -> None:
     parser.add_argument("--output-dir", required=True)
     parser.add_argument("--top-n", type=int, default=10)
     parser.add_argument("--sheet-url")
+    parser.add_argument(
+        "--import-sheet",
+        action="store_true",
+        help=(
+            "Opt in to importing the XLSX report as a Feishu online sheet "
+            "(a real online write). Off by default; debug_only stays local."
+        ),
+    )
     parser.add_argument("--identity", choices=["bot", "user"], default="bot")
     parser.add_argument("--title", default="近7天低效打标策略全等级结果")
     args = parser.parse_args()
@@ -128,6 +136,7 @@ def main() -> None:
         sent_payload=None,
         target_user_id=None,
         target_chat_id=None,
+        auto_import_sheet=args.import_sheet,
     )
     print(
         "Label-rate notification artifacts wrote "
@@ -149,7 +158,7 @@ def build_label_rate_notification_artifacts(
     sent_payload: dict[str, Any] | None,
     target_user_id: str | None,
     target_chat_id: str | None,
-    auto_import_sheet: bool = True,
+    auto_import_sheet: bool = False,
 ) -> NotificationArtifacts:
     """Build all safe notification artifacts; caller owns any real send action."""
 

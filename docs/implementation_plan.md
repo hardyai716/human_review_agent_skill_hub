@@ -15,13 +15,14 @@
 | 样板主线 | 以自动处置准确率作为架构占位，打标率未形成完整链路。 | 打标率已成为主线样板场景；自动处置准确率保留为相邻场景和误触发校验。 | 方案和 demo 必须把打标率作为当前基线，自动处置准确率仅作为扩展/反例。 |
 | Skill 形态 | 四类 Skill 以模板和参考资料为主。 | 感知、分析、通知、解决均已具备可执行 `SKILL.md`、`scripts/`、`assets/test-prompts.json`、发布清单和 standalone smoke 门禁。 | 将“建设模板”改为“维护可发布 Skill 基线”。 |
 | 查询链路 | 以 QueryPlan 和 mock/只读预检验证为主。 | 已接入 Aeolus 数据集 `3888816` 的真实只读查询，输出 `analysis_result`、`source_footer`、`provenance` 和分级结果。 | 后续计划聚焦口径治理、查询稳定性和异常样例，不再把真实只读接入列为待办。 |
-| 通知产物 | 以固定人/群测试通知和草稿为主。 | 通知 Skill 已生成 POC 路由、Card、分级 CSV/XLSX、`send_plan`，并在缺少 `sheet_url` 时通过 `sheet_importer.py` 自动导入飞书表格。 | 方案、demo、发布清单必须体现“报表自动上传 + sheet_url 回填”能力。 |
+| 通知产物 | 以固定人/群测试通知和草稿为主。 | 通知 Skill 已生成 POC 路由、Card、分级 CSV/XLSX、`send_plan`；`sheet_importer.py` 已纳入发布清单，但在线表格导入属于真实在线写入，默认关闭，必须显式 `--import-sheet` / `auto_import_sheet=true` 才回填 `sheet_url`。 | 方案、demo、发布清单必须体现“本地报表默认生成 + 在线表格导入 opt-in + 发送门禁”。 |
 | 处理闭环 | 仅描述人工跟进。 | resolution Skill 已支持本地 `manual_tracking.json`，仍禁止线上写状态。 | 后续计划转向状态表、回复回收、幂等写入和回滚策略设计。 |
 | 编排入口 | 文档中存在阶段脚本和演示脚本混用。 | 已形成正式 Skill-first 入口 `run_label_rate_formal_flow.py`：`Perception -> Analysis -> Notification -> external_executor`，真实发送只由外部执行环境显式确认。 | 对外方案使用 `external_executor`、`calling_agent` 等产品化词汇；内部脚本名只作为工程附录。 |
 | 发布治理 | 早期只校验文件结构。 | 已有 AgentBuddy restricted 发布、产品化 strict、standalone smoke、脚本级 validator、`skill_release_manifest.json`。 | 后续开发必须先跑发布前校验，再进入发布或 demo 更新。 |
-| 下一阶段方向 | 四类横向能力 Skill 是主要目标形态。 | 最新评估提出新增场景级 Skill `efficiency-label-rate-ops`，四类能力 Skill 保留为 legacy compatibility path。 | 方案和 demo 需把“四 Skill 产品化”定位为当前基线，把“场景 Skill 迁移”定位为后续主线。 |
+| 场景级 Skill | 四类横向能力 Skill 是主要目标形态。 | 已新增场景级 Skill `efficiency-label-rate-ops`，并登记到 `skill_release_manifest.json` 与 AgentBuddy 发布配置；四类能力 Skill 保留为 legacy compatibility path。 | 方案和 demo 需把“四 Skill 产品化”定位为兼容基线，把 `efficiency-label-rate-ops` 定位为打标率 canonical path。 |
+| 路径治理 | Runner / validator 直接拼接旧四能力 Skill 路径。 | 已新增 `configs/skill_path_registry.json`、`tools/compat/skill_path_resolver.py` 和 `validate_skill_path_registry.py`；正式入口 `run_label_rate_formal_flow.py` 已按 `auto/canonical/legacy` 解析路径。 | 后续只迁移仍硬编码旧路径的历史 runner / validator，不再新增无注册表路径。 |
 
-因此，本轮文档和 demo 更新的原则是：历史阶段记录保留用于追溯，但下一阶段主计划不再围绕“阶段 1/阶段 2”扩写；对外表述收敛为“当前基线、场景化迁移、真实通知确认链路、状态闭环治理、扩场景复制”五条主线。
+因此，本轮文档和 demo 更新的原则是：历史阶段记录保留用于追溯，但下一阶段主计划不再围绕“阶段 1/阶段 2”扩写；对外表述收敛为“当前四能力兼容基线、打标率场景级 canonical path、路径注册表治理、真实通知确认链路、状态闭环治理、扩场景复制”六条主线。
 
 ## 2. 开发成功标准
 
@@ -158,6 +159,42 @@ human_review_ops/
           efficiency-label-rate.sla.md
           efficiency-label-rate.owner_routing.md
           efficiency-label-rate.examples.md
+    efficiency-label-rate-ops/
+      SKILL.md
+      package_manifest.json
+      references/
+        common.md
+        scenario-index.md
+        scenarios/
+          efficiency-label-rate.md
+        scenario_manifest.md
+        metric_contract.md
+        dataset_reference.md
+        analysis.md
+        notification_templates.md
+        owner_routing.md
+        state_machine.md
+        sla.md
+        examples.md
+      assets/
+        test-prompts.json
+        efficiency-label-rate/
+          mach_root_label_poc_mapping.json
+          low_efficiency_grading_card_template.json
+          card_schema_notes.md
+      scripts/
+        label_rate_perception.py
+        label_rate_analysis.py
+        label_rate_notification_artifacts.py
+        render_label_rate_grading_card.py
+        resolve_label_rate_poc_routing.py
+        card_hash.py
+        sheet_importer.py
+        build_label_rate_manual_tracking.py
+        selfcheck.py
+    skill_release_manifest.json
+  configs/
+    skill_path_registry.json
   evals/
     efficiency-auto-disposal-accuracy/
       eval_samples.jsonl
@@ -174,6 +211,8 @@ human_review_ops/
     retrieval_policy.schema.json
     tool_call_record.schema.json
   tools/
+    compat/
+      skill_path_resolver.py
     packagers/
       build_skill_package.py
     policies/
@@ -184,6 +223,7 @@ human_review_ops/
       validate_skill_package.py
       validate_query_plan.py
       validate_source_footer.py
+      validate_skill_path_registry.py
 ```
 
 说明：
@@ -774,7 +814,7 @@ human_review_ops/evals/efficiency-label-rate/eval_samples.jsonl
 
 ### 12.1 当前架构合规结论
 
-当前架构与本实施方案的核心要求一致，阶段 0.5 TRAE 调试验证已完成，阶段 1 感知 + 分析链路已围绕打标率场景跑通。阶段 2 已完成低打标率分级结果的通知卡片草稿、POC / 触达对象路由占位、群推送门禁、本地人工处理状态记录和局部调度回归。打标率主线的四类核心 Skill 已完成产品化改造：具备自包含触发测试、增强版 `SKILL.md` 操作手册、可独立运行的打标率脚本、发布清单和 standalone smoke 门禁。
+当前架构与本实施方案的核心要求一致，阶段 0.5 TRAE 调试验证已完成，阶段 1 感知 + 分析链路已围绕打标率场景跑通。阶段 2 已完成低打标率分级结果的通知卡片草稿、POC / 触达对象路由占位、群推送门禁、本地人工处理状态记录和局部调度回归。打标率主线的四类核心 Skill 已完成产品化改造：具备自包含触发测试、增强版 `SKILL.md` 操作手册、可独立运行的打标率脚本、发布清单和 standalone smoke 门禁。打标率场景级 Skill `efficiency-label-rate-ops` 已生成并进入发布清单；路径注册表与 resolver 已补齐，正式 Skill-first 入口已支持 `auto/canonical/legacy` 路径模式。
 
 | 检查项 | 当前状态 | 结论 |
 | --- | --- | --- |
@@ -793,6 +833,8 @@ human_review_ops/evals/efficiency-label-rate/eval_samples.jsonl
 | 阶段 1 P1 只读执行 | 已生成 mock `readonly_execution`、`analysis_result` 和 `provenance`，并校验不会发送通知或写状态。 | 通过 |
 | 阶段 1 P1 真实只读查询 | 已通过 Aeolus 数据集 `3888816` 执行打标率只读查询，支持 `--days`、`--dimensions` 和 `--query-mode`。 | 通过 |
 | 阶段 1 P1 低打标率分级 | 已通过真实只读 SQL 输出 notice/P2/P1/P0 分级结果、综合去重结果、evidence 和 provenance。 | 通过 |
+| 场景级 Skill | `efficiency-label-rate-ops` 已具备 `SKILL.md`、references、assets、scripts、`package_manifest.json` 和 selfcheck。 | 通过 |
+| 路径注册表 | 已新增 `skill_path_registry.json`、`skill_path_resolver.py` 和 `validate_skill_path_registry.py`，正式入口优先 canonical 并可回退 legacy。 | 通过 |
 
 ### 12.2 已完成任务看板
 
@@ -856,6 +898,8 @@ human_review_ops/evals/efficiency-label-rate/eval_samples.jsonl
 | 架构治理 | P2 | 可执行化 perception Skill。 | 新增 `human_review_ops/skills/perception/scripts/label_rate_perception.py`，可输出 `scenario_key`、`task_type`、`run_mode`、`metric_ids`、`retrieval_policy` 和 readiness，不执行 SQL、不发送通知、不写线上状态。 | 已完成 |
 | 架构治理 | P2 | 建立单 Skill 独立运行与发布清单门禁。 | 新增 `human_review_ops/skills/skill_release_manifest.json` 和 `validate_skill_standalone_smoke.py`，覆盖 `SKILL.md`、references、assets、scripts、Python 编译、最小 dry-run、外部依赖声明、本机绝对路径和真实 token 风险。 | 已完成 |
 | 架构治理 | P2 | 固化发布前轻量回归清单。 | `validate_agentbuddy_publish.py` 已纳入产品化检查；发布前推荐执行场景包、AgentBuddy、POC 映射、产品化 strict、standalone smoke、analysis/notification/perception 脚本、阶段 1/阶段 2 和 `git diff --check` 校验。 | 已完成 |
+| 架构治理 | P0 | 完成打标率场景级 Skill 迁移。 | 新增并同步 `human_review_ops/skills/efficiency-label-rate-ops/`，发布包包含打标率 perception、analysis、notification、resolution 脚本和场景 references/assets。 | 已完成 |
+| 架构治理 | P0 | 建立打标率 Skill 路径注册表与解析器。 | 新增 `human_review_ops/configs/skill_path_registry.json`、`human_review_ops/tools/compat/skill_path_resolver.py`、`validate_skill_path_registry.py`；`run_label_rate_formal_flow.py` 已按 resolver 加载脚本。 | 已完成 |
 
 ### 12.3 阶段 3 / 后续实施计划
 
@@ -870,16 +914,17 @@ human_review_ops/evals/efficiency-label-rate/eval_samples.jsonl
 | 回收闭环 | 当前仅记录本地 `manual_tracking.json`。 | 明确联系人回复收集、卡片按钮回调或 Lark Base 状态表设计。 |
 | 状态存储 | 开发阶段仅本地存储，不写线上状态。 | 状态表 schema、权限、写入幂等和回滚策略确认。 |
 | 发送身份 | 当前默认 bot；bot 已验证可发送群消息并在验证群里 @ 用户。 | 若后续真实 POC 群权限不足，再评估 user identity 或应用权限补齐。 |
-| Skill 产品化 | 四类核心 Skill 已具备自包含基线、可执行 `SKILL.md`、打标率 analysis / notification / perception scripts、resolution manual tracking 脚本、发布清单和 standalone smoke 门禁。 | 后续新增场景或改动 Skill 时，同步更新 `test-prompts.json`、`skill_release_manifest.json` 和对应脚本级 validator。 |
+| Skill 产品化 | 四类核心 Skill 已具备自包含基线、可执行 `SKILL.md`、打标率 analysis / notification / perception scripts、resolution manual tracking 脚本、发布清单和 standalone smoke 门禁；`efficiency-label-rate-ops` 场景级 Skill 已具备自包含发布包和 selfcheck。 | 后续新增场景或改动 Skill 时，同步更新 `test-prompts.json`、`skill_release_manifest.json`、`skill_path_registry.json` 和对应脚本级 validator。 |
 
 #### 12.3.2 后续任务表
 
 | 优先级 | 任务 | 要做什么 | 预期产物 | 验收标准 | 状态 |
 | --- | --- | --- | --- | --- | --- |
-| P0 | 冻结四能力 Skill 产品化基线 | 先记录当前 perception / analysis / notification / resolution 的发布版本、validator 结果和关键产物，作为迁移前回滚基线。 | 基线记录、发布版本、校验结果摘要。 | 旧四能力 Skill 的 productization、standalone smoke、脚本级 validator 可复跑；`notification/scripts/sheet_importer.py` 已纳入发布清单。 | 进行中 |
-| P0 | 启动打标率场景 Skill 迁移 | 新增 `efficiency-label-rate-ops`，把打标率强绑定 references、assets、scripts 复制到场景级 Skill，旧四能力路径保留兼容。 | `human_review_ops/skills/efficiency-label-rate-ops/`、场景级 `SKILL.md`、场景级 `test-prompts.json`。 | 新 Skill 能独立完成 perception、analysis、notification、resolution 四段 dry-run；旧路径不破坏。 | 待开始 |
-| P0 | 建立路径注册表和解析器 | 新建 `skill_path_registry.json` 和 `skill_path_resolver.py`，让 runner、validator 和 packager 通过 `auto/canonical/legacy` 三种模式解析路径。 | 路径注册表、解析器、registry validator。 | `HRO_SKILL_PATH_MODE=legacy` 与当前结果一致；`canonical` 在新 Skill 完成后可独立通过；`auto` 默认优先新路径。 | 待开始 |
-| P1 | 改造发布与校验门禁 | 让 `validate_skill_productization.py`、`validate_skill_standalone_smoke.py`、`validate_skill_package.py` 和 AgentBuddy 发布配置从 manifest / registry 读取 Skill 列表。 | 支持 `legacy_core`、`scenario_label_rate`、`all_releaseable` 的校验 profile。 | 四能力 Skill 和 `efficiency-label-rate-ops` 可分别或全量校验；发布清单、AgentBuddy manifest、Skill 包资产一致。 | 待开始 |
+| P0 | 冻结四能力 Skill 产品化基线 | 记录当前 perception / analysis / notification / resolution 的发布版本、validator 结果和关键产物，作为迁移回滚基线。 | 基线记录、发布版本、校验结果摘要。 | 旧四能力 Skill 的 productization、standalone smoke、脚本级 validator 可复跑；`notification/scripts/sheet_importer.py` 已纳入发布清单。 | 已完成 |
+| P0 | 启动打标率场景 Skill 迁移 | 新增 `efficiency-label-rate-ops`，把打标率强绑定 references、assets、scripts 复制到场景级 Skill，旧四能力路径保留兼容。 | `human_review_ops/skills/efficiency-label-rate-ops/`、场景级 `SKILL.md`、场景级 `test-prompts.json`、`package_manifest.json`。 | 新 Skill 能独立完成 perception、analysis、notification、resolution 四段 dry-run；旧路径不破坏。 | 已完成 |
+| P0 | 建立路径注册表和解析器 | 新建 `skill_path_registry.json` 和 `skill_path_resolver.py`，让正式 runner 通过 `auto/canonical/legacy` 三种模式解析路径。 | 路径注册表、解析器、registry validator、正式入口 resolver 接入。 | `validate_skill_path_registry.py` 通过；`run_label_rate_formal_flow.py` 默认 `auto` 优先 canonical，必要时可回退 legacy。 | 已完成 |
+| P1 | 改造发布与校验门禁 | 让 `validate_skill_productization.py`、`validate_skill_standalone_smoke.py` 和 AgentBuddy 发布配置支持 manifest / registry 中的新旧 Skill；`validate_skill_package.py` 和历史阶段 validator 后续逐步接入。 | 支持 `legacy_core`、`scenario_label_rate`、`all_releaseable` 的校验 profile。 | 四能力 Skill 和 `efficiency-label-rate-ops` 可分别或全量校验；发布清单、AgentBuddy manifest、Skill 包资产一致。 | 进行中 |
+| P1 | 批量迁移历史 runner / validator 路径解析 | 将仍硬编码 `skills/perception|analysis|notification|resolution` 的历史 runner 和打标率 validator 逐步改用 resolver；正式入口已先行切换。 | 历史 runner / validator 的 resolver 改造 PR。 | `HRO_SKILL_PATH_MODE=legacy/canonical/auto` 三种模式下关键回归一致；未改造前不新增新的硬编码路径。 | 待开始 |
 | P1 | 接入 POC 联系人身份解析 | 基于当前 `mach_root_label_name -> POC 姓名` 映射，决定 open_id 安全存储方式，并保留姓名级 fallback。 | POC open_id 映射配置、联系人解析脚本、validator、脱敏样例。 | 能输出可通知 POC 或明确 fallback 原因；不泄露敏感身份；映射缺失可解释。 | 待开始 |
 | P1 | 固化通知对象解析 | 将角色范围、POC 身份、open_id 解析和置信度写入路由计划。 | 增强版 `poc_routing_plan.json`。 | notice/P2/P1/P0 均有可审计收件人来源、置信度、升级关系和人工确认状态。 | 待开始 |
 | P1 | 建立群推送确认链路 | 在 `send_plan.json` 基础上增加人工确认状态和真实发送前检查。 | 确认记录、发送前 validator、群推送 dry-run 结果。 | 未确认不发送；确认后仅向指定群 / POC 发送；发送结果可追踪。 | 待开始 |

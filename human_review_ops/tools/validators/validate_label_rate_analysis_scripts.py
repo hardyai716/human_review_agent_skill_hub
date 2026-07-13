@@ -101,6 +101,7 @@ LEVEL_WINDOW_SNIPPETS = {
 
 def main() -> None:
     validate_imported_module_contract()
+    validate_report_flow_contract()
     validate_cli_dry_run()
     print("Label-rate analysis scripts OK")
 
@@ -167,6 +168,56 @@ def validate_cli_dry_run() -> None:
         raise AssertionError("CLI dry-run must not claim a real readonly query was executed.")
     if payload.get("readonly_execution", {}).get("execution_mode") == "real_readonly_query":
         raise AssertionError("CLI dry-run must not label execution_mode as real_readonly_query.")
+
+
+def validate_report_flow_contract() -> None:
+    sql = label_rate_analysis.build_report_flow_low_label_rate_sql()
+    required_snippets = [
+        "`[进审日期]` >= today() - 7",
+        "`[进审日期]` < today()",
+        "ifNull(`[enpool_reason]`, '（空/enpool_reason）') AS enpool_reason",
+        "`[人审完结量_report_id]` / count(distinct `[进审日期]`) AS avg_report_review_done_cnt",
+        "`[打标量_report_id]` / count(distinct `[进审日期]`) AS avg_report_label_cnt",
+        "`[打标率_report_id]` AS report_label_rate",
+        "`[终轮队列名称]` IN",
+        "`[一轮队列名称]` IN",
+        "`[任务类型]` IN ('关注-【举报专项】任务链路流转')",
+        "`[一轮队列名称]` NOT LIKE '%兜底%'",
+        "GROUP BY enpool_reason",
+        "HAVING `[人审完结量_report_id]` > 0",
+        "AND `[打标率_report_id]` < 0.1",
+    ]
+    for snippet in required_snippets:
+        if snippet not in sql:
+            raise AssertionError(f"Report-flow SQL missing snippet: {snippet}")
+    forbidden_snippets = [
+        "partition",
+        "`[p_date]`",
+        "`[reason]`",
+        "`[完审量_reviewid]`",
+        "`[打标量__reviewid]`",
+        "3888816",
+    ]
+    for snippet in forbidden_snippets:
+        if snippet in sql:
+            raise AssertionError(f"Report-flow SQL contains forbidden snippet: {snippet}")
+
+    payload = label_rate_analysis.build_report_flow_dry_run_payload(dry_run=True)
+    query_plan = payload["QueryPlan"]
+    if query_plan.get("data_direction") != "report_flow":
+        raise AssertionError("Report-flow QueryPlan data_direction mismatch.")
+    if query_plan.get("source_profile") != "report_flow_review":
+        raise AssertionError("Report-flow QueryPlan source_profile mismatch.")
+    if query_plan.get("metric_id") != "report_label_rate":
+        raise AssertionError("Report-flow QueryPlan metric_id mismatch.")
+    if query_plan.get("metric_entities", [{}])[0].get("aeolus_dataset_id") != "3952594":
+        raise AssertionError("Report-flow QueryPlan dataset mismatch.")
+    if query_plan.get("time_range", {}).get("date_field") != "进审日期":
+        raise AssertionError("Report-flow QueryPlan must use 进审日期.")
+    if query_plan.get("dimensions") != ["enpool_reason"]:
+        raise AssertionError("Report-flow QueryPlan dimensions mismatch.")
+    if payload.get("safety", {}).get("sql_executed") is not False:
+        raise AssertionError("Report-flow dry-run must not execute SQL.")
 
 
 def assert_query_plan(query_plan: dict[str, Any], levels: list[str]) -> None:

@@ -10,6 +10,8 @@
 
 ## 相关指标
 
+### 方向 1：人工审核明细
+
 | 业务概念 | `metric_id` | 口径 | 默认粒度 |
 | --- | --- | --- | --- |
 | 打标率 | `label_rate` | `SUM(label_cnt) / SUM(review_done_cnt)` | `day × reason` |
@@ -20,12 +22,25 @@
 | 日均完审量 | `avg_daily_review_done_cnt` | `SUM(review_done_cnt) / COUNT(DISTINCT p_date)` | `reason` |
 | 日均打标量 | `avg_daily_label_cnt` | `SUM(label_cnt) / COUNT(DISTINCT p_date)` | `reason` |
 
+### 方向 2：举报流转
+
+| 业务概念 | `metric_id` | 口径 | 默认粒度 |
+| --- | --- | --- | --- |
+| 举报打标率 | `report_label_rate` | `SUM(report_label_cnt) / SUM(report_review_done_cnt)` | `day × enpool_reason` |
+| 举报进审量 | `report_review_in_cnt` | 数据集指标 `进审量_report_id` | `day × enpool_reason` |
+| 举报人审完结量 | `report_review_done_cnt` | 数据集指标 `人审完结量_report_id` | `day × enpool_reason` |
+| 举报打标量 | `report_label_cnt` | 数据集指标 `打标量_report_id` | `day × enpool_reason` |
+| 举报日均人审完结量 | `avg_daily_report_review_done_cnt` | `SUM(report_review_done_cnt) / COUNT(DISTINCT 进审日期)` | `enpool_reason` |
+| 举报日均打标量 | `avg_daily_report_label_cnt` | `SUM(report_label_cnt) / COUNT(DISTINCT 进审日期)` | `enpool_reason` |
+
 ## 核心口径
 
 - 打标率分子：打标量。
 - 打标率分母：完审量。
 - 打标率公式：`打标率 = SUM(打标量) / SUM(完审量)`。
 - 日均公式：`SUM(指标) / COUNT(DISTINCT p_date)`。
+- 举报方向的分子是 `打标量_report_id`，分母是 `人审完结量_report_id`；时间字段统一使用数据集字段 `进审日期`，底层 expr 为 `` `date` ``。
+- 举报方向默认输出字段为 `enpool_reason`、`日均人审完结量`、`日均打标量`、`打标率`。
 - 环比增长率：`(本期日均进审量 - 上期日均进审量) / NULLIF(上期日均进审量, 0)`。
 - 日均增量：`本期日均进审量 - 上期日均进审量`。
 
@@ -74,10 +89,57 @@ AND (
 
 默认情况下，打标率查询、排序、低打标率分级和维度拆解都必须使用以上默认样本池 SQL 片段。若用户明确要求覆盖样本池，必须在 QueryPlan 的 `filters` 和 source_footer 中标明覆盖原因，并要求人工确认。
 
+## 举报方向默认样本池
+
+当 `data_direction=report_flow` 时，默认使用举报流转任务明细数据集 `3952594`，并复用以下基础筛选项。该样本池与人工审核明细默认样本池互斥，不得混用。
+
+```sql
+AND `[终轮队列名称]` IN (
+  '【视频专项_举报】D-J-不良行为和争议价值观-B',
+  '【视频专项_举报】D-J-人工分流-B',
+  '【视频专项_举报】D-J-危险行为-B',
+  '【视频专项_举报】D-J-引人不适-B',
+  '【视频专项_举报】D-J-未成年-B',
+  '【视频专项_举报】D-J-色情低俗-B',
+  '【视频专项_举报】D-J-违法犯罪-B',
+  '【视频专项_举报】【众包-PC端】短视频-安全-举报-时政',
+  '【视频专项_举报】短视频-安全-举报-兜底',
+  '【视频专项_举报】短视频-安全-举报-时政',
+  '短视频-安全-疑难研判专审队列-涉政-举报'
+)
+AND `[一轮队列名称]` IN (
+  '【众包-PC端】【视频专项_举报】短视频-安全-举报-兜底',
+  '【视频专项_举报】D-J-不良行为和争议价值观-B',
+  '【视频专项_举报】D-J-人工分流-B',
+  '【视频专项_举报】D-J-危险行为-B',
+  '【视频专项_举报】D-J-引人不适-B',
+  '【视频专项_举报】D-J-未成年-B',
+  '【视频专项_举报】D-J-短视频-兜底-2.0',
+  '【视频专项_举报】D-J-短视频特殊2.0',
+  '【视频专项_举报】D-J-色情低俗-B',
+  '【视频专项_举报】D-J-违法犯罪-B',
+  '【视频专项_举报】D-J-长视频特殊2.0',
+  '【视频专项_举报】D-J-音频-B',
+  '【视频专项_举报】D-J-高审',
+  '【视频专项_举报】D-J-高频',
+  '【视频专项_举报】【众包-PC端】短视频-安全-举报-时政',
+  '【视频专项_举报】短视频-安全-举报-兜底',
+  '【视频专项_举报】短视频-安全-举报-时政'
+)
+AND `[任务类型]` IN ('关注-【举报专项】任务链路流转')
+AND `[一轮队列名称]` NOT LIKE '%兜底%'
+AND `[一轮队列名称]` NOT LIKE '%海外%'
+AND `[一轮队列名称]` NOT LIKE '%特殊%'
+```
+
+举报方向低效规则默认是 `打标率_report_id < 10%` 且 `人审完结量_report_id > 0`。
+
 ## 支持维度
 
 - `reason`：送审原因。
 - `p_date`：日期分区。
+- `enpool_reason`：举报方向的入池原因，等价于举报场景下的 reason。
+- `进审日期`：举报方向日期分区字段，底层 expr 为 `` `date` ``。
 - `mach_root_label_name`：机审一级标签。
 - `strategy_id`：策略 / 规则 ID，2026-07-09 经 `dataset-fields` 与真实只读查询确认。
 - `strategy_name`：策略名称，2026-07-09 经 `dataset-fields` 与真实只读查询确认。

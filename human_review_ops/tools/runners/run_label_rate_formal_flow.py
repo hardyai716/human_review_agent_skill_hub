@@ -16,12 +16,29 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 REPO_ROOT = ROOT.parent
-PERCEPTION_SCRIPTS = ROOT / "skills" / "perception" / "scripts"
-ANALYSIS_SCRIPTS = ROOT / "skills" / "analysis" / "scripts"
-NOTIFICATION_SCRIPTS = ROOT / "skills" / "notification" / "scripts"
-sys.path.insert(0, str(PERCEPTION_SCRIPTS))
-sys.path.insert(0, str(ANALYSIS_SCRIPTS))
-sys.path.insert(0, str(NOTIFICATION_SCRIPTS))
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from human_review_ops.tools.compat.skill_path_resolver import (  # noqa: E402
+    active_path_mode,
+    resolve_script_dir,
+)
+
+
+SCENARIO_KEY = "efficiency-label-rate"
+PERCEPTION_SCRIPTS = resolve_script_dir(SCENARIO_KEY, "perception")
+ANALYSIS_SCRIPTS = resolve_script_dir(SCENARIO_KEY, "analysis")
+NOTIFICATION_SCRIPTS = resolve_script_dir(SCENARIO_KEY, "notification_artifacts")
+POC_ROUTING_SCRIPTS = resolve_script_dir(SCENARIO_KEY, "poc_routing")
+for script_dir in reversed(
+    tuple(dict.fromkeys((
+        PERCEPTION_SCRIPTS,
+        ANALYSIS_SCRIPTS,
+        NOTIFICATION_SCRIPTS,
+        POC_ROUTING_SCRIPTS,
+    )))
+):
+    sys.path.insert(0, str(script_dir))
 
 import label_rate_analysis  # noqa: E402
 from label_rate_perception import detect_label_rate_perception  # noqa: E402
@@ -35,7 +52,6 @@ from resolve_label_rate_poc_routing import (  # noqa: E402
 )
 
 
-SCENARIO_KEY = "efficiency-label-rate"
 REGION = "cn"
 DATASET_ID = "3888816"
 QUERY_LIMIT = "50000"
@@ -132,6 +148,13 @@ def main() -> None:
         "target_chat_name": TEST_GROUP_NAME
         if args.send_chat_id == TEST_GROUP_CHAT_ID
         else None,
+        "skill_path_mode": active_path_mode(),
+        "skill_paths": {
+            "perception": str(PERCEPTION_SCRIPTS.relative_to(REPO_ROOT)),
+            "analysis": str(ANALYSIS_SCRIPTS.relative_to(REPO_ROOT)),
+            "notification_artifacts": str(NOTIFICATION_SCRIPTS.relative_to(REPO_ROOT)),
+            "poc_routing": str(POC_ROUTING_SCRIPTS.relative_to(REPO_ROOT)),
+        },
         "validators": [],
     }
     write_json(base / "formal_flow_summary.json", summary)

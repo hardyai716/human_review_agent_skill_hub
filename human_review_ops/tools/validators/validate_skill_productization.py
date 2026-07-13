@@ -17,10 +17,11 @@ HUMAN_REVIEW_OPS_ROOT = Path(__file__).resolve().parents[2]
 REPO_ROOT = HUMAN_REVIEW_OPS_ROOT.parent
 SKILLS_ROOT = HUMAN_REVIEW_OPS_ROOT / "skills"
 MANIFEST_PATH = SKILLS_ROOT / "skill_release_manifest.json"
+REGISTRY_PATH = HUMAN_REVIEW_OPS_ROOT / "configs" / "skill_path_registry.json"
 AEOLUS_FIELD_CONTRACT_VALIDATOR = (
     HUMAN_REVIEW_OPS_ROOT / "tools" / "validators" / "validate_aeolus_field_contracts.py"
 )
-SKILLS = ("perception", "analysis", "notification", "resolution")
+DEFAULT_SKILLS = ("perception", "analysis", "notification", "resolution")
 TEXT_SUFFIXES = {".md", ".py", ".json", ".yaml", ".yml", ".toml", ".txt"}
 ALLOWED_CATEGORIES = {"should-trigger", "should-not-trigger"}
 LOCAL_PATH_PATTERNS = {
@@ -73,6 +74,40 @@ def load_json_object(path: Path) -> dict[str, Any]:
     if not isinstance(data, dict):
         raise ValidationError(f"{rel(path)} must be a JSON object.")
     return data
+
+
+def load_registry() -> dict[str, Any]:
+    if not REGISTRY_PATH.exists():
+        return {}
+    try:
+        return load_json_object(REGISTRY_PATH)
+    except ValidationError:
+        return {}
+
+
+def load_manifest_skill_names() -> tuple[str, ...]:
+    if not MANIFEST_PATH.exists():
+        return DEFAULT_SKILLS
+    try:
+        manifest = load_json_object(MANIFEST_PATH)
+    except ValidationError:
+        return DEFAULT_SKILLS
+    skills = manifest.get("skills")
+    if not isinstance(skills, dict) or not skills:
+        return DEFAULT_SKILLS
+    return tuple(sorted(skills))
+
+
+def profile_skills(profile: str) -> tuple[str, ...]:
+    registry = load_registry()
+    profiles = registry.get("validation_profiles", {})
+    if isinstance(profiles, dict):
+        skills = profiles.get(profile)
+        if isinstance(skills, list) and all(isinstance(skill, str) for skill in skills):
+            return tuple(skills)
+    if profile == "legacy_core":
+        return DEFAULT_SKILLS
+    return load_manifest_skill_names()
 
 
 def manifest_path(raw_path: str, issues: list[str]) -> Path | None:
@@ -342,6 +377,8 @@ def validate_no_local_paths(skill_dir: Path, issues: list[str]) -> None:
                     issues.append(
                         f"{rel(path)}:{line_number} contains local path risk: {pattern_name}"
                     )
+            if path.name == "package_manifest.json":
+                continue
             for pattern_name, pattern in FORBIDDEN_RUNTIME_REFERENCE_PATTERNS.items():
                 if pattern.search(line):
                     issues.append(
@@ -402,17 +439,23 @@ def main() -> None:
     parser.add_argument(
         "--skills",
         nargs="+",
-        choices=SKILLS,
-        default=list(SKILLS),
-        help="Subset of core Skills to validate.",
+        default=None,
+        help="Explicit Skill names to validate. Overrides --profile.",
+    )
+    parser.add_argument(
+        "--profile",
+        choices=("legacy_core", "scenario_label_rate", "all_releaseable"),
+        default="legacy_core",
+        help="Skill set from configs/skill_path_registry.json.",
     )
     args = parser.parse_args()
 
     issues: list[str] = []
-    summaries = [validate_skill(skill, args.strict, issues) for skill in args.skills]
+    selected_skills = tuple(args.skills) if args.skills else profile_skills(args.profile)
+    summaries = [validate_skill(skill, args.strict, issues) for skill in selected_skills]
     if args.strict:
-        validate_release_manifest(args.skills, issues)
-        if "analysis" in args.skills:
+        validate_release_manifest(list(selected_skills), issues)
+        if "analysis" in selected_skills:
             validate_aeolus_field_contracts(issues)
 
     if issues:

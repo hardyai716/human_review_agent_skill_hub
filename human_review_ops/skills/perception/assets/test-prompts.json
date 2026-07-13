@@ -43,6 +43,29 @@
       }
     },
     {
+      "id": "perception-should-trigger-report-flow-label-rate",
+      "category": "should-trigger",
+      "coverage": [
+        "efficiency-label-rate",
+        "report-flow",
+        "jinshen-date"
+      ],
+      "prompt": "举报场景近七天打标率小于10%的enpool_reason有哪些？输出日均人审完结量、日均打标量和打标率。",
+      "expected": {
+        "trigger": true,
+        "scenario_key": "efficiency-label-rate",
+        "task_type": "report_flow_low_label_rate",
+        "data_direction": "report_flow",
+        "source_profile": "report_flow_review",
+        "time_window": "近七天",
+        "dimensions": [
+          "enpool_reason"
+        ],
+        "handoff_next_skill": "analysis",
+        "date_field": "进审日期"
+      }
+    },
+    {
       "id": "perception-should-not-trigger-overreach-execution",
       "category": "should-not-trigger",
       "coverage": [

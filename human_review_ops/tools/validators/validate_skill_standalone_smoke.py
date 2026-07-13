@@ -10,6 +10,7 @@ import json
 import os
 import py_compile
 import re
+import shlex
 import subprocess
 import sys
 import tempfile
@@ -21,7 +22,8 @@ HUMAN_REVIEW_OPS_ROOT = Path(__file__).resolve().parents[2]
 REPO_ROOT = HUMAN_REVIEW_OPS_ROOT.parent
 SKILLS_ROOT = HUMAN_REVIEW_OPS_ROOT / "skills"
 MANIFEST_PATH = SKILLS_ROOT / "skill_release_manifest.json"
-SKILLS = ("perception", "analysis", "notification", "resolution")
+REGISTRY_PATH = HUMAN_REVIEW_OPS_ROOT / "configs" / "skill_path_registry.json"
+DEFAULT_SKILLS = ("perception", "analysis", "notification", "resolution")
 SCRIPT_LEVEL_VALIDATORS = {
     "perception": HUMAN_REVIEW_OPS_ROOT
     / "tools"
@@ -98,6 +100,40 @@ def load_json_object(path: Path) -> dict[str, Any]:
     if not isinstance(data, dict):
         raise ValidationError(f"{rel(path)} must be a JSON object.")
     return data
+
+
+def load_registry() -> dict[str, Any]:
+    if not REGISTRY_PATH.exists():
+        return {}
+    try:
+        return load_json_object(REGISTRY_PATH)
+    except ValidationError:
+        return {}
+
+
+def load_manifest_skill_names() -> tuple[str, ...]:
+    if not MANIFEST_PATH.exists():
+        return DEFAULT_SKILLS
+    try:
+        manifest = load_json_object(MANIFEST_PATH)
+    except ValidationError:
+        return DEFAULT_SKILLS
+    skills = manifest.get("skills")
+    if not isinstance(skills, dict) or not skills:
+        return DEFAULT_SKILLS
+    return tuple(sorted(skills))
+
+
+def profile_skills(profile: str) -> tuple[str, ...]:
+    registry = load_registry()
+    profiles = registry.get("validation_profiles", {})
+    if isinstance(profiles, dict):
+        skills = profiles.get(profile)
+        if isinstance(skills, list) and all(isinstance(skill, str) for skill in skills):
+            return tuple(skills)
+    if profile == "legacy_core":
+        return DEFAULT_SKILLS
+    return load_manifest_skill_names()
 
 
 def manifest_path(raw_path: str, issues: list[str]) -> Path | None:
@@ -402,6 +438,8 @@ def scan_text_file(path: Path, issues: list[str]) -> None:
                 issues.append(
                     f"{rel(path)}:{line_number} contains local path risk: {pattern_name}"
                 )
+        if path.name == "package_manifest.json":
+            continue
         for pattern_name, pattern in FORBIDDEN_RUNTIME_REFERENCE_PATTERNS.items():
             if pattern.search(line):
                 issues.append(
@@ -419,7 +457,7 @@ def scan_text_file(path: Path, issues: list[str]) -> None:
                 )
 
 
-def run_skill_smoke(skill: str, issues: list[str]) -> None:
+def run_skill_smoke(skill: str, manifest: dict[str, Any], issues: list[str]) -> None:
     if skill in SCRIPT_LEVEL_VALIDATORS:
         run_subprocess_smoke(
             [
@@ -433,7 +471,26 @@ def run_skill_smoke(skill: str, issues: list[str]) -> None:
     if skill == "resolution":
         run_resolution_smoke(issues)
         return
+    commands = manifest_smoke_commands(skill, manifest)
+    if commands:
+        for command in commands:
+            run_shell_smoke(command, SKILLS_ROOT / skill, f"{skill} smoke: {command}", issues)
+        return
     issues.append(f"No standalone smoke configured for Skill: {skill}")
+
+
+def manifest_smoke_commands(skill: str, manifest: dict[str, Any]) -> list[str]:
+    entry = manifest.get("skills", {}).get(skill, {})
+    if not isinstance(entry, dict):
+        return []
+    commands: list[str] = []
+    for script in entry.get("scripts", []):
+        if not isinstance(script, dict):
+            continue
+        command = script.get("smoke_command")
+        if isinstance(command, str) and command and command not in commands:
+            commands.append(command)
+    return commands
 
 
 def run_subprocess_smoke(command: list[str], label: str, issues: list[str]) -> None:
@@ -442,6 +499,25 @@ def run_subprocess_smoke(command: list[str], label: str, issues: list[str]) -> N
     completed = subprocess.run(
         command,
         cwd=REPO_ROOT,
+        env=env,
+        text=True,
+        capture_output=True,
+    )
+    if completed.returncode != 0:
+        details = "\n".join(
+            part.strip()
+            for part in (completed.stdout, completed.stderr)
+            if part.strip()
+        )
+        issues.append(f"{label} failed with exit {completed.returncode}: {details}")
+
+
+def run_shell_smoke(command: str, cwd: Path, label: str, issues: list[str]) -> None:
+    env = os.environ.copy()
+    env["PYTHONDONTWRITEBYTECODE"] = "1"
+    completed = subprocess.run(
+        shlex.split(command),
+        cwd=cwd,
         env=env,
         text=True,
         capture_output=True,
@@ -553,9 +629,14 @@ def main() -> None:
     parser.add_argument(
         "--skills",
         nargs="+",
-        choices=SKILLS,
-        default=list(SKILLS),
-        help="Subset of core Skills to validate.",
+        default=None,
+        help="Explicit Skill names to validate. Overrides --profile.",
+    )
+    parser.add_argument(
+        "--profile",
+        choices=("legacy_core", "scenario_label_rate", "all_releaseable"),
+        default="legacy_core",
+        help="Skill set from configs/skill_path_registry.json.",
     )
     parser.add_argument(
         "--skip-dry-run",
@@ -564,7 +645,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    selected_skills = tuple(args.skills)
+    selected_skills = tuple(args.skills) if args.skills else profile_skills(args.profile)
     issues: list[str] = []
     manifest = validate_manifest(selected_skills, issues)
     script_counts: dict[str, int] = {}
@@ -576,7 +657,7 @@ def main() -> None:
         validate_external_dependencies(skill, manifest, issues)
         validate_text_risks(skill, issues)
         if not args.skip_dry_run:
-            run_skill_smoke(skill, issues)
+            run_skill_smoke(skill, manifest, issues)
 
     if issues:
         print("Skill standalone smoke FAILED")

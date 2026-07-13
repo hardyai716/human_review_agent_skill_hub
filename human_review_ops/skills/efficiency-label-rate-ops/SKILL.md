@@ -40,8 +40,14 @@ allowed-tools:
 1. 使用 `scripts/label_rate_perception.py` 识别场景、任务类型和运行模式。
 2. 使用 `references/scenario-index.md` 定位指标契约、数据集说明、分析规则、通知模板和状态机。
 3. 使用 `scripts/label_rate_analysis.py` 生成 QueryPlan、SQL、分级规则和 source_footer；真实只读查询由 external_executor 执行。
-4. 使用 `scripts/label_rate_notification_artifacts.py` 生成通知草稿、报表、Card 和 send_plan；未提供 `sheet_url` 时可尝试导入 XLSX。
+4. 使用 `scripts/label_rate_notification_artifacts.py` 生成通知草稿、报表、Card 和 send_plan；只有显式授权 `--import-sheet` / `auto_import_sheet=true` 时才导入 XLSX 并回填 `sheet_url`。
 5. 使用 `scripts/build_label_rate_manual_tracking.py` 记录本地人工处理状态；不写线上状态。
+
+## SQL 生成约束
+
+- 可空维度聚合前必须先生成内部稳定 key，再参与 `GROUP BY`。内部 key 统一使用 `*_key`，例如 `mach_root_label_key`、`strategy_id_key`、`strategy_name_key`、`reason_key`。
+- 禁止把 `ifNull(...)`、`coalesce(...)` 或 `case` 的归一化别名写成底表物理字段名或输出字段名，例如禁止 `ifNull(`[机审一级标签]`, '（空/机审一级标签）') AS mach_root_label_name GROUP BY mach_root_label_name`。
+- 外层输出时再把内部 key 映射回标准字段名，例如 `mach_root_label_key AS mach_root_label_name`。这是为了避免 Aeolus / ClickHouse 在别名与底表字段同名时解析到原始字段，漏掉 NULL 维度桶。
 
 ## 参考资料加载
 

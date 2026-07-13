@@ -18,6 +18,7 @@ ANALYSIS_TASK_TYPES = {
     "label_rate_trend",
     "label_rate_ranking",
     "low_label_rate_grading",
+    "report_flow_low_label_rate",
     "dimension_breakdown",
 }
 REFERENCE_FILES = [
@@ -38,6 +39,22 @@ LABEL_RATE_KEYWORDS = (
     "labelrate",
     "label_rate",
 )
+REPORT_FLOW_KEYWORDS = (
+    "举报",
+    "举报场景",
+    "举报流转",
+    "enpool_reason",
+    "report_id",
+    "一轮队列",
+    "终轮队列",
+    "举报流转任务明细数据集",
+    "3952594",
+)
+REPORT_FLOW_METRIC_KEYWORDS = {
+    "report_review_in_cnt": ("进审量_report_id",),
+    "report_review_done_cnt": ("人审完结量_report_id", "日均人审完结量", "人审完结量"),
+    "report_label_cnt": ("打标量_report_id", "日均打标量"),
+}
 AMBIGUOUS_LABEL_RATE_KEYWORDS = (
     "达标率",
 )
@@ -84,7 +101,9 @@ NOTIFICATION_KEYWORDS = (
 RESOLUTION_KEYWORDS = ("闭环", "跟进", "状态", "已处理", "关闭", "tracking", "工单")
 TIME_WINDOW_PATTERNS = (
     r"近\s*\d+\s*(天|日|周|月)",
+    r"近\s*[一二三四五六七八九十两]+\s*(天|日|周|月)",
     r"最近\s*\d+\s*(天|日|周|月)",
+    r"最近\s*[一二三四五六七八九十两]+\s*(天|日|周|月)",
     r"\d{4}[-/]\d{1,2}[-/]\d{1,2}\s*(至|到|~|—)\s*\d{4}[-/]\d{1,2}[-/]\d{1,2}",
     r"(今天|昨天|前天|本周|上周|本月|上月|近一周|近两周|近一个月)",
 )
@@ -94,6 +113,7 @@ EXCLUDED_SCENARIOS = {
     "baseline-incident": ("底线事故", "事故数"),
 }
 DIMENSION_KEYWORDS = {
+    "enpool_reason": ("enpool_reason", "举报入池原因", "入池原因"),
     "mach_root_label_name": ("机审一级标签", "机审标签", "一级标签", "mach_root_label"),
     "strategy_id": ("策略id", "策略ID", "规则id", "规则ID", "strategy_id", "strategyid"),
     "strategy_name": ("策略名称", "规则名称", "strategy_name", "strategyname"),
@@ -199,6 +219,8 @@ def detect_label_rate_perception(
     unsupported_dimensions = detect_unsupported_dimensions(canonical, dimensions)
     resolved_time_window = time_window or extract_time_window(request)
     source_refs = source_refs or []
+    data_direction = detect_data_direction(canonical)
+    source_profile = source_profile_for(data_direction)
     missing_refs = missing_reference_files()
     risk_flags = detect_risk_flags(request)
     readiness = build_readiness(
@@ -221,6 +243,8 @@ def detect_label_rate_perception(
         "scenario_candidates": scenario_candidates,
         "task_type": task_type,
         "run_mode": run_mode or DEFAULT_RUN_MODE,
+        "data_direction": data_direction,
+        "source_profile": source_profile,
         "metric_ids": metrics,
         "time_window": resolved_time_window,
         "dimensions": dimensions,
@@ -256,6 +280,18 @@ def canonicalize(value: str) -> str:
 
 def contains_any(canonical: str, keywords: tuple[str, ...]) -> bool:
     return any(canonicalize(keyword) in canonical for keyword in keywords)
+
+
+def detect_data_direction(canonical: str) -> str:
+    if contains_any(canonical, REPORT_FLOW_KEYWORDS):
+        return "report_flow"
+    return "manual_review_detail"
+
+
+def source_profile_for(data_direction: str) -> str:
+    if data_direction == "report_flow":
+        return "report_flow_review"
+    return "community_manual_review"
 
 
 def detect_excluded_scenario(canonical: str) -> str | None:
@@ -330,14 +366,32 @@ def looks_like_label_rate_grading(canonical: str) -> bool:
     )
 
 
+def is_low_label_rate_request(canonical: str) -> bool:
+    return contains_any(canonical, GRADING_KEYWORDS) or any(
+        token in canonical
+        for token in (
+            "打标率<10",
+            "打标率小于10",
+            "打标率低于10",
+            "打标率不足10",
+            "打标率<0.1",
+            "打标率小于0.1",
+            "打标率低于0.1",
+        )
+    )
+
+
 def detect_task_type(canonical: str, scenario_key: str) -> str:
     if scenario_key != SCENARIO_KEY:
         return "unknown"
+    data_direction = detect_data_direction(canonical)
     if contains_any(canonical, NOTIFICATION_KEYWORDS):
         return "notification_request"
     if contains_any(canonical, RESOLUTION_KEYWORDS):
         return "resolution_tracking"
-    if contains_any(canonical, GRADING_KEYWORDS):
+    if data_direction == "report_flow" and is_low_label_rate_request(canonical):
+        return "report_flow_low_label_rate"
+    if is_low_label_rate_request(canonical):
         return "low_label_rate_grading"
     if contains_any(canonical, TREND_KEYWORDS):
         return "label_rate_trend"
@@ -353,6 +407,12 @@ def detect_task_type(canonical: str, scenario_key: str) -> str:
 def detect_metric_ids(canonical: str, scenario_key: str) -> list[str]:
     if scenario_key != SCENARIO_KEY:
         return []
+    if detect_data_direction(canonical) == "report_flow":
+        metric_ids = ["report_label_rate"]
+        for metric_id, keywords in REPORT_FLOW_METRIC_KEYWORDS.items():
+            if contains_any(canonical, keywords):
+                metric_ids.append(metric_id)
+        return dedupe(metric_ids)
     metric_ids = ["label_rate"]
     for metric_id, keywords in METRIC_KEYWORDS.items():
         if contains_any(canonical, keywords):
@@ -366,6 +426,10 @@ def detect_dimensions(text: str, dimension_hints: list[str]) -> list[str]:
     for dimension, keywords in DIMENSION_KEYWORDS.items():
         if contains_any(combined, keywords):
             dimensions.append(dimension)
+    if detect_data_direction(combined) == "report_flow" and "enpool_reason" in dimensions:
+        # `enpool_reason` contains the substring `reason`; keep the governed
+        #举报方向维度，避免误落到人工审核明细的 reason。
+        dimensions = [dimension for dimension in dimensions if dimension != "reason"]
     return dedupe(dimensions)
 
 

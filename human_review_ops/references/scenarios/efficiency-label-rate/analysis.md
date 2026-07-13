@@ -8,6 +8,7 @@
 | `label_rate_ranking` | 用户查询高打标率、低打标率、TopN / BottomN 策略或 reason | 排序清单 + evidence |
 | `low_label_rate_grading` | 用户明确问低效策略、P0/P1/P2/notice、低打标 reason 清单 | 四级分级清单 + 综合去重清单 |
 | `dimension_breakdown` | 用户要求按机审一级标签、场景、项目或其他维度拆解 | `dimensions × reason` 明细 + `dimensions` 汇总 |
+| `report_flow_low_label_rate` | 用户询问举报场景、举报流转或 `enpool_reason` 下的低打标率 | `enpool_reason` 低效清单 + evidence |
 
 ## 通用分析顺序
 
@@ -38,12 +39,16 @@
 - `fallback_reason`
 - `quality_checks`
 - `review_required`
+- `data_direction`
+- `source_profile`
 
 示例：
 
 ```json
 {
   "metric_id": "label_rate",
+  "data_direction": "manual_review_detail",
+  "source_profile": "community_manual_review",
   "time_range": {"type": "trailing_days", "days": 7, "data_lag_days": 1},
   "dimensions": ["reason"],
   "filters": ["standard_review_scope"],
@@ -53,6 +58,25 @@
   "fallback_reason": "none",
   "quality_checks": ["freshness_gate", "denominator_not_zero", "field_mapping_check"],
   "review_required": true
+}
+```
+
+举报方向 QueryPlan 示例：
+
+```json
+{
+  "metric_id": "report_label_rate",
+  "data_direction": "report_flow",
+  "source_profile": "report_flow_review",
+  "time_range": {"type": "trailing_days", "days": 7, "date_field": "进审日期"},
+  "dimensions": ["enpool_reason"],
+  "filters": ["report_flow_queue_scope", "task_type_report_flow", "first_queue_exclusion"],
+  "source_priority": ["governed_dataset", "curated_raw_sql"],
+  "allowed_sources": ["aeolus_dataset:3952594"],
+  "forbidden_sources": ["aeolus_dataset:3888816", "temporary_table", "ownerless_legacy_sql"],
+  "fallback_reason": "report_flow_source_profile",
+  "quality_checks": ["field_mapping_check", "freshness_gate", "denominator_not_zero"],
+  "review_required": false
 }
 ```
 
@@ -95,6 +119,7 @@
 - 打标率重算：`SUM(label_cnt) / SUM(review_done_cnt)`。
 - 日均量使用该组合实际有数据天数。
 - NULL 维度值输出为 `（空/<维度名>）`。
+- 可空维度必须先生成内部稳定 key，再参与 `GROUP BY`。内部 key 统一使用 `*_key`，不得与底表物理字段同名；例如 `ifNull(`[机审一级标签]`, '（空/机审一级标签）') AS mach_root_label_key`，后续 `GROUP BY mach_root_label_key`，外层再映射为 `mach_root_label_name`。禁止把归一化别名写成 `mach_root_label_name` 后再 `GROUP BY mach_root_label_name`，否则可能漏掉 NULL 机审标签记录。
 
 输出：
 
@@ -102,6 +127,34 @@
 - `dimensions` 全量汇总。
 
 如果用户指定的维度不在 `metric_contract.md` 支持维度中，必须先通过 Semantic Layer / 数据集字段发现确认字段，不能直接拼字段名。
+
+## 模式 D：举报流转低打标率
+
+适用于 `data_direction=report_flow`，即用户明确提到举报、举报场景、举报流转、`enpool_reason`、`report_id`、一轮队列或终轮队列。
+
+字段和口径：
+
+- 时间字段：`进审日期`。
+- 主维度：`enpool_reason`。
+- 分母：`人审完结量_report_id`。
+- 分子：`打标量_report_id`。
+- 打标率：`打标率_report_id`。
+- 低效条件：`打标率_report_id < 10%` 且 `人审完结量_report_id > 0`。
+
+默认输出：
+
+- `enpool_reason`
+- `日均人审完结量`
+- `日均打标量`
+- `打标率`
+
+SQL 约束：
+
+- 必须使用 Dataset `3952594` / appId `555137`。
+- 必须复用 `dataset_reference.md#默认过滤：举报流转` 中的基础筛选。
+- 不得使用人工审核明细 Dataset `3888816` 的 `reason`、`完审量_reviewid`、`打标量__reviewid`。
+- 如果直接逻辑表名不可用，可使用 query_log 中确认的物理表作为受控 fallback，并在 provenance 中记录。
+- 指标字段已经是聚合表达式时，不要放入未按维度聚合的子查询中二次聚合；应在同一层按 `enpool_reason` 聚合，或改写成底层 raw formula。
 
 ## 停止条件
 

@@ -60,6 +60,23 @@
 - 读取 `mach_root_label_name` 维度。
 - 输出 `dimensions × reason` 和 `dimensions` 汇总结构。
 
+### 举报场景低打标率
+
+输入：
+
+```text
+举报场景近七天打标率小于 10% 的 enpool_reason 有哪些？输出日均人审完结量、日均打标量和打标率。
+```
+
+期望：
+
+- 命中 `efficiency-label-rate`。
+- `data_direction=report_flow`，`source_profile=report_flow_review`。
+- 使用 Dataset `3952594` / appId `555137`。
+- 时间字段使用 `进审日期`。
+- 输出字段为 `enpool_reason`、`日均人审完结量`、`日均打标量`、`打标率`。
+- 不得走人工审核明细 Dataset `3888816`。
+
 ### 用户指定未列举维度
 
 输入：

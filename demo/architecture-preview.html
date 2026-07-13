@@ -1116,7 +1116,7 @@
         <span class="eyebrow"><span class="pulse-dot"></span> 当前状态 · 四 Skill 产品化基线</span>
         <h1>把分散的人审运营经验，变成可调度、可追溯、可迭代的闭环系统。</h1>
         <p class="hero-lead">
-          这页演示按照“目标架构总览 → 数据资产与契约 → 场景流程包 → Skill 能力 → Agent 编排治理 → 运营闭环与落地计划”的顺序展开。当前打标率主线已完成感知、分析、通知、解决四类 Skill 的产品化：稳定领域逻辑已下沉到各 Skill 的 scripts 目录，并通过 standalone smoke 与 AgentBuddy restricted 发布验证；下一阶段将把打标率强绑定资产收敛为场景级 Skill `efficiency-label-rate-ops`。
+          这页演示按照“目标架构总览 → 数据资产与契约 → 场景流程包 → Skill 能力 → Agent 编排治理 → 运营闭环与落地计划”的顺序展开。当前打标率主线已完成感知、分析、通知、解决四类 Skill 的产品化，并已生成场景级 Skill `efficiency-label-rate-ops` 作为 canonical path；路径注册表支持 `auto/canonical/legacy` 三种模式，正式入口已默认优先场景级 Skill。
         </p>
         <div class="hero-actions">
           <a class="button primary" href="#architecture">查看目标架构总览</a>
@@ -1126,23 +1126,23 @@
 
       <aside class="mission-card reveal delay-1" aria-label="当前产品化状态卡片">
         <span class="section-kicker">当前状态（Productized Skills）</span>
-        <h2>四类 Skill 已具备独立运行与发布门禁，下一步向场景级 Skill 收敛。</h2>
+        <h2>四类 Skill 保留兼容基线，打标率场景级 Skill 已进入 canonical path。</h2>
         <div class="mission-grid">
           <div class="metric">
-            <b>4/4</b>
-            <span>感知、分析、通知、解决四类 Skill 均具备可执行版 SKILL.md、test-prompts 和发布校验。</span>
+            <b>5</b>
+            <span>四类通用 Skill 加 `efficiency-label-rate-ops` 场景级 Skill 均已进入发布清单。</span>
           </div>
           <div class="metric">
-            <b>7</b>
-            <span>已下沉可复用脚本：perception 1 个、analysis 1 个、notification 4 个、resolution 1 个。</span>
+            <b>9</b>
+            <span>场景级 Skill 已包含打标率感知、分析、通知、解决、自检等 9 个脚本。</span>
           </div>
           <div class="metric">
-            <b>14/14</b>
-            <span>产品化 checklist 已通过；通知闭环默认 validator 已指向当前 canonical 产物。</span>
+            <b>3</b>
+            <span>路径治理支持 auto、canonical、legacy 三种模式，正式入口已接入 resolver。</span>
           </div>
           <div class="metric">
             <b>AB</b>
-            <span>四个 Skill 已发布到 AgentBuddy restricted 空间，并可通过 skill find 命中。</span>
+            <span>四能力 Skill 已发布到 AgentBuddy restricted 空间，场景级 Skill 已进入发布配置。</span>
           </div>
         </div>
       </aside>
@@ -1602,7 +1602,7 @@
             <div>    │   ├── assets/README.md</div>
             <div>    │   └── test-prompts.json</div>
             <div>    ├── skill_release_manifest.json            <span>声明发布资产、脚本入口和外部依赖</span></div>
-            <div>    └── efficiency-label-rate-ops/              <span>下一阶段新增：打标率场景级 Skill canonical path</span></div>
+            <div>    └── efficiency-label-rate-ops/              <span>当前 canonical：打标率场景级 Skill</span></div>
           </div>
         </article>
 
@@ -1779,7 +1779,7 @@
           <div class="phase-row"><b>1. 感知识别</b><span>调用 `label_rate_perception.py`，输出 `scenario_key=efficiency-label-rate`、`task_type`、`readiness`。</span><span>请求真实 SQL、群发或拉人入群时直接阻断。</span></div>
           <div class="phase-row"><b>2. 口径确认</b><span>读取 metric_contract，确认打标率唯一口径和默认样本池 SQL。</span><span>未命中指标 ID 或时间窗口时不执行查询。</span></div>
           <div class="phase-row"><b>3. 分析执行</b><span>调用 `label_rate_analysis.py` 生成 QueryPlan、分级 SQL、source_footer 和标准化结果。</span><span>外部执行环境只负责真实只读查询和 eval 写入。</span></div>
-          <div class="phase-row"><b>4. 通知产物</b><span>调用 notification scripts 生成 POC 路由、notification_draft、send_plan、Card、报表和飞书表格链接。</span><span>未传 `sheet_url` 时自动导入 XLSX，默认 `group_send_blocked=true`。</span></div>
+          <div class="phase-row"><b>4. 通知产物</b><span>调用 notification scripts 生成 POC 路由、notification_draft、send_plan、Card、报表和可选飞书表格链接。</span><span>在线表格导入必须显式 opt-in；默认 `group_send_blocked=true`。</span></div>
           <div class="phase-row"><b>5. 解决记录</b><span>调用 resolution script 生成 manual_tracking。</span><span>不写线上状态，不把草稿等同于已发送。</span></div>
           <div class="phase-row"><b>6. 评估回路</b><span>运行 productization、standalone、分析链路、通知闭环和发布清单 validator。</span><span>失败则回到 Skill 或场景包修订，不进入发布。</span></div>
         </div>
@@ -2204,7 +2204,7 @@
           <p class="section-kicker">Delivery Plan · 建设阶段与验收标准</p>
           <h2>建设阶段、验收标准与推进节奏</h2>
         </div>
-        <p class="section-note">当前优先目标已经从“跑通早期链路”升级为“保持产品化门禁可复现，并启动场景化迁移”：四 Skill 自包含是当前基线，打标率场景级 Skill 是下一阶段主线。</p>
+        <p class="section-note">当前优先目标已经从“跑通早期链路”升级为“保持产品化门禁可复现，并推进真实闭环准备”：四 Skill 自包含是兼容基线，打标率场景级 Skill 已成为 canonical path。</p>
       </div>
       <div class="asset-grid">
         <article class="asset-card reveal">
@@ -2244,8 +2244,8 @@
       <article class="stack-card reveal delay-2" style="margin-top: 16px;">
         <h3>从产品化到真实闭环的推进节奏</h3>
         <div class="phase-table">
-          <div class="phase-row"><b>当前</b><span>打标率 Skill 产品化：四类 Skill 自包含、脚本下沉、standalone smoke、AgentBuddy restricted 发布。</span><span>目标：冻结迁移前回滚基线。</span></div>
-          <div class="phase-row"><b>下一步</b><span>新建 `efficiency-label-rate-ops`，引入路径注册表和 resolver，保留旧四能力路径兼容。</span><span>目标：打标率强绑定资产收敛到场景级 Skill。</span></div>
+          <div class="phase-row"><b>当前</b><span>打标率 Skill 产品化：四类 Skill 自包含、场景级 Skill、路径注册表、standalone smoke 和 AgentBuddy 发布配置均已具备。</span><span>目标：保持 canonical / legacy 可回退。</span></div>
+          <div class="phase-row"><b>下一步</b><span>批量迁移历史 runner / validator 到 resolver，并补齐 open_id 安全解析、真实群推送确认链路。</span><span>目标：让场景级 Skill 成为稳定默认入口。</span></div>
           <div class="phase-row"><b>随后</b><span>补齐 open_id 安全存储、真实 POC 联系人解析、真实群推送确认链路。</span><span>目标：让姓名级 POC 路由变成可确认通知对象。</span></div>
           <div class="phase-row"><b>再下一步</b><span>接入 SLA 跟进、卡片按钮回收、联系人回复收集和状态表写入。</span><span>目标：形成可持续迭代的运营闭环。</span></div>
           <div class="phase-row"><b>目标形态</b><span>场景流程包、Skill 发布包、Tool/MCP/CLI、离线评估和线上监控一起版本化。</span><span>目标：运营经验沉淀成可运行、可审计、可演进的系统。</span></div>
@@ -2259,7 +2259,7 @@
           <p class="section-kicker">Milestone Appendix · 阶段里程碑附录</p>
           <h2>交付阶段与里程碑</h2>
         </div>
-        <p class="section-note">按里程碑收敛：先冻结四 Skill 产品化基线，再完成打标率场景级 Skill 迁移，之后推进真实通知确认链路和状态闭环。</p>
+        <p class="section-note">按里程碑收敛：四 Skill 产品化基线和打标率场景级 Skill 迁移已完成，之后推进历史入口 resolver 改造、真实通知确认链路和状态闭环。</p>
       </div>
 
       <div class="roadmap">
@@ -2309,8 +2309,8 @@
 
         <article class="road-card reveal delay-3">
           <span class="phase">里程碑 4</span>
-          <h3>场景级 Skill 迁移与状态闭环准备</h3>
-          <p>下一阶段先新增 `efficiency-label-rate-ops` 和路径注册表，再补齐 open_id 安全存储、真实群推送确认、SLA 跟进和线上状态表。</p>
+          <h3>路径治理与状态闭环准备</h3>
+          <p>`efficiency-label-rate-ops` 和路径注册表已完成；下一阶段补齐历史 runner/validator resolver 改造、open_id 安全存储、真实群推送确认、SLA 跟进和线上状态表。</p>
           <ul>
             <li>场景 Skill</li>
             <li>联系人解析</li>
@@ -2381,7 +2381,7 @@
 
         <article class="data-card reveal delay-1">
           <h3>架构论证视角</h3>
-          <p>四个 Skill + 场景包的方向成立，并已完成产品化基线；下一步需要把打标率强绑定资产收敛到场景级 Skill，避免继续在横向能力 Skill 中堆叠单场景逻辑。</p>
+          <p>四个 Skill + 场景包的方向成立，并已完成产品化基线；打标率强绑定资产已收敛到场景级 Skill，下一步是让历史 runner/validator 全面通过 resolver 选择 canonical 或 legacy 路径。</p>
           <div class="field-list">
             <div class="field"><span>调整结果</span><span>补充 ADR 风格决策记录和全域流程覆盖地图</span></div>
             <div class="field"><span>调整结果</span><span>补充局部调度模式，支持查询分析、责任人定位、处理记录等局部任务</span></div>

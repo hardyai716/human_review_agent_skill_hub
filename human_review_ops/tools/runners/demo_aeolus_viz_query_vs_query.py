@@ -267,20 +267,27 @@ def build_physical_table_sql(args: argparse.Namespace) -> str:
     days = args.last_sync_days
     return f"""
 SELECT
-  ifNull(`[机审一级标签]`, '（空/机审一级标签）') AS mach_root_label_name,
-  `[完审量_reviewid]` AS review_done_cnt,
-  `[打标量__reviewid]` AS label_cnt,
-  if(
-    `[完审量_reviewid]` = 0,
-    0,
-    `[打标量__reviewid]` / `[完审量_reviewid]`
-  ) AS label_rate
-FROM {args.source_table}
-WHERE `[p_date]` = today() - {days}
-GROUP BY mach_root_label_name
-HAVING review_done_cnt > 0
-ORDER BY review_done_cnt DESC
-LIMIT {args.limit}
+  mach_root_label_key AS mach_root_label_name,
+  review_done_cnt,
+  label_cnt,
+  label_rate
+FROM (
+  SELECT
+    ifNull(`[机审一级标签]`, '（空/机审一级标签）') AS mach_root_label_key,
+    `[完审量_reviewid]` AS review_done_cnt,
+    `[打标量__reviewid]` AS label_cnt,
+    if(
+      `[完审量_reviewid]` = 0,
+      0,
+      `[打标量__reviewid]` / `[完审量_reviewid]`
+    ) AS label_rate
+  FROM {args.source_table}
+  WHERE `[p_date]` = today() - {days}
+  GROUP BY mach_root_label_key
+  HAVING review_done_cnt > 0
+  ORDER BY review_done_cnt DESC
+  LIMIT {args.limit}
+)
 """.strip()
 
 

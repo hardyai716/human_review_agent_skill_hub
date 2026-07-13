@@ -7,7 +7,7 @@
 架构中的能力分工需要区分三层：
 
 - Agent：负责意图识别、流程编排、状态机、权限卡点、SLA 和升级。
-- Skill：负责可复用的业务能力和过程逻辑，例如感知、分析、通知、解决；执行时读取对应运营内容的场景流程包。
+- Skill：负责可复用的业务能力和过程逻辑，例如感知、分析、通知、解决；对已成熟的强绑定样板场景，可收敛为场景级 Skill，并通过路径注册表保留旧四能力路径兼容。
 - Tool/MCP/CLI：负责原子工具调用、外部系统连接和命令行能力，例如查指标、读写 Lark Base、发送飞书通知、查询文档、访问数据集、执行批处理或调用内部平台 CLI。
 
 核心使用者是运营值班人员。系统支持自然语言、告警监控、工单、群聊等多源入口，并统一进入简单咨询快路径或事件闭环流程。
@@ -16,17 +16,18 @@
 
 当前 MVP 范围修正：
 
-- 优先建设感知和分析，覆盖效率模块与质量模块的日常分析、周期推送、撞线预警。
-- 通知模块先采用测试模式，发送给指定人或指定群，不深入建设动态 Owner 路由和复杂升级。
-- 解决模块先采用人工跟进模式，只记录人工处理状态、结论和证据，不建设自动处理和复杂 SLA 闭环。
-- Owner 路由、升级规则、通知模板、解决 SLA 仍作为场景流程包资产设计，但可在后续基建能力成熟后逐步启用。
+- 打标率样板场景已完成感知、分析、通知、解决四段本地闭环，并形成 `efficiency-label-rate-ops` 场景级 Skill。
+- 四类通用 Skill 保留为 legacy compatibility path；打标率正式入口默认通过 `skill_path_registry.json` 使用 canonical 场景 Skill，可按需回退 legacy。
+- 通知模块已能生成 POC 路由、通知草稿、Card、CSV/XLSX 报表和 `send_plan`；真实群发和在线表格导入必须显式确认或 opt-in。
+- 解决模块当前仍采用本地 `manual_tracking.json`，只记录人工处理状态、结论和证据，不写线上状态。
+- 下一步重点不再是跑通感知/分析，而是补齐 POC open_id 安全解析、群推送确认链路、状态表 schema、幂等写入和回滚策略。
 
 ## 2. 架构原则
 
 | 原则 | 说明 |
 | --- | --- |
 | 编排优先 | Agent 调度层负责状态机、路由、并行调度、SLA、升级和人工卡点，能力 Skill 不直接决定全局流程。 |
-| 能力复用 | 感知、分析、通知、解决能力沉淀为可复用模块，避免按单一场景写死。 |
+| 能力复用 | 感知、分析、通知、解决能力沉淀为可复用模块；强绑定成熟场景可以封装为场景级 Skill，但必须通过注册表保留旧路径兼容。 |
 | 场景独立 | 每项运营内容都有独立状态机、SLA、Owner 路由、通知模板和工具策略，以场景流程包形式维护。 |
 | 治理查询优先 | 感知/分析阶段必须优先映射到语义层、指标契约和治理数据集，禁止模型自由找表导致查询偏移。 |
 | 工具下沉 | Tool/MCP/CLI 只承载原子能力和外部连接，不直接承载业务流程判断。 |
@@ -86,6 +87,8 @@
 Skill 不直接绕过编排层执行高风险动作。所有执行动作都需要读取场景权限配置，并写入审计。
 
 通用 Skill 不直接内置某项运营内容的规则。每次调用必须带上 `scenario_package_ref`，该字段用于定位当前场景包；前期 TRAE 调试态可指向 Skill 内快照，目标治理态应指向根目录 `human_review_ops/references/scenarios/{scenario}`。
+
+当前打标率主线的运行态采用场景级 Skill `efficiency-label-rate-ops` 作为 canonical path。该 Skill 包内包含打标率场景需要的 perception、analysis、notification、resolution 脚本和自包含 references/assets；旧的 `perception`、`analysis`、`notification`、`resolution` 路径保留为 legacy compatibility path。路径选择由 `human_review_ops/configs/skill_path_registry.json` 管理，正式入口通过 `skill_path_resolver.py` 支持 `auto`、`canonical`、`legacy` 三种模式。
 
 Skill 与 Tool/MCP/CLI 的关系：
 
@@ -147,18 +150,27 @@ CLI 的定位：
 
 ```text
 human_review_ops/references/scenarios/{scenario}/
-  perception.md
   analysis.md
-  notification.md
-  resolution.md
+  dataset_reference.md
   state_machine.md
   sla.md
   metric_contract.md
   owner_routing.md
   notification_templates.md
-  tool_policy.md
+  scenario_manifest.md
   examples.md
+
+human_review_ops/skills/{scenario}-ops/
+  SKILL.md
+  package_manifest.json
+  references/
+  assets/
+  scripts/
+
+human_review_ops/configs/skill_path_registry.json
 ```
+
+场景级 Skill 是运行态发布包，不替代根目录场景包的业务事实来源。根目录场景包变化后，通过 `build_skill_package.py --target scenario-bundle --write` 同步生成发布包，并通过 `--check-sync` 校验 hash。
 
 ### 3.6 混合存储与评估迭代层
 
@@ -227,20 +239,18 @@ human_review_ops/references/scenarios/{scenario}/
 
 ### 4.3 MVP 轻量流程
 
-当前阶段优先使用轻量流程验证感知和分析能力：
+当前打标率样板优先使用正式 Skill-first 流程验证完整本地闭环：
 
 ```text
 用户提问 / 定时任务 / 指标扫描
-  -> 识别运营内容：机审策略有效性 / 质量监控 / 底线事故监控
-  -> 识别任务类型：日常分析 / 周期推送 / 撞线预警
-  -> 感知：读取指标契约、映射治理实体、生成证据包
-  -> 分析：生成 QueryPlan、只读查询、质量检查、规则命中、归因
-  -> 输出：分析报告 / AI Summary 卡片
-  -> 测试通知：发送给指定人或群
-  -> 人工跟进：人工记录处理结论或归档
+  -> 感知：识别 efficiency-label-rate、任务类型、run_mode、readiness
+  -> 分析：生成 QueryPlan、只读 SQL、分级结果、source_footer、provenance
+  -> 通知：生成 POC 路由、notification_draft、send_plan、Card、CSV/XLSX
+  -> external_executor：仅在显式确认或 opt-in 时执行真实发送 / 在线表格导入
+  -> 解决：生成本地 manual_tracking，记录人工状态、证据和继续观察
 ```
 
-此流程中，通知和解决只作为轻量承接节点，不作为当前阶段的主要验证对象。
+此流程中，真实群发、在线表格导入、线上状态写入都不由 Skill 默认执行；它们必须由 calling_agent 或 external_executor 完成人工确认、权限检查和审计记录。
 
 ## 5. 能力接口
 

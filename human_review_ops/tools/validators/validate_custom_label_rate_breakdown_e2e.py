@@ -13,9 +13,12 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 NOTIFICATION_SCRIPTS = ROOT / "skills" / "notification" / "scripts"
+RUNNER_SCRIPTS = ROOT / "tools" / "runners"
 sys.path.insert(0, str(NOTIFICATION_SCRIPTS))
+sys.path.insert(0, str(RUNNER_SCRIPTS))
 
 from card_hash import strip_internal_keys, verify_card_hash  # noqa: E402
+from run_custom_label_rate_breakdown_e2e import build_sql, parse_date  # noqa: E402
 
 
 DEFAULT_OUTPUT_DIR = (
@@ -65,6 +68,18 @@ REQUIRED_SQL_SNIPPETS = [
     "SUM(review_done_cnt) > 0",
     "< 0.1",
 ]
+REQUIRED_TEMPLATE_SQL_SNIPPETS = [
+    "ifNull(`[机审一级标签]`, '（空/机审一级标签）') AS mach_root_label_key",
+    "ifNull(`[strategy_id]`, '（空/strategy_id）') AS strategy_id_key",
+    "ifNull(`[strategy_name]`, '（空/strategy_name）') AS strategy_name_key",
+    "ifNull(`[reason]`, '（空/reason）') AS reason_key",
+    "mach_root_label_key AS mach_root_label_name",
+    "GROUP BY mach_root_label_key, strategy_id_key, strategy_name_key, reason_key",
+]
+FORBIDDEN_TEMPLATE_SQL_SNIPPETS = [
+    "AS mach_root_label_name,\n    ifNull(`[strategy_id]`",
+    "GROUP BY mach_root_label_name, strategy_id, strategy_name, reason",
+]
 
 
 def main() -> None:
@@ -96,6 +111,7 @@ def read_csv_rows(path: Path) -> list[dict[str, str]]:
 
 
 def validate(output_dir: Path, *, expect_group_sent: bool) -> None:
+    assert_runner_sql_template()
     required_files = [
         "summary.json",
         "custom_label_rate_breakdown_results.jsonl",
@@ -187,6 +203,20 @@ def assert_summary(
     for snippet in REQUIRED_SQL_SNIPPETS:
         if snippet not in sql:
             raise AssertionError(f"SQL missing required snippet: {snippet}")
+
+
+def assert_runner_sql_template() -> None:
+    sql = build_sql(
+        start_date=parse_date("2026-06-29"),
+        end_date=parse_date("2026-07-05"),
+        limit=50000,
+    )
+    for snippet in REQUIRED_TEMPLATE_SQL_SNIPPETS:
+        if snippet not in sql:
+            raise AssertionError(f"Runner SQL template missing required snippet: {snippet}")
+    for snippet in FORBIDDEN_TEMPLATE_SQL_SNIPPETS:
+        if snippet in sql:
+            raise AssertionError(f"Runner SQL template contains forbidden snippet: {snippet}")
 
 
 def assert_analysis_summary(path: Path, summary: dict[str, Any]) -> None:

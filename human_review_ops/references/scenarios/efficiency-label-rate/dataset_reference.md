@@ -15,8 +15,9 @@
 | `semantic_layer` | 公司内部语义层 / 风神语义数据集 | 普通打标率、完审量、趋势查询 | 优先 |
 | `governed_dataset` | Aeolus 治理数据集 | 语义层未覆盖但数据集已治理时使用 | 可回退 |
 | `curated_raw_sql` | `olap_content_security_community.dws_sft_tcs_review_task_detail_di` | 低打标率分级、维度拆解 | 受控回退 |
+| `governed_dataset` | Aeolus 举报流转任务明细数据集 | 举报场景下的 `enpool_reason` 打标率查询 | 可回退 |
 
-## 真实风神入口
+## 方向 1：人工审核明细入口
 
 - Region：`cn`
 - App ID：`1128`
@@ -29,6 +30,23 @@
 - 分子指标：`打标量__reviewid`
 - 分母指标：`完审量_reviewid`
 
+## 方向 2：举报流转入口
+
+- Region：`cn`
+- App ID：`555137`
+- Dataset ID：`3952594`
+- Dataset 名称：`举报流转任务明细数据集`
+- 数据集链接：`https://data.bytedance.net/aeolus/pages/dataManage/detail/3952594?appId=555137`
+- 查询命令：`bytedcli -j aeolus query -r cn 3952594 "<SQL>" --limit 1000`
+- 查字段命令：`bytedcli -j aeolus dataset-fields -r cn 3952594`
+- `report_label_rate` 对应风神指标：`打标率_report_id`
+- 分子指标：`打标量_report_id`
+- 分母指标：`人审完结量_report_id`
+- 规模指标：`进审量_report_id`
+- 主维度：`enpool_reason`
+- 日期字段：`进审日期`，expr 为 `` `date` ``。
+- 直接使用逻辑表名 `Hive-sql-0` 查询会报 unknown table；2026-07-13 通过 `system.query_log` 定位到物理表 `aeolus_data_db_aeolus_sagittarius_mini_202511.aeolus_data_table_22_3373535_migrate_v1_prod`。正式模板优先使用数据集语义字段，必要时可在 provenance 中记录该物理表。
+
 ## 风神使用注意事项
 
 - JSON 输出必须使用 `-j`，且 `-j` 是 bytedcli 全局参数，位置必须在 `aeolus` 前：`bytedcli -j aeolus ...`。
@@ -37,6 +55,8 @@
 - `viz-query` 仅适合字段验证、简单聚合或快速探测；若 `expr` 已自带 `sum(`、`count(`、`avg(` 或比率表达式，不要再传 `aggregation`，否则容易触发后端校验错误。
 - 查询失败不能解释成“无低打标率 reason”；必须区分权限失败、字段错误、分区缺失、过滤过严和真实空结果。
 - 不要误用 `4284992` 等标注准确率数据集替代 `3888816`，否则会把打标率口径查成标签准确率口径。
+- 举报方向不要使用 `3888816` 的 `reason`、`完审量_reviewid`、`打标量__reviewid` 字段；必须使用 `3952594` 的 `enpool_reason`、`人审完结量_report_id`、`打标量_report_id`、`打标率_report_id`。
+- 举报方向统一使用 `进审日期` 作为时间字段。
 
 ## 物理表参考
 
@@ -62,6 +82,65 @@
 | 完审量 | `review_done_cnt` | `完审量_reviewid` | 打标率分母。 |
 | 打标量 | `label_cnt` | `打标量__reviewid` | 双下划线，打标率分子。 |
 | 打标率 | `label_rate` | `打标率__reviewid` | 不直接跨粒度聚合，应重算。 |
+
+## 字段映射：举报流转
+
+| 概念 | 逻辑字段 | 默认 Name | Aeolus 字段 ID | expr / 说明 |
+| --- | --- | --- | --- | --- |
+| 日期分区 | `review_date` | `进审日期` | `10000001218266` | expr 为 `` `date` ``。 |
+| 举报入池原因 | `enpool_reason` | `enpool_reason` | `10000010927224` | 等价于举报方向下的 reason。 |
+| 进审量 | `report_review_in_cnt` | `进审量_report_id` | `10000001270480` | `count(distinct [report_id])`。 |
+| 人审完结量 | `report_review_done_cnt` | `人审完结量_report_id` | `10000001270606` | 打标率分母。 |
+| 打标量 | `report_label_cnt` | `打标量_report_id` | `10000001274137` | 打标率分子。 |
+| 打标率 | `report_label_rate` | `打标率_report_id` | `10000001274387` | `[打标量_report_id] / [人审完结量_report_id]`。 |
+| 终轮队列 | `last_queue_name` | `终轮队列名称` | `10000001218290` | expr 为 `last_tab_roject_name`。 |
+| 一轮队列 | `first_queue_name` | `一轮队列名称` | `10000001218268` | expr 为 `first_tab_project_name`。 |
+| 任务类型 | `task_type` | `任务类型` | `10000001289385` | 默认取 `关注-【举报专项】任务链路流转`。 |
+
+## 默认过滤：举报流转
+
+举报方向默认基础筛选项：
+
+```sql
+AND `[终轮队列名称]` IN (
+  '【视频专项_举报】D-J-不良行为和争议价值观-B',
+  '【视频专项_举报】D-J-人工分流-B',
+  '【视频专项_举报】D-J-危险行为-B',
+  '【视频专项_举报】D-J-引人不适-B',
+  '【视频专项_举报】D-J-未成年-B',
+  '【视频专项_举报】D-J-色情低俗-B',
+  '【视频专项_举报】D-J-违法犯罪-B',
+  '【视频专项_举报】【众包-PC端】短视频-安全-举报-时政',
+  '【视频专项_举报】短视频-安全-举报-兜底',
+  '【视频专项_举报】短视频-安全-举报-时政',
+  '短视频-安全-疑难研判专审队列-涉政-举报'
+)
+AND `[一轮队列名称]` IN (
+  '【众包-PC端】【视频专项_举报】短视频-安全-举报-兜底',
+  '【视频专项_举报】D-J-不良行为和争议价值观-B',
+  '【视频专项_举报】D-J-人工分流-B',
+  '【视频专项_举报】D-J-危险行为-B',
+  '【视频专项_举报】D-J-引人不适-B',
+  '【视频专项_举报】D-J-未成年-B',
+  '【视频专项_举报】D-J-短视频-兜底-2.0',
+  '【视频专项_举报】D-J-短视频特殊2.0',
+  '【视频专项_举报】D-J-色情低俗-B',
+  '【视频专项_举报】D-J-违法犯罪-B',
+  '【视频专项_举报】D-J-长视频特殊2.0',
+  '【视频专项_举报】D-J-音频-B',
+  '【视频专项_举报】D-J-高审',
+  '【视频专项_举报】D-J-高频',
+  '【视频专项_举报】【众包-PC端】短视频-安全-举报-时政',
+  '【视频专项_举报】短视频-安全-举报-兜底',
+  '【视频专项_举报】短视频-安全-举报-时政'
+)
+AND `[任务类型]` IN ('关注-【举报专项】任务链路流转')
+AND `[一轮队列名称]` NOT LIKE '%兜底%'
+AND `[一轮队列名称]` NOT LIKE '%海外%'
+AND `[一轮队列名称]` NOT LIKE '%特殊%'
+```
+
+举报方向低效查询默认 `HAVING [人审完结量_report_id] > 0 AND [打标率_report_id] < 0.1`，输出 `enpool_reason`、日均人审完结量、日均打标量和打标率。
 
 ## 扩展维度发现
 
@@ -101,6 +180,7 @@
 - 使用风神语义指标时，可用 `` `[打标率__reviewid]` ``，但必须同时输出 `` `[完审量_reviewid]` `` 和 `` `[打标量__reviewid]` `` 作为 evidence。
 - 日均量必须用 `COUNT(DISTINCT p_date)`，不得硬编码 `/7`。
 - NULL 机审标签必须用 `field IS NULL OR field IN (...)`，不得写 `IN (NULL, ...)`。
+- 可空维度做 `ifNull` / `coalesce` / `case` 归一化后，内部别名不得与底表物理字段或 Aeolus 展示字段同名，统一使用 `*_key`。例如必须写 `ifNull(`[机审一级标签]`, '（空/机审一级标签）') AS mach_root_label_key` 并 `GROUP BY mach_root_label_key`，外层再 `mach_root_label_key AS mach_root_label_name`。禁止写 `AS mach_root_label_name GROUP BY mach_root_label_name`，否则 Aeolus / ClickHouse 可能解析到原始字段，导致 NULL 维度桶丢失。
 
 ## 查询模板参数化
 

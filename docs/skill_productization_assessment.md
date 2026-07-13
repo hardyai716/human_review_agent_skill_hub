@@ -16,25 +16,25 @@
 
 ### 1.1 决策
 
-当前 Agent + Skill + Tool/MCP/CLI 三层架构方向是合理的，但 `efficiency-label-rate` 场景还停留在“开发态可跑通”，尚未完全达到“Skill 可独立复用”的产品化标准。
+当前 Agent + Skill + Tool/MCP/CLI 三层架构方向仍然合理。相对初次评估，`efficiency-label-rate` 已从“开发态可跑通”推进到“可发布、可独立 dry-run、可回退”的产品化状态。
 
-下一阶段应采用以下方向：
+本次复核后的决策是：
 
-1. 保留 `tools/runners/` 作为项目级端到端编排入口。
-2. 将已经跑通、可复用、可被单个 Skill 独立调用的领域逻辑下沉到各 Skill 的 `scripts/`。
-3. 将 `SKILL.md` 从“简要说明卡”升级为“可执行操作手册”，包含触发条件、决策树、输入输出、脚本调用、失败分支、禁止事项和验证步骤。
-4. 强化发布包校验，确保单个 Skill 脱离当前 Agent 后仍具备最小可用能力。
+1. 保留 `perception`、`analysis`、`notification`、`resolution` 四能力 Skill 作为 legacy compatibility path。
+2. 将 `efficiency-label-rate-ops` 作为打标率场景 canonical path，承载完整打标率闭环发布包。
+3. 用 `skill_path_registry.json` 和 `skill_path_resolver.py` 管理 `auto/canonical/legacy` 路径，避免 runner / validator 继续硬编码旧目录。
+4. 真实群发、在线表格导入、线上状态写入继续留在 calling_agent / external_executor 的显式确认链路，不由 Skill 默认执行。
 
 ### 1.2 判断
 
 | 维度 | 当前状态 | 判断 | 说明 |
 | --- | --- | --- | --- |
-| Agent 编排 | 已基本成型 | 通过 | 能串联感知、分析、通知、解决，并支持 E2E 验证。 |
-| 场景包资产 | 已基本成型 | 通过 | `references/scenarios/efficiency-label-rate/` 已承载口径、字段、路由、模板和样例。 |
-| Skill 独立性 | 部分通过 | 需增强 | notification/resolution 有脚本；perception/analysis 缺少 `scripts/`。 |
-| SKILL.md 可操作性 | 不足 | 需重写 | 当前多为字段清单，缺少流程、失败分支和脚本用法。 |
-| 脚本职责边界 | 部分混杂 | 需拆分 | E2E runner 中混入了查询、转换、发布、发送等多类职责。 |
-| 发布自包含 | 部分通过 | 需增强 | 快照和脚本编译有校验，但缺少“独立运行能力”校验。 |
+| Agent 编排 | 已成型 | 通过 | `run_label_rate_formal_flow.py` 能串联感知、分析、通知和 external_executor，并已接入 resolver。 |
+| 场景包资产 | 已成型 | 通过 | `references/scenarios/efficiency-label-rate/` 承载口径、字段、路由、模板和样例。 |
+| 四能力 Skill 独立性 | 已达基线 | 通过 | perception、analysis、notification、resolution 均具备 `SKILL.md`、assets/test-prompts、scripts、release manifest 和 standalone smoke。 |
+| 场景级 Skill | 已建立 | 通过 | `efficiency-label-rate-ops` 已具备完整 references/assets/scripts、`package_manifest.json` 和 selfcheck。 |
+| 路径治理 | 已起步 | 需继续 | 已新增 registry/resolver，并切换正式入口；历史 runner / validator 仍需逐步迁移。 |
+| 真实闭环 | 未完成 | 需增强 | open_id 安全解析、群推送确认链路、状态表 schema、幂等写入和回滚策略仍是后续重点。 |
 
 ## 2. 外部规范对齐
 
@@ -49,13 +49,13 @@
 
 | 规范项 | 要求 | 当前差距 |
 | --- | --- | --- |
-| `SKILL.md` frontmatter | `name`、`description` 是触发 Skill 的核心入口，description 要说明何时使用。 | 当前 description 可触发，但边界和负例不足。 |
-| 渐进披露 (Progressive_Disclosure) | `SKILL.md` 只放核心流程，细节放 `references/`、`assets/`、`scripts/`。 | references 已有，但 `SKILL.md` 没有明确“何时读取哪个文件”。 |
-| 可执行脚本 (scripts) | 重复、易错、需要一致性的逻辑应沉淀为脚本。 | 关键逻辑多数仍在 `tools/runners/`。 |
-| 资源资产 (assets) | 模板、schema、映射表应放入 Skill 包。 | notification 已较好，analysis/perception 仍偏文档化。 |
-| 失败模式 | 应明确“如果 X 失败，执行 Y”。 | 当前 `SKILL.md` 基本缺失失败分支。 |
-| 禁止事项 | 应列出不要做什么，避免误触发和越权。 | 当前只有简单调试约束，缺少反例清单。 |
-| 触发评估 | 应有 should-trigger / should-not-trigger 测试。 | 当前没有针对四个 Skill 的触发测试集。 |
+| `SKILL.md` frontmatter | `name`、`description` 是触发 Skill 的核心入口，description 要说明何时使用。 | 四能力 Skill 与 `efficiency-label-rate-ops` 已具备。 |
+| 渐进披露 (Progressive_Disclosure) | `SKILL.md` 只放核心流程，细节放 `references/`、`assets/`、`scripts/`。 | 已具备；场景级 Skill 还通过 `package_manifest.json` 记录源文件同步关系。 |
+| 可执行脚本 (scripts) | 重复、易错、需要一致性的逻辑应沉淀为脚本。 | 已具备；剩余工作是让历史 runner/validator 统一通过 resolver 选择脚本路径。 |
+| 资源资产 (assets) | 模板、schema、映射表应放入 Skill 包。 | 已具备；POC 映射、Card 模板、test-prompts 已进入场景级 Skill。 |
+| 失败模式 | 应明确“如果 X 失败，执行 Y”。 | 已具备基线；后续需增加真实通知和状态写入失败样例。 |
+| 禁止事项 | 应列出不要做什么，避免误触发和越权。 | 已具备；继续保留 `adjacent-misfire` 和 `unauthorized-action` 负向样例。 |
+| 触发评估 | 应有 should-trigger / should-not-trigger 测试。 | 已具备，并已纳入 productization profile。 |
 
 ## 3. 当前架构现状
 
@@ -67,24 +67,53 @@ human_review_ops/
     perception/
       SKILL.md
       references/
+      assets/
+      scripts/
+        label_rate_perception.py
     analysis/
       SKILL.md
       references/
+      assets/
+      scripts/
+        label_rate_analysis.py
+        quality_inspection_accuracy_query.py
     notification/
       SKILL.md
       references/
       assets/
       scripts/
         card_hash.py
+        label_rate_notification_artifacts.py
         render_label_rate_grading_card.py
         resolve_label_rate_poc_routing.py
+        sheet_importer.py
     resolution/
       SKILL.md
       references/
+      assets/
       scripts/
         build_label_rate_manual_tracking.py
+    efficiency-label-rate-ops/
+      SKILL.md
+      package_manifest.json
+      references/
+      assets/
+      scripts/
+        label_rate_perception.py
+        label_rate_analysis.py
+        label_rate_notification_artifacts.py
+        render_label_rate_grading_card.py
+        resolve_label_rate_poc_routing.py
+        card_hash.py
+        sheet_importer.py
+        build_label_rate_manual_tracking.py
+  configs/
+    skill_path_registry.json
   tools/
+    compat/
+      skill_path_resolver.py
     runners/
+      run_label_rate_formal_flow.py
       run_stage_1_real_readonly_label_rate_grading.py
       run_stage_2_label_rate_notification_draft.py
       run_custom_label_rate_breakdown_e2e.py
@@ -93,6 +122,7 @@ human_review_ops/
       validate_stage_1_real_readonly_label_rate_grading.py
       validate_stage_2_label_rate_notification_draft.py
       validate_custom_label_rate_breakdown_e2e.py
+      validate_skill_path_registry.py
       ...
 ```
 
@@ -102,8 +132,11 @@ human_review_ops/
 | --- | --- |
 | 根场景包 | 已经形成长期业务事实来源，避免规则散落在脚本里。 |
 | Skill 快照 | 支持单 Skill 发布态的自包含方向。 |
-| notification scripts | 已把卡片渲染、POC 路由、hash 校验下沉。 |
+| perception / analysis scripts | 已把场景识别、readiness、QueryPlan、SQL、分级规则和 source_footer 下沉。 |
+| notification scripts | 已把通知草稿、send_plan、CSV/XLSX、Card、POC 路由、hash 校验和 sheet_importer 下沉。 |
 | resolution scripts | 已把 manual_tracking 构造下沉。 |
+| 场景级 Skill | `efficiency-label-rate-ops` 已成为打标率 canonical path，旧四能力路径保留兼容。 |
+| 路径治理 | `skill_path_registry.json` 与 `skill_path_resolver.py` 已提供 `auto/canonical/legacy` 模式。 |
 | validators | 已有较强的产物结构校验和发布校验。 |
 | AgentBuddy 发布 | 已具备平台发布配置和基础门禁。 |
 
@@ -111,46 +144,37 @@ human_review_ops/
 
 | 位置 | 现状 |
 | --- | --- |
-| `human_review_ops/skills/perception/` | 只有 `SKILL.md` 和 references，无 scripts。 |
-| `human_review_ops/skills/analysis/` | 只有 `SKILL.md` 和 references，无 scripts。 |
-| `human_review_ops/skills/notification/scripts/` | 已有 3 个可复用脚本。 |
-| `human_review_ops/skills/resolution/scripts/` | 已有 1 个可复用脚本。 |
-| `human_review_ops/tools/runners/run_stage_1_real_readonly_label_rate_grading.py` | 约 930 行，包含 SQL 构造、查询执行、分级、POC 解析、结果包装。 |
-| `human_review_ops/tools/runners/run_stage_2_label_rate_notification_draft.py` | 约 853 行，包含 CSV/XLSX、卡片、发送、草稿、send_plan。 |
-| `human_review_ops/tools/runners/run_custom_label_rate_breakdown_e2e.py` | 约 1162 行，包含查询、表格、飞书导入、卡片、消息发送、POC 路由。 |
+| `human_review_ops/skills/perception/` | 已有场景识别脚本和 selfcheck。 |
+| `human_review_ops/skills/analysis/` | 已有打标率分析脚本、质检准确率 SQL 生成脚本和 selfcheck。 |
+| `human_review_ops/skills/notification/scripts/` | 已有通知产物、Card、POC 路由、hash、sheet_importer 和 selfcheck。 |
+| `human_review_ops/skills/resolution/scripts/` | 已有 manual_tracking 和 selfcheck。 |
+| `human_review_ops/skills/efficiency-label-rate-ops/` | 已有完整场景级发布包，包含四段脚本、场景 references/assets 和 package manifest。 |
+| `human_review_ops/tools/runners/run_label_rate_formal_flow.py` | 已通过 resolver 加载脚本，默认 `auto` 优先场景级 canonical path。 |
+| 历史阶段 runner / validator | 仍有部分硬编码旧四能力路径，后续按优先级迁移到 resolver。 |
 
 ## 4. 主要问题
 
-### 4.1 Skill 的独立性不足
+### 4.1 历史 runner / validator 路径治理未完全收敛
 
-当前很多可复用逻辑仍只能通过 `tools/runners/` 使用。对于外部 Agent 或只安装单个 Skill 的 runtime 来说，Skill 包本身缺少直接可调用的能力入口。
+当前正式入口已通过 registry/resolver 选择 canonical 或 legacy 路径，但部分历史阶段 runner 和 validator 仍直接拼接旧四能力 Skill 目录。
 
 典型表现：
 
-- 分析 Skill 不包含 QueryPlan、SQL 构造、分级规则执行脚本。
-- 感知 Skill 不包含场景识别或 readiness 结构化生成脚本。
-- 通知 Skill 已有核心脚本，但发送草稿、send_plan、CSV/XLSX 构造仍主要在 runner。
-- 部分 runner 通过 `sys.path.insert` 临时引用 Skill 脚本，说明复用方向正确，但封装边界还没有稳定下来。
+- `run_stage_1_real_readonly_label_rate_grading.py` 等历史 runner 仍可继续作为 legacy 回归入口，但不应再作为新开发模板。
+- `validate_label_rate_*` 部分脚本级 validator 仍需要改为通过 resolver 定位 canonical / legacy 脚本。
+- 新增 runner / validator 必须先登记 `skill_path_registry.json`，再调用 `skill_path_resolver.py`。
 
-### 4.2 SKILL.md 过短，无法指导真实执行
+### 4.2 真实闭环能力仍在人工确认前
 
-当前四个 `SKILL.md` 都是简要说明，缺少以下内容：
+当前 Skill 已能生成通知和本地跟踪产物，但真实 POC 通知和状态闭环仍未产品化上线：
 
-- 输入对象示例。
-- 输出 JSON 模板。
-- 工作流决策树。
-- 对应场景文件读取规则。
-- 脚本调用方式。
-- 失败模式。
-- 禁止事项。
-- 验收命令。
-- should-trigger / should-not-trigger 示例。
+- 姓名级 POC 已可审计，但 open_id 安全存储和权限边界仍待确认。
+- `send_plan` 已默认阻断群发，但真实群推送确认记录、发送前 validator 和目标收件人确认链路仍待补齐。
+- `manual_tracking.json` 仍是本地记录；线上状态表 schema、幂等写入和回滚策略尚未完成。
 
-这会导致 Agent 在真实使用时只能“猜”怎么执行，无法稳定复现已经跑通的最佳路径。
+### 4.3 tools 与 skills 边界仍需持续执行
 
-### 4.3 tools 与 skills 边界不够清晰
-
-`tools/runners/` 当前同时承担了两类职责：
+`tools/runners/` 应继续只承担项目级编排、eval 写入和真实外部发送门禁；稳定领域逻辑必须留在 Skill scripts 或场景级 Skill 中。
 
 | 职责类型 | 是否应长期留在 tools | 说明 |
 | --- | --- | --- |
@@ -413,6 +437,10 @@ description: Use this skill when a human-review operations request needs to iden
 
 ```bash
 python3 human_review_ops/tools/validators/validate_scenario_package.py efficiency-label-rate
+python3 human_review_ops/tools/validators/validate_skill_path_registry.py
+python3 human_review_ops/tools/validators/validate_efficiency_label_rate_ops_skill.py
+python3 human_review_ops/tools/validators/validate_skill_productization.py --strict --profile all_releaseable
+python3 human_review_ops/tools/validators/validate_skill_standalone_smoke.py --profile all_releaseable
 python3 human_review_ops/tools/validators/validate_agentbuddy_publish.py
 python3 human_review_ops/tools/validators/validate_label_rate_poc_mapping.py
 python3 human_review_ops/tools/validators/validate_stage_1_real_readonly_label_rate_grading.py
@@ -422,11 +450,11 @@ python3 human_review_ops/tools/validators/validate_custom_label_rate_breakdown_e
 
 ## 10. 结论
 
-当前项目的架构方向是正确的：Agent 负责编排，Skill 负责可复用业务能力，Tool/MCP/CLI 负责原子动作。但目前打标率场景的实现更偏“Agent 项目工程化可跑通”，还没有完全完成“Skill 产品化可独立复用”。
+当前项目的架构方向是正确的：Agent 负责编排，Skill 负责可复用业务能力，Tool/MCP/CLI 负责原子动作。打标率场景已经完成四能力 Skill 产品化和场景级 Skill 自包含发布包建设；`efficiency-label-rate-ops` 是当前 canonical path，旧四能力路径是 legacy compatibility path。
 
-最合理的下一步不是推翻结构，而是做一次可控的产品化重构：
+最合理的下一步不是推翻结构，而是在现有产品化基线上继续收敛运行治理：
 
-1. 先增强 `SKILL.md`，让 Agent 知道怎么用。
-2. 再下沉稳定脚本，让 Skill 自己能做事。
-3. 最后用 standalone smoke test 证明 Skill 脱离当前 Agent 也可用。
-
+1. 将仍硬编码旧四能力路径的历史 runner / validator 分批改用 resolver。
+2. 补齐 POC open_id 安全解析、真实群推送确认链路和发送前校验。
+3. 设计状态表 schema、幂等写入、回滚策略和回收闭环。
+4. 复制当前模式到质检准确率等新场景，保持根场景包、场景级 Skill、registry 和评估样例同步。

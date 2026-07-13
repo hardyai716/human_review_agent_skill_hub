@@ -7,8 +7,10 @@
 - `validate_scenario_package.py`：校验指定场景流程包是否包含最小必需文件。
 - `validate_skill_package.py`：校验四类 Skill 是否具备 `SKILL.md`、`common.md`、`scenario-index.md` 和调试快照目录。
 - `validate_agentbuddy_publish.py`：校验 `.agentbuddy/publish.yaml` 是否符合 AgentBuddy Git 仓库上传协议，并检查已声明 Skill 的 `SKILL.md` frontmatter、调试快照、脚本编译和本机绝对路径。
-- `validate_skill_productization.py`：校验四类核心 Skill 的产品化基线资产。默认模式检查 `SKILL.md` 基础 frontmatter、`test-prompts.json` 或 `assets/test-prompts.json` 结构、现有脚本编译和本机路径风险；`--strict` 额外检查 Task 2 需要补齐的 `SKILL.md` 必备章节。
-- `validate_skill_standalone_smoke.py`：校验四类核心 Skill 的独立发布包门禁，覆盖 `SKILL.md`、`references/`、`assets/`、`scripts/`、`skill_release_manifest.json`、Python 编译、外部依赖声明和最小 dry-run；perception、analysis、notification 会复用对应脚本级 smoke validator。
+- `validate_skill_productization.py`：校验 Skill 产品化基线资产。默认 profile 为 `legacy_core`；可通过 `--profile scenario_label_rate|all_releaseable` 覆盖场景级 Skill 或全量可发布 Skill。默认模式检查 `SKILL.md` 基础 frontmatter、`test-prompts.json` 或 `assets/test-prompts.json` 结构、现有脚本编译和本机路径风险；`--strict` 额外检查必备章节。
+- `validate_skill_standalone_smoke.py`：校验 Skill 独立发布包门禁，默认 profile 为 `legacy_core`；可通过 `--profile scenario_label_rate|all_releaseable` 覆盖场景级 Skill 或全量可发布 Skill。覆盖 `SKILL.md`、`references/`、`assets/`、`scripts/`、`skill_release_manifest.json`、Python 编译、外部依赖声明和最小 dry-run；四能力 Skill 复用脚本级 smoke，场景级 Skill 读取 manifest 中的 smoke command。
+- `validate_skill_path_registry.py`：校验 `configs/skill_path_registry.json` 中的 `auto/canonical/legacy` 路径、validation profile、canonical 场景 Skill、legacy fallback、脚本、资产和参考文件是否存在且可解析。
+- `validate_efficiency_label_rate_ops_skill.py`：聚合校验打标率场景级 Skill，串联路径注册表、场景级产品化、场景级 standalone smoke 和场景包 sync 检查。
 - `validate_aeolus_field_contracts.py`：校验 analysis 场景文档和脚本中的 Aeolus 语义字段契约，确认 `` `[数据集字段名]` `` 已登记、存在于数据集字段缓存、字段表表头符合 `common.md` 规范，且脚本 SQL 使用的语义字段已在场景文档登记。默认读取 `aeolus_dataset_fields_cache.json`；需要更新字段缓存时可运行 `--refresh-cache`。
 - `validate_query_plan.py`：校验 QueryPlan JSON 是否包含治理字段。
 - `validate_source_footer.py`：校验 source_footer JSON 是否包含来源说明字段。
@@ -30,10 +32,17 @@
 
 - Task 1 验收默认命令：`python3 human_review_ops/tools/validators/validate_skill_productization.py`
 - Task 2 前置缺口识别：`python3 human_review_ops/tools/validators/validate_skill_productization.py --strict`
+- 场景级 Skill 产品化：`python3 human_review_ops/tools/validators/validate_skill_productization.py --strict --profile scenario_label_rate`
+- 场景级 Skill 独立运行：`python3 human_review_ops/tools/validators/validate_skill_standalone_smoke.py --profile scenario_label_rate`
+- 场景级 Skill 聚合校验：`python3 human_review_ops/tools/validators/validate_efficiency_label_rate_ops_skill.py`
+- 全量可发布 Skill 产品化：`python3 human_review_ops/tools/validators/validate_skill_productization.py --strict --profile all_releaseable`
+- 全量可发布 Skill 独立运行：`python3 human_review_ops/tools/validators/validate_skill_standalone_smoke.py --profile all_releaseable`
+- 路径注册表：`python3 human_review_ops/tools/validators/validate_skill_path_registry.py`
 - Task 6 独立运行门禁：`python3 human_review_ops/tools/validators/validate_skill_standalone_smoke.py`
 - Aeolus 字段契约单项校验：`python3 human_review_ops/tools/validators/validate_aeolus_field_contracts.py`
 - Aeolus 字段缓存刷新：`python3 human_review_ops/tools/validators/validate_aeolus_field_contracts.py --refresh-cache`
 - 发布前推荐命令：
   - `python3 human_review_ops/tools/validators/validate_skill_productization.py --strict`
   - `python3 human_review_ops/tools/validators/validate_skill_standalone_smoke.py`
+  - `python3 human_review_ops/tools/validators/validate_skill_path_registry.py`
   - `git diff --check`

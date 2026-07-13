@@ -55,21 +55,25 @@ DIMENSION_SPECS = {
     "mach_root_label_name": {
         "display_name": "机审一级标签",
         "source_field": "`[机审一级标签]`",
+        "key_alias": "mach_root_label_key",
         "empty_value": "（空/机审一级标签）",
     },
     "strategy_id": {
         "display_name": "strategy_id",
         "source_field": "`[strategy_id]`",
+        "key_alias": "strategy_id_key",
         "empty_value": "（空/strategy_id）",
     },
     "strategy_name": {
         "display_name": "strategy_name",
         "source_field": "`[strategy_name]`",
+        "key_alias": "strategy_name_key",
         "empty_value": "（空/strategy_name）",
     },
     "reason": {
         "display_name": "reason",
         "source_field": "`[reason]`",
+        "key_alias": "reason_key",
         "empty_value": "（空/reason）",
     },
 }
@@ -268,13 +272,18 @@ def parse_date(raw_value: str) -> date:
 def build_sql(*, start_date: date, end_date: date, limit: int) -> str:
     end_exclusive = end_date + timedelta(days=1)
     dimension_select = ",\n    ".join(
-        f"ifNull({spec['source_field']}, '{spec['empty_value']}') AS {name}"
-        for name, spec in DIMENSION_SPECS.items()
+        f"ifNull({DIMENSION_SPECS[name]['source_field']}, "
+        f"'{DIMENSION_SPECS[name]['empty_value']}') AS {DIMENSION_SPECS[name]['key_alias']}"
+        for name in DEFAULT_DIMENSIONS
     )
+    dimension_output_select = ",\n  ".join(
+        f"{DIMENSION_SPECS[name]['key_alias']} AS {name}" for name in DEFAULT_DIMENSIONS
+    )
+    dimension_keys = ", ".join(DIMENSION_SPECS[name]["key_alias"] for name in DEFAULT_DIMENSIONS)
     dimension_names = ", ".join(DEFAULT_DIMENSIONS)
     return f"""
 SELECT
-  {dimension_names},
+  {dimension_output_select},
   COUNT(DISTINCT dt) AS data_days,
   {calendar_days(start_date, end_date)} AS calendar_days,
   SUM(review_in_cnt) AS total_review_in_cnt,
@@ -323,9 +332,9 @@ FROM (
       '违法违规',
       '领导人'
     ))
-  GROUP BY {dimension_names}, dt
+  GROUP BY {dimension_keys}, dt
 ) daily
-GROUP BY {dimension_names}
+GROUP BY {dimension_keys}
 HAVING SUM(review_done_cnt) > 0
    AND if(SUM(review_done_cnt) = 0, 0, SUM(label_cnt) / SUM(review_done_cnt)) < 0.1
 ORDER BY avg_review_done_cnt DESC

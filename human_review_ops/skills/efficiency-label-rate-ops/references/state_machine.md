@@ -42,6 +42,7 @@ STOPPED_NO_CONCLUSION
 
 - 用户只问趋势：`QUERY_PLAN_READY -> ANALYSIS_READY -> DEBUG_CLOSED`。
 - 用户问低打标率 reason 分级：`QUERY_PLAN_READY -> ANALYSIS_READY -> OWNER_SUGGESTED`。
+- 用户问举报场景低打标率或 `enpool_reason`：仍命中 `efficiency-label-rate`，但必须在 `PERCEPTION_READY` 和 `QUERY_PLAN_READY` 中保留 `data_direction=report_flow`、`source_profile=report_flow_review`。
 - 用户问高打标率或普通趋势：`QUERY_PLAN_READY -> ANALYSIS_READY -> DEBUG_CLOSED`。
 - 用户要求通知：必须先 `OWNER_SUGGESTED`，再 `NOTIFICATION_DRAFTED`。
 - 口径、时间窗口或指标不明确：进入 `NEED_MORE_INFO`。

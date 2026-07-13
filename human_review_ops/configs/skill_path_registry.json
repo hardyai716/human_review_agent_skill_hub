@@ -1,0 +1,170 @@
+{
+  "schema_version": "human_review_ops_skill_path_registry.v1",
+  "default_path_mode": "auto",
+  "validation_profiles": {
+    "legacy_core": [
+      "perception",
+      "analysis",
+      "notification",
+      "resolution"
+    ],
+    "scenario_label_rate": [
+      "efficiency-label-rate-ops"
+    ],
+    "all_releaseable": [
+      "perception",
+      "analysis",
+      "notification",
+      "resolution",
+      "efficiency-label-rate-ops"
+    ]
+  },
+  "scenario_skills": {
+    "efficiency-label-rate": {
+      "canonical_skill": "efficiency-label-rate-ops",
+      "canonical_root": "human_review_ops/skills/efficiency-label-rate-ops",
+      "legacy_capability_roots": {
+        "perception": "human_review_ops/skills/perception",
+        "analysis": "human_review_ops/skills/analysis",
+        "notification": "human_review_ops/skills/notification",
+        "resolution": "human_review_ops/skills/resolution"
+      },
+      "scripts": {
+        "perception": {
+          "canonical": "human_review_ops/skills/efficiency-label-rate-ops/scripts/label_rate_perception.py",
+          "legacy": [
+            "human_review_ops/skills/perception/scripts/label_rate_perception.py"
+          ]
+        },
+        "analysis": {
+          "canonical": "human_review_ops/skills/efficiency-label-rate-ops/scripts/label_rate_analysis.py",
+          "legacy": [
+            "human_review_ops/skills/analysis/scripts/label_rate_analysis.py"
+          ]
+        },
+        "notification_artifacts": {
+          "canonical": "human_review_ops/skills/efficiency-label-rate-ops/scripts/label_rate_notification_artifacts.py",
+          "legacy": [
+            "human_review_ops/skills/notification/scripts/label_rate_notification_artifacts.py"
+          ]
+        },
+        "poc_routing": {
+          "canonical": "human_review_ops/skills/efficiency-label-rate-ops/scripts/resolve_label_rate_poc_routing.py",
+          "legacy": [
+            "human_review_ops/skills/notification/scripts/resolve_label_rate_poc_routing.py"
+          ]
+        },
+        "card_render": {
+          "canonical": "human_review_ops/skills/efficiency-label-rate-ops/scripts/render_label_rate_grading_card.py",
+          "legacy": [
+            "human_review_ops/skills/notification/scripts/render_label_rate_grading_card.py"
+          ]
+        },
+        "card_hash": {
+          "canonical": "human_review_ops/skills/efficiency-label-rate-ops/scripts/card_hash.py",
+          "legacy": [
+            "human_review_ops/skills/notification/scripts/card_hash.py"
+          ]
+        },
+        "sheet_importer": {
+          "canonical": "human_review_ops/skills/efficiency-label-rate-ops/scripts/sheet_importer.py",
+          "legacy": [
+            "human_review_ops/skills/notification/scripts/sheet_importer.py"
+          ]
+        },
+        "manual_tracking": {
+          "canonical": "human_review_ops/skills/efficiency-label-rate-ops/scripts/build_label_rate_manual_tracking.py",
+          "legacy": [
+            "human_review_ops/skills/resolution/scripts/build_label_rate_manual_tracking.py"
+          ]
+        }
+      },
+      "assets": {
+        "poc_mapping": {
+          "canonical": "human_review_ops/skills/efficiency-label-rate-ops/assets/efficiency-label-rate/mach_root_label_poc_mapping.json",
+          "legacy": [
+            "human_review_ops/skills/notification/assets/efficiency-label-rate/mach_root_label_poc_mapping.json",
+            "human_review_ops/references/scenarios/efficiency-label-rate/mach_root_label_poc_mapping.json"
+          ]
+        },
+        "card_template": {
+          "canonical": "human_review_ops/skills/efficiency-label-rate-ops/assets/efficiency-label-rate/low_efficiency_grading_card_template.json",
+          "legacy": [
+            "human_review_ops/skills/notification/assets/efficiency-label-rate/low_efficiency_grading_card_template.json"
+          ]
+        },
+        "card_schema_notes": {
+          "canonical": "human_review_ops/skills/efficiency-label-rate-ops/assets/efficiency-label-rate/card_schema_notes.md",
+          "legacy": [
+            "human_review_ops/skills/notification/assets/efficiency-label-rate/card_schema_notes.md"
+          ]
+        }
+      },
+      "references": {
+        "scenario_bundle": {
+          "canonical": "human_review_ops/skills/efficiency-label-rate-ops/references/scenarios/efficiency-label-rate.md",
+          "legacy": [
+            "human_review_ops/skills/perception/references/scenarios/efficiency-label-rate.md",
+            "human_review_ops/skills/analysis/references/scenarios/efficiency-label-rate.md",
+            "human_review_ops/skills/notification/references/scenarios/efficiency-label-rate.md",
+            "human_review_ops/skills/resolution/references/scenarios/efficiency-label-rate.md"
+          ]
+        },
+        "scenario_manifest": {
+          "canonical": "human_review_ops/skills/efficiency-label-rate-ops/references/scenario_manifest.md",
+          "legacy": [
+            "human_review_ops/references/scenarios/efficiency-label-rate/scenario_manifest.md"
+          ]
+        },
+        "metric_contract": {
+          "canonical": "human_review_ops/skills/efficiency-label-rate-ops/references/metric_contract.md",
+          "legacy": [
+            "human_review_ops/references/scenarios/efficiency-label-rate/metric_contract.md"
+          ]
+        },
+        "dataset_reference": {
+          "canonical": "human_review_ops/skills/efficiency-label-rate-ops/references/dataset_reference.md",
+          "legacy": [
+            "human_review_ops/references/scenarios/efficiency-label-rate/dataset_reference.md"
+          ]
+        },
+        "analysis": {
+          "canonical": "human_review_ops/skills/efficiency-label-rate-ops/references/analysis.md",
+          "legacy": [
+            "human_review_ops/references/scenarios/efficiency-label-rate/analysis.md"
+          ]
+        },
+        "notification_templates": {
+          "canonical": "human_review_ops/skills/efficiency-label-rate-ops/references/notification_templates.md",
+          "legacy": [
+            "human_review_ops/references/scenarios/efficiency-label-rate/notification_templates.md"
+          ]
+        },
+        "owner_routing": {
+          "canonical": "human_review_ops/skills/efficiency-label-rate-ops/references/owner_routing.md",
+          "legacy": [
+            "human_review_ops/references/scenarios/efficiency-label-rate/owner_routing.md"
+          ]
+        },
+        "state_machine": {
+          "canonical": "human_review_ops/skills/efficiency-label-rate-ops/references/state_machine.md",
+          "legacy": [
+            "human_review_ops/references/scenarios/efficiency-label-rate/state_machine.md"
+          ]
+        },
+        "sla": {
+          "canonical": "human_review_ops/skills/efficiency-label-rate-ops/references/sla.md",
+          "legacy": [
+            "human_review_ops/references/scenarios/efficiency-label-rate/sla.md"
+          ]
+        },
+        "examples": {
+          "canonical": "human_review_ops/skills/efficiency-label-rate-ops/references/examples.md",
+          "legacy": [
+            "human_review_ops/references/scenarios/efficiency-label-rate/examples.md"
+          ]
+        }
+      }
+    }
+  }
+}
