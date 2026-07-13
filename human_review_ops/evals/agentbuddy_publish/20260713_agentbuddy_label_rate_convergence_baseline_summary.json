@@ -1,0 +1,124 @@
+{
+  "schema_version": "agentbuddy_label_rate_convergence_baseline.v1",
+  "published_at": "2026-07-13T23:50:34+08:00",
+  "git_commit": "aeceb26f5f750df0622361277e6b650adc8908a6",
+  "group": "skills.byted.org/lizhongtao/hunman_review_ops",
+  "space_url": "https://skills.bytedance.net/space/skills.byted.org%2Flizhongtao%2Fhunman_review_ops",
+  "access": "restricted",
+  "region": "cn",
+  "status": "success",
+  "blockers": [],
+  "non_blocking_warnings": [
+    "Some Python validation shells printed a Trae startup warning for missing trash_rm.bash, but the commands exited 0.",
+    "The first efficiency-label-rate-ops publish attempt failed because that shell did not resolve npx; retrying with /Users/bytedance/.nvm/versions/node/v24.17.0/bin/npx succeeded."
+  ],
+  "commands": [
+    {
+      "name": "git_status_review",
+      "command": "git status --short",
+      "status": "passed"
+    },
+    {
+      "name": "git_diff_stat_review",
+      "command": "git diff --stat",
+      "status": "passed"
+    },
+    {
+      "name": "git_diff_check",
+      "command": "git diff --check",
+      "status": "passed"
+    },
+    {
+      "name": "validate_skill_path_registry",
+      "command": "python3 human_review_ops/tools/validators/validate_skill_path_registry.py",
+      "status": "passed"
+    },
+    {
+      "name": "scenario_bundle_check_sync",
+      "command": "python3 human_review_ops/tools/packagers/build_skill_package.py efficiency-label-rate --target scenario-bundle --check-sync",
+      "status": "passed"
+    },
+    {
+      "name": "validate_efficiency_label_rate_ops_skill",
+      "command": "HRO_SKILL_PATH_MODE=canonical python3 human_review_ops/tools/validators/validate_efficiency_label_rate_ops_skill.py",
+      "status": "passed"
+    },
+    {
+      "name": "git_commit",
+      "command": "git commit -m \"chore: publish current label rate convergence baseline\"",
+      "status": "passed",
+      "commit": "aeceb26f5f750df0622361277e6b650adc8908a6"
+    },
+    {
+      "name": "git_push",
+      "command": "git push origin main",
+      "status": "passed",
+      "result": "32e803a..aeceb26 main -> main"
+    }
+  ],
+  "skills": [
+    {
+      "local_item": "perception",
+      "skill_name": "perceiving-ops-events",
+      "source": "./human_review_ops/skills/perception",
+      "publish_method": "directory",
+      "command": "NPM_CONFIG_REGISTRY=http://bnpm.byted.org npx -y agentbuddy@latest skill publish ./human_review_ops/skills/perception --group skills.byted.org/lizhongtao/hunman_review_ops --access restricted --region cn -y",
+      "status": "published",
+      "id": "skills:skills.byted.org/lizhongtao/hunman_review_ops/perceiving-ops-events:1.0.6",
+      "package_size_mb": 0.03
+    },
+    {
+      "local_item": "analysis",
+      "skill_name": "analyzing-ops-metrics",
+      "source": "./human_review_ops/skills/analysis",
+      "publish_method": "directory",
+      "command": "NPM_CONFIG_REGISTRY=http://bnpm.byted.org npx -y agentbuddy@latest skill publish ./human_review_ops/skills/analysis --group skills.byted.org/lizhongtao/hunman_review_ops --access restricted --region cn -y",
+      "status": "published",
+      "id": "skills:skills.byted.org/lizhongtao/hunman_review_ops/analyzing-ops-metrics:1.0.10",
+      "package_size_mb": 0.05
+    },
+    {
+      "local_item": "notification",
+      "skill_name": "routing-ops-notifications",
+      "source": "./human_review_ops/skills/notification",
+      "publish_method": "directory",
+      "command": "NPM_CONFIG_REGISTRY=http://bnpm.byted.org npx -y agentbuddy@latest skill publish ./human_review_ops/skills/notification --group skills.byted.org/lizhongtao/hunman_review_ops --access restricted --region cn -y",
+      "status": "published",
+      "id": "skills:skills.byted.org/lizhongtao/hunman_review_ops/routing-ops-notifications:1.0.13",
+      "package_size_mb": 0.04
+    },
+    {
+      "local_item": "resolution",
+      "skill_name": "tracking-ops-resolution",
+      "source": "./human_review_ops/skills/resolution",
+      "publish_method": "directory",
+      "command": "NPM_CONFIG_REGISTRY=http://bnpm.byted.org npx -y agentbuddy@latest skill publish ./human_review_ops/skills/resolution --group skills.byted.org/lizhongtao/hunman_review_ops --access restricted --region cn -y",
+      "status": "published",
+      "id": "skills:skills.byted.org/lizhongtao/hunman_review_ops/tracking-ops-resolution:1.0.8",
+      "package_size_mb": 0.02
+    },
+    {
+      "local_item": "efficiency-label-rate-ops",
+      "skill_name": "efficiency-label-rate-ops",
+      "source": "./human_review_ops/skills/efficiency-label-rate-ops",
+      "publish_method": "directory",
+      "command": "NPM_CONFIG_REGISTRY=http://bnpm.byted.org /Users/bytedance/.nvm/versions/node/v24.17.0/bin/npx -y agentbuddy@latest skill publish ./human_review_ops/skills/efficiency-label-rate-ops --group skills.byted.org/lizhongtao/hunman_review_ops --access restricted --region cn -y",
+      "status": "published",
+      "id": "skills:skills.byted.org/lizhongtao/hunman_review_ops/efficiency-label-rate-ops:1.0.2",
+      "package_size_mb": 0.09,
+      "attempts": [
+        {
+          "command": "NPM_CONFIG_REGISTRY=http://bnpm.byted.org npx -y agentbuddy@latest skill publish ./human_review_ops/skills/efficiency-label-rate-ops --group skills.byted.org/lizhongtao/hunman_review_ops --access restricted --region cn -y",
+          "status": "failed",
+          "exit_code": 127,
+          "reason": "npx command not found in that shell"
+        },
+        {
+          "command": "NPM_CONFIG_REGISTRY=http://bnpm.byted.org /Users/bytedance/.nvm/versions/node/v24.17.0/bin/npx -y agentbuddy@latest skill publish ./human_review_ops/skills/efficiency-label-rate-ops --group skills.byted.org/lizhongtao/hunman_review_ops --access restricted --region cn -y",
+          "status": "published",
+          "exit_code": 0
+        }
+      ]
+    }
+  ]
+}

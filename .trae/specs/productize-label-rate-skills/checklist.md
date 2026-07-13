@@ -21,8 +21,8 @@
 - [x] 严格回归通过：productization、standalone smoke、perception/analysis/notification/resolution 脚本 validator、Stage 1/Stage 2 关键 validator、AgentBuddy publish validator 和 `git diff --check`。
 - [x] 感知、分析、通知流程可跑通，并产出 readiness、QueryPlan、source_footer、notification_draft、Card、poc_routing_plan 和 send_plan。
 - [x] 验证群发送完成；若无法唯一定位验证群或权限不足，则记录明确阻断原因且不伪造发送结果。
-- [ ] 收敛前当前工作态已提交并推送到 `origin/main`。
-- [ ] 收敛前当前受影响 Skill 已发布到 AgentBuddy，或已记录明确阻断原因。
+- [x] 收敛前当前工作态已提交并推送到 `origin/main`。
+- [x] 收敛前当前受影响 Skill 已发布到 AgentBuddy，或已记录明确阻断原因。
 - [ ] `plus1_agreed_strategy_updates.json` 已纳入场景级 Skill 的发布资产声明、package manifest 和一致性校验覆盖。
 - [ ] `sheet_importer.py` / `--import-sheet` 的副作用声明准确表达“默认无线上写入，显式 opt-in 后在线写入”。
 - [ ] `efficiency-label-rate-ops/SKILL.md` 含 `🔴 CHECKPOINT`，覆盖真实群发、在线导入、线上状态写入、敏感身份解析。

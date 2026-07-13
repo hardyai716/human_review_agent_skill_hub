@@ -75,12 +75,12 @@
   - [x] SubTask 14.4: 在目标群唯一且权限满足时发送验证摘要；发送内容必须包含本次结构调整摘要、关键验证命令结果、send_plan/card 产物路径和未执行线上写入声明。
   - [x] SubTask 14.5: 将发送结果或阻断原因记录到本规格 progress，并更新 checklist。
 
-- [ ] Task 15: 上传当前工作态到 Git 仓库和 AgentBuddy，建立收敛前基线。
-  - [ ] SubTask 15.1: 审阅当前 `git status`、`git diff --stat` 和新增文件，确认本轮上传范围，不回滚用户改动。
-  - [ ] SubTask 15.2: 运行最小安全检查：`git diff --check`、`validate_skill_path_registry.py`、场景包 `--check-sync`、场景级 Skill smoke；若失败，记录阻断原因。
-  - [ ] SubTask 15.3: 提交并推送当前工作态到 `origin/main`。
-  - [ ] SubTask 15.4: 将当前受影响 Skill 发布到 AgentBuddy restricted 空间，至少覆盖 `efficiency-label-rate-ops`、`analysis`、`notification`，必要时覆盖五个可发布 Skill。
-  - [ ] SubTask 15.5: 记录发布摘要文件，包含 skill、版本/ID、commit、命令和状态。
+- [x] Task 15: 上传当前工作态到 Git 仓库和 AgentBuddy，建立收敛前基线。
+  - [x] SubTask 15.1: 审阅当前 `git status`、`git diff --stat` 和新增文件，确认本轮上传范围，不回滚用户改动。
+  - [x] SubTask 15.2: 运行最小安全检查：`git diff --check`、`validate_skill_path_registry.py`、场景包 `--check-sync`、场景级 Skill smoke；若失败，记录阻断原因。
+  - [x] SubTask 15.3: 提交并推送当前工作态到 `origin/main`。
+  - [x] SubTask 15.4: 将当前受影响 Skill 发布到 AgentBuddy restricted 空间，至少覆盖 `efficiency-label-rate-ops`、`analysis`、`notification`，必要时覆盖五个可发布 Skill。
+  - [x] SubTask 15.5: 记录发布摘要文件，包含 skill、版本/ID、commit、命令和状态。
 
 - [ ] Task 16: 收敛发布资产声明和安全副作用声明。
   - [ ] SubTask 16.1: 将 `plus1_agreed_strategy_updates.json` 纳入 `skill_release_manifest.json`、场景级 package manifest 和必要的 registry/validator 覆盖。
