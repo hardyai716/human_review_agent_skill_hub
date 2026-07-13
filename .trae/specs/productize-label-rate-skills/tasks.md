@@ -113,6 +113,14 @@
   - [x] SubTask 20.4: 重新发布受影响 Skill 到 AgentBuddy restricted 空间，并记录最终发布摘要。
   - [x] SubTask 20.5: 汇总本轮完成情况到 `progress.md`。
 
+- [ ] Task 21: 修复 `efficiency-label-rate-ops` 独立可读性，并补齐最终发布闭环。
+  - [x] SubTask 21.1: 将 `efficiency-label-rate-ops/SKILL.md` 的 description 改为独立完整描述，不引用“四个通用能力 Skill”或“根场景包”作为理解前提。
+  - [x] SubTask 21.2: 将 `efficiency-label-rate-ops/references/scenario_manifest.md` 和合并场景文档中的 `.trae/skills/*` 参考来源改为通用来源说明，避免外部 Agent 读到不可解析路径。
+  - [x] SubTask 21.3: 将 `默认运行约束` 中的 `debug_only`、默认只读、QueryPlan、mock / 只读查询链路解释为独立安装时可理解的运行模式和安全边界。
+  - [x] SubTask 21.4: 同步 `build_skill_package.py` 的场景级 SKILL.md / scenario manifest 生成模板，确保 `--check-sync` 不回滚独立可读文案。
+  - [x] SubTask 21.5: 新增或增强 validator，检查场景级 Skill 发布包不含 `.trae/skills/`、`warehouse-skill`、`low-efficiency-strategy-analysis`、作为理解前提的“四个通用能力 Skill”等不可独立理解文本。
+  - [ ] SubTask 21.6: 运行关键回归、提交并推送最终状态，重新发布受影响 Skill 到 AgentBuddy，记录最终发布摘要，并勾选剩余 checklist。
+
 # Task Dependencies
 
 - Task 2 depends on Task 1.
@@ -127,6 +135,7 @@
 - Task 16、Task 17、Task 18、Task 19 depend on Task 15.
 - Task 16、Task 17、Task 18、Task 19 可并行，但同一文件出现冲突时以后完成者必须先 re-read 后再改。
 - Task 20 depends on Task 16、Task 17、Task 18、Task 19.
+- Task 21 depends on Task 20 and addresses the standalone-readability issue found after final integration.
 
 # Parallelization Notes
 
@@ -136,3 +145,4 @@
 - Task 10、Task 11、Task 12 的目录合并可由不同子 Agent 并行处理，但都必须遵守各自 Skill 定位。
 - Task 14 的验证群发送必须在所有回归通过后执行；若缺少唯一群标识，不得使用猜测目标。
 - Task 16 偏发布清单和安全边界，Task 17 偏四能力 Skill 内容一致性，Task 18 偏字段契约门禁，Task 19 偏文档/Card 状态清理，四者可由不同子 Agent 并行推进。
+- Task 21 需要串行执行，因为它会修改场景级 Skill 发布文案、打包模板、validator 和最终发布记录。

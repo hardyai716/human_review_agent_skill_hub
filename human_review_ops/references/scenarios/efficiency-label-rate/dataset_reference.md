@@ -208,7 +208,7 @@ AND `[一轮队列名称]` NOT LIKE '%特殊%'
 2. 字段必须在小样本查询或真实只读查询中成功使用。
 3. 回填内容至少包含：逻辑字段、默认 Name、业务含义、字段来源命令、确认日期。
 4. 若字段用于 runner / validator，必须同步更新对应 `DIMENSION_SPECS`、validator 断言和 eval 产物。
-5. 若字段属于场景常用维度，必须同步更新根场景包与 Skill 内 `*.dataset_reference.md` 快照。
+5. 若字段属于场景常用维度，必须同步更新本场景文档与 Skill 内 `*.dataset_reference.md` 快照。
 
 本轮已回填字段：
 

@@ -26,6 +26,29 @@ REGISTRY_PATH = HUMAN_REVIEW_OPS_ROOT / "configs" / "skill_path_registry.json"
 PACKAGE_MANIFEST_PATH = (
     HUMAN_REVIEW_OPS_ROOT / "skills" / SKILL_NAME / "package_manifest.json"
 )
+SKILL_DIR = HUMAN_REVIEW_OPS_ROOT / "skills" / SKILL_NAME
+STANDALONE_READABILITY_FILES = [
+    SKILL_DIR / "SKILL.md",
+    SKILL_DIR / "references" / "scenario_manifest.md",
+    SKILL_DIR / "references" / "scenarios" / f"{SCENARIO_KEY}.md",
+    SKILL_DIR / "references" / "metric_contract.md",
+    SKILL_DIR / "references" / "dataset_reference.md",
+    SKILL_DIR / "references" / "common.md",
+    SKILL_DIR / "assets" / "README.md",
+]
+FORBIDDEN_STANDALONE_TEXT = [
+    ".trae/skills/warehouse-skill",
+    ".trae/skills/low-efficiency-strategy-analysis",
+    "warehouse-skill",
+    "low-efficiency-strategy-analysis",
+    "由四个通用能力 Skill",
+    "四个通用能力 Skill",
+    "四能力 Skill",
+    "根场景包生成",
+    "根目录场景包",
+    "canonical 路径",
+    "通用 Skill assets",
+]
 
 
 COMMANDS = [
@@ -134,8 +157,52 @@ def validate_plus1_asset_tracking() -> None:
         )
 
 
+def validate_standalone_readability() -> None:
+    issues: list[str] = []
+    texts: dict[Path, str] = {}
+    for path in STANDALONE_READABILITY_FILES:
+        if not path.exists():
+            issues.append(f"standalone runtime file missing: {path.relative_to(REPO_ROOT)}")
+            continue
+        text = path.read_text(encoding="utf-8")
+        texts[path] = text
+        for token in FORBIDDEN_STANDALONE_TEXT:
+            if token in text:
+                issues.append(
+                    "standalone runtime file contains non-portable text: "
+                    f"{path.relative_to(REPO_ROOT)}: {token!r}"
+                )
+
+    mode_paths = [
+        SKILL_DIR / "references" / "scenario_manifest.md",
+        SKILL_DIR / "references" / "scenarios" / f"{SCENARIO_KEY}.md",
+    ]
+    mode_requirements = {
+        "debug_only": ["debug_only", "仅生成本地", "不真实发送", "不写线上状态"],
+        "readonly": ["只读", "SELECT", "受控只读查询"],
+        "QueryPlan": ["QueryPlan", "字段", "口径", "权限"],
+        "mock": ["mock", "不伪造业务结论"],
+    }
+    for path in mode_paths:
+        text = texts.get(path, "")
+        for label, tokens in mode_requirements.items():
+            missing = [token for token in tokens if token not in text]
+            if missing:
+                issues.append(
+                    f"{path.relative_to(REPO_ROOT)} lacks standalone {label} "
+                    f"explanation tokens: {missing}"
+                )
+
+    if issues:
+        raise SystemExit(
+            "Efficiency-label-rate standalone readability validation failed:\n"
+            + "\n".join(issues)
+        )
+
+
 def main() -> None:
     validate_plus1_asset_tracking()
+    validate_standalone_readability()
     for command in COMMANDS:
         completed = subprocess.run(
             command,

@@ -7,4 +7,4 @@
 - `efficiency-label-rate/low_efficiency_grading_card_template.json`：飞书 Card 模板。
 - `efficiency-label-rate/card_schema_notes.md`：Card schema 说明。
 
-这些文件由打包脚本从根场景包和通用 Skill assets 同步。
+这些文件由打包脚本同步到发布包内；运行时以本目录内资产为准。

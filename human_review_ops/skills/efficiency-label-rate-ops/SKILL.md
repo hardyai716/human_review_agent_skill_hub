@@ -1,6 +1,6 @@
 ---
 name: efficiency-label-rate-ops
-description: "当用户需要围绕 efficiency-label-rate 打标率场景执行只读分析、低效分级、通知草稿、POC 路由、报表生成或本地人工跟踪时使用；这是由四个通用能力 Skill 和根场景包生成的自包含发布包，默认不真实发送通知、不写线上状态。"
+description: "当用户需要处理 efficiency-label-rate 打标率场景时使用：可识别打标率意图和数据方向，生成 QueryPlan 与只读分析，按 notice/P2/P1/P0 分级，产出报表、通知/Card 草稿、POC 路由和本地 manual tracking；默认 debug_only 与只读，只生成本地草稿/报表/跟踪记录，不真实发送、不写线上状态、不执行在线表格导入，外部动作必须用户确认。"
 allowed-tools:
   - Read
   - Bash
@@ -20,7 +20,7 @@ allowed-tools:
 - 不用于自动处置准确率、质检准确率、底线事故等其他场景。
 - 不默认真实群发、不拉群、不解析敏感身份、不写线上状态。
 - 不替代 calling_agent 的权限判断、人工确认和真实外部执行。
-- 不把本发布包作为业务事实来源；业务事实以根目录场景包为准。
+- 不把未执行查询的草稿当成业务事实；结论必须来自 QueryPlan 约束下的只读查询结果或用户提供的可复核证据。
 
 ## 🔴 CHECKPOINT · 安全边界
 
@@ -33,7 +33,14 @@ allowed-tools:
 
 - `raw_user_request` 或上游感知结果。
 - 可选 `analysis_result.jsonl`、`sheet_url`、通知草稿、`send_plan`。
-- 可选时间窗口、维度和运行模式；默认 `debug_only`。
+- 可选时间窗口、维度和运行模式；默认 `debug_only`，即只生成本地草稿、报表和跟踪记录。
+
+## 运行模式与安全边界
+
+- `debug_only`：仅生成本地感知结果、QueryPlan、分析报表、通知草稿、POC 路由草稿和 manual tracking；不真实发送消息、不创建群、不写线上状态。
+- 默认只读：只允许 `SELECT` 或平台受控只读查询；禁止 DML / DDL、线上配置变更、工单状态变更和未授权在线表格导入。
+- `QueryPlan`：查询前的字段、指标口径、维度、过滤条件、数据方向、来源优先级、权限要求和质量检查计划；未通过断言或人工确认时不得查询。
+- `mock / 只读查询链路`：没有外部查询权限时只生成计划或用内置样例验证输出结构，mock 结果不得伪造业务结论；具备权限且 QueryPlan 通过后，才可由受控执行器执行只读查询。
 
 ## 输出
 
@@ -44,7 +51,7 @@ allowed-tools:
 
 ## 打标率能力矩阵
 
-本场景级 Skill 是 canonical 路径，必须覆盖以下能力口径，并与四能力 Skill 保持一致。
+本 Skill 独立覆盖以下打标率能力口径，单独安装时即可按这些规则执行。
 
 - 数据方向：`manual_review_detail`（3888816）与 `report_flow`（3952594 / `enpool_reason`）。
 - 默认分级：`mach_root_label_name × strategy_id × strategy_name`；`reason` 不作为默认分组，只用于样本清洗或显式 `dimension_breakdown`。
@@ -57,7 +64,7 @@ allowed-tools:
 
 1. 使用 `scripts/label_rate_perception.py` 识别场景、任务类型和运行模式。
 2. 使用 `references/scenario-index.md` 定位指标契约、数据集说明、分析规则、通知模板和状态机。
-3. 使用 `scripts/label_rate_analysis.py` 生成 QueryPlan、SQL、分级规则和 source_footer；真实只读查询由 external_executor 执行。
+3. 使用 `scripts/label_rate_analysis.py` 生成 QueryPlan、SQL、分级规则和 source_footer；真实只读查询由具备权限的受控执行器执行。
 4. 使用 `scripts/label_rate_notification_artifacts.py` 生成通知草稿、报表、Card 和 send_plan；只有显式授权 `--import-sheet` / `auto_import_sheet=true` 时才导入 XLSX 并回填 `sheet_url`。
 5. 使用 `scripts/build_label_rate_manual_tracking.py` 记录本地人工处理状态；不写线上状态。
 
