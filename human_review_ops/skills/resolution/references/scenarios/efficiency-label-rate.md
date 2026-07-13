@@ -138,6 +138,7 @@ STOPPED_NO_CONCLUSION
 - 若原始机审一级标签为空，分析取数层会先按策略名称补齐为高热、政媒、商业化或指令舆情相关，再进入 POC 路由。
 - 当前 POC 映射资产尚未包含 `商业化`，命中商业化补映射的行会进入未映射 / 人工确认路径。
 - 举报流转方向（`data_direction=report_flow`）默认没有 `mach_root_label_name`，以 `enpool_reason` 作为证据字段，Owner 建议先路由到“举报”POC，占位 POC 为韩晶晶；真实触达前必须由人审运营确认是否需要按风险域或队列进一步拆分。
+- 路由脚本在输入只有 `enpool_reason` 且无机审一级标签时，必须把路由标签 fallback 为 `举报`，用于姓名级 POC 预览；manual tracking 需把该 fallback 标为待人工确认。
 - 映射来源：飞书表格 `https://bytedance.larkoffice.com/sheets/TpxwsA8zohUZkVtJ4J9cDcXUnbg?sheet=HKdm9w`。
 - 当前身份粒度：仅完成 POC 姓名映射，`poc_open_id` 尚未解析。
 - 默认收件人：当输入数据缺少 `mach_root_label_name` 或标签未映射时，开发验证阶段 fallback 到用户本人，即 `default_recipient=self`。
@@ -180,6 +181,8 @@ STOPPED_NO_CONCLUSION
 - 动作要求。
 - 命中依据。
 - POC 姓名、命中的机审一级标签、未映射标签和缺失路由维度计数。
+- 默认三维分级闭环证据必须保留 `是否+1同意`、`更新日期`、`+1同意日期是否在本次统计周期前`，并引用完整口径与剔除 `+1同意` 口径报表：`综合`、`综合_剔除+1同意`、`汇总统计`、`汇总统计_剔除+1同意`。
+- 举报流转 manual tracking 必须保留 `enpool_reason`、日均人审完结量、日均打标量、举报打标率、`data_direction=report_flow` 和 source_footer 作为 evidence；`举报` POC fallback 不等同于已完成真实负责人确认。
 - 置信度：`high` / `medium` / `low`。
 - 是否需要人工确认。
 

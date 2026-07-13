@@ -10,7 +10,7 @@
 - `scenario_key`：`efficiency-label-rate`
 - 模块：效率模块
 - 指标对象：打标率
-- 运营对象：策略三维、风险域、送审原因 / reason、举报入池原因 / enpool_reason 在不同维度下的打标率表现
+- 运营对象：策略三维、风险域、可选 `reason` 拆解、举报入池原因 / enpool_reason 在不同维度下的打标率表现
 - 当前状态：阶段 1 主线样板场景
 
 ## 数据方向
@@ -71,7 +71,7 @@
 - `metric_id`：`label_rate`
 - 中文名：打标率
 - 模块：效率模块
-- 场景：策略、风险域、送审原因 / reason 在不同维度下的打标率查询、对比、趋势和分级分析
+- 场景：策略、风险域、可选 `reason` 拆解维度下的打标率查询、对比、趋势和分级分析
 - 状态：active
 
 ## 相关指标
@@ -209,7 +209,7 @@ AND `[一轮队列名称]` NOT LIKE '%特殊%'
 
 ## 支持维度
 
-- `reason`：送审原因。
+- `reason`：样本清洗字段；仅在用户明确要求维度拆解时作为分组字段，不参与默认分级。
 - `p_date`：日期分区。
 - `enpool_reason`：举报方向的入池原因，等价于举报场景下的 reason。
 - `进审日期`：举报方向日期分区字段，底层 expr 为 `` `date` ``。
@@ -328,7 +328,7 @@ AND `[一轮队列名称]` NOT LIKE '%特殊%'
 
 | 概念 | 逻辑字段 | 默认 Name | 说明 |
 | --- | --- | --- | --- |
-| 送审原因 / reason | `reason` | `reason` | 打标率分析主实体。 |
+| 可选 reason 拆解 | `reason` | `reason` | 样本清洗字段；仅在用户明确要求维度拆解时作为分组字段。 |
 | 策略 ID | `strategy_id` | `strategy_id` | 规则 ID；2026-07-09 通过 `bytedcli -j aeolus dataset-fields -r cn 3888816` 确认。 |
 | 策略名称 | `strategy_name` | `strategy_name` | 策略名称；2026-07-09 通过 `bytedcli -j aeolus dataset-fields -r cn 3888816` 确认。 |
 | 日期分区 | `date` | `p_date` | 用于时间窗口和分区就绪检查。 |

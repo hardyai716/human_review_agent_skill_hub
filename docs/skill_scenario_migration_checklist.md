@@ -38,7 +38,8 @@
 | 正式 Skill-first runner | 已完成 | `run_label_rate_formal_flow.py` 已默认通过 `auto` 模式优先 canonical。 |
 | 产品化 / standalone profile | 已完成 | `validate_skill_productization.py` 和 `validate_skill_standalone_smoke.py` 已支持 `scenario_label_rate` 与 `all_releaseable`。 |
 | 历史 runner / validator 全量切换 | 待开始 | 阶段性 runner 和部分脚本级 validator 仍需分批改用 resolver。 |
-| AgentBuddy 场景 Skill 发布 | 待确认 | `.agentbuddy/publish.yaml` 已包含场景 Skill；真实发布和检索验证仍需执行。 |
+| AgentBuddy 场景 Skill 发布 | 已完成 | 20260710 首次发布 `efficiency-label-rate-ops:1.0.0`；20260713 收敛基线发布成功到 `efficiency-label-rate-ops:1.0.2`，见 `human_review_ops/evals/agentbuddy_publish/20260710_agentbuddy_efficiency_label_rate_ops_publish_summary.json` 与 `human_review_ops/evals/agentbuddy_publish/20260713_agentbuddy_label_rate_convergence_baseline_summary.json`。 |
+| AgentBuddy 安装后路由观察 | 观察中 | 发布已完成；真实安装后的 skill 检索、路由命中和跨 Agent 调用表现仍需在下一轮安装环境中观察。 |
 
 ## 迁移目标
 
@@ -807,9 +808,10 @@ NPM_CONFIG_REGISTRY=http://bnpm.byted.org npx -y agentbuddy@latest skill find la
 
 ### Phase 5：发布和观察
 
-- [ ] 发布 `efficiency-label-rate-ops` 到 AgentBuddy restricted 空间。
+- [x] 发布 `efficiency-label-rate-ops` 到 AgentBuddy restricted 空间。
 - [ ] 保留旧四能力 Skill，不立刻下线。
-- [x] 正式本地入口将 `efficiency-label-rate` 优先指向新场景 Skill；AgentBuddy 真实路由待发布后确认。
+- [x] 正式本地入口将 `efficiency-label-rate` 优先指向新场景 Skill。
+- [ ] 观察真实安装后的 AgentBuddy 路由和跨 Agent 调用命中情况。
 - [ ] 观察至少一轮完整验证后，再评估旧四能力 Skill 是否降级为公共能力模板。
 
 ## 验收命令

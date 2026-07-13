@@ -2,7 +2,7 @@
   "schema_version": "human_review_ops_scenario_bundle_manifest.v1",
   "bundle_name": "efficiency-label-rate-ops",
   "scenario_key": "efficiency-label-rate",
-  "generated_at": "2026-07-13T15:21:48.696400+00:00",
+  "generated_at": "2026-07-13T16:14:37.759512+00:00",
   "source_of_truth": "human_review_ops/references/scenarios/efficiency-label-rate",
   "sync_command": "python3 human_review_ops/tools/packagers/build_skill_package.py efficiency-label-rate --target scenario-bundle --write",
   "check_command": "python3 human_review_ops/tools/packagers/build_skill_package.py efficiency-label-rate --target scenario-bundle --check-sync",
@@ -11,22 +11,22 @@
       "kind": "copy",
       "source": "human_review_ops/references/scenarios/efficiency-label-rate/scenario_manifest.md",
       "target": "human_review_ops/skills/efficiency-label-rate-ops/references/scenario_manifest.md",
-      "source_sha256": "afafc4c520bbf6a66ea4ebc7ebda34aa76ae7a2f0b8d2f8306fcc47c520d752a",
-      "target_sha256": "afafc4c520bbf6a66ea4ebc7ebda34aa76ae7a2f0b8d2f8306fcc47c520d752a"
+      "source_sha256": "bc58bae862fae7432d0199d4b11e82ef70b5a36f20d0d9291fd5c2f1234f74bb",
+      "target_sha256": "bc58bae862fae7432d0199d4b11e82ef70b5a36f20d0d9291fd5c2f1234f74bb"
     },
     {
       "kind": "copy",
       "source": "human_review_ops/references/scenarios/efficiency-label-rate/metric_contract.md",
       "target": "human_review_ops/skills/efficiency-label-rate-ops/references/metric_contract.md",
-      "source_sha256": "2ceb8e0681fe955aed6f19fc3e5ea43f8915c247792de9d22e94ce44fe3e95b4",
-      "target_sha256": "2ceb8e0681fe955aed6f19fc3e5ea43f8915c247792de9d22e94ce44fe3e95b4"
+      "source_sha256": "6bce9952e14a3703c802b493fcfbb684f487ae0937487ca0660c3d397c5c4358",
+      "target_sha256": "6bce9952e14a3703c802b493fcfbb684f487ae0937487ca0660c3d397c5c4358"
     },
     {
       "kind": "copy",
       "source": "human_review_ops/references/scenarios/efficiency-label-rate/dataset_reference.md",
       "target": "human_review_ops/skills/efficiency-label-rate-ops/references/dataset_reference.md",
-      "source_sha256": "527e7aec73e89cf8e014561071ef04ecab2db34f190c8289b1802dfdfd2a1884",
-      "target_sha256": "527e7aec73e89cf8e014561071ef04ecab2db34f190c8289b1802dfdfd2a1884"
+      "source_sha256": "a381b1dd9940df9ab64adeb9c6085f5ed2ef2dcbaeda6bc630068c4d62d8e1e0",
+      "target_sha256": "a381b1dd9940df9ab64adeb9c6085f5ed2ef2dcbaeda6bc630068c4d62d8e1e0"
     },
     {
       "kind": "copy",
@@ -73,7 +73,7 @@
     {
       "kind": "generated_skill_md",
       "target": "human_review_ops/skills/efficiency-label-rate-ops/SKILL.md",
-      "target_sha256": "7981954a668f4d95e1ec7bbe9091b86d7dc6c2acee74803c679cdab9652ffee0"
+      "target_sha256": "738073e929a8c22fa16a12ec6315a13aaadaa80261d1a35ea0669d21adf73150"
     },
     {
       "kind": "generated_common",
@@ -88,19 +88,19 @@
     {
       "kind": "generated_combined_scenario_reference",
       "target": "human_review_ops/skills/efficiency-label-rate-ops/references/scenarios/efficiency-label-rate.md",
-      "target_sha256": "9dfb764123e545321b6287200d49b2144e47c8e95f2c8f42edd27ce1a5627b11",
+      "target_sha256": "4be7f0bdfa2a3936b791eeea4ecc85972218d852a009737d51afdef7d8866140",
       "sources": [
         {
           "path": "human_review_ops/references/scenarios/efficiency-label-rate/scenario_manifest.md",
-          "sha256": "afafc4c520bbf6a66ea4ebc7ebda34aa76ae7a2f0b8d2f8306fcc47c520d752a"
+          "sha256": "bc58bae862fae7432d0199d4b11e82ef70b5a36f20d0d9291fd5c2f1234f74bb"
         },
         {
           "path": "human_review_ops/references/scenarios/efficiency-label-rate/metric_contract.md",
-          "sha256": "2ceb8e0681fe955aed6f19fc3e5ea43f8915c247792de9d22e94ce44fe3e95b4"
+          "sha256": "6bce9952e14a3703c802b493fcfbb684f487ae0937487ca0660c3d397c5c4358"
         },
         {
           "path": "human_review_ops/references/scenarios/efficiency-label-rate/dataset_reference.md",
-          "sha256": "527e7aec73e89cf8e014561071ef04ecab2db34f190c8289b1802dfdfd2a1884"
+          "sha256": "a381b1dd9940df9ab64adeb9c6085f5ed2ef2dcbaeda6bc630068c4d62d8e1e0"
         },
         {
           "path": "human_review_ops/references/scenarios/efficiency-label-rate/analysis.md",
@@ -136,7 +136,7 @@
     {
       "kind": "generated_test_prompts",
       "target": "human_review_ops/skills/efficiency-label-rate-ops/assets/test-prompts.json",
-      "target_sha256": "b34c62ec4396e5ed47d37c8799fb74422cb0e42b6e578d2001b5c98e52926284"
+      "target_sha256": "6aa3a0698b584a246489c1a9f966f3bdb7fd97de94375519247fa8035f647b78"
     },
     {
       "kind": "generated_selfcheck",
@@ -154,29 +154,29 @@
       "kind": "copy",
       "source": "human_review_ops/references/scenarios/efficiency-label-rate/plus1_agreed_strategy_updates.json",
       "target": "human_review_ops/skills/efficiency-label-rate-ops/assets/efficiency-label-rate/plus1_agreed_strategy_updates.json",
-      "source_sha256": "9c7c7f140f473abf576549a22c7151bad7934c648f06163e96b0599433ac76ee",
-      "target_sha256": "9c7c7f140f473abf576549a22c7151bad7934c648f06163e96b0599433ac76ee"
+      "source_sha256": "8c7db247c19d48a647cba512ffa3c9d0d9669fc3146eee109f170b9bfe4a228c",
+      "target_sha256": "8c7db247c19d48a647cba512ffa3c9d0d9669fc3146eee109f170b9bfe4a228c"
     },
     {
       "kind": "copy",
       "source": "human_review_ops/skills/notification/assets/efficiency-label-rate/card_schema_notes.md",
       "target": "human_review_ops/skills/efficiency-label-rate-ops/assets/efficiency-label-rate/card_schema_notes.md",
-      "source_sha256": "ae446fb68cd30946be113c455ac3591552b298dff331a9ecddc1b892477d29e2",
-      "target_sha256": "ae446fb68cd30946be113c455ac3591552b298dff331a9ecddc1b892477d29e2"
+      "source_sha256": "031092bfd247bf44ace9076552d62be0628642887bfc38b987f77d472131f55a",
+      "target_sha256": "031092bfd247bf44ace9076552d62be0628642887bfc38b987f77d472131f55a"
     },
     {
       "kind": "copy",
       "source": "human_review_ops/skills/notification/assets/efficiency-label-rate/low_efficiency_grading_card_template.json",
       "target": "human_review_ops/skills/efficiency-label-rate-ops/assets/efficiency-label-rate/low_efficiency_grading_card_template.json",
-      "source_sha256": "0f6e2b8ced358e814c83ff5035957ecb4992415ef5a7fb8f6bbca5b9d398caa4",
-      "target_sha256": "0f6e2b8ced358e814c83ff5035957ecb4992415ef5a7fb8f6bbca5b9d398caa4"
+      "source_sha256": "23277eb39da0184da10d09085b55a44b9c71ce88e492b8c23d4eee7d5d09d163",
+      "target_sha256": "23277eb39da0184da10d09085b55a44b9c71ce88e492b8c23d4eee7d5d09d163"
     },
     {
       "kind": "copy",
       "source": "human_review_ops/skills/perception/scripts/label_rate_perception.py",
       "target": "human_review_ops/skills/efficiency-label-rate-ops/scripts/label_rate_perception.py",
-      "source_sha256": "d7d6eac69b0d6f019d774b0d2710f328ec1bcb7823980a4294fb644de038b47d",
-      "target_sha256": "61e0d3d025943a0731e896d93eaae58baf26859b023804bfed673d35075dfde7"
+      "source_sha256": "7138b8e4b648e591889e8a8a76dbc96bfaf120a8774e9393716f6e3addb7600c",
+      "target_sha256": "c2bac00ed29061bf8bdae94e63529b93f5b104868b1b19fe9d1f866ebee16e48"
     },
     {
       "kind": "copy",
@@ -196,15 +196,15 @@
       "kind": "copy",
       "source": "human_review_ops/skills/notification/scripts/render_label_rate_grading_card.py",
       "target": "human_review_ops/skills/efficiency-label-rate-ops/scripts/render_label_rate_grading_card.py",
-      "source_sha256": "6ab5cc4707be6d6f8ff4fcbb453302f7c82ac8f40178d2513837c75a405baf2d",
-      "target_sha256": "6ab5cc4707be6d6f8ff4fcbb453302f7c82ac8f40178d2513837c75a405baf2d"
+      "source_sha256": "060a1ff150cc3226452c221f393412b8f3f41b21cc9536ea27be3a8f28311289",
+      "target_sha256": "060a1ff150cc3226452c221f393412b8f3f41b21cc9536ea27be3a8f28311289"
     },
     {
       "kind": "copy",
       "source": "human_review_ops/skills/notification/scripts/resolve_label_rate_poc_routing.py",
       "target": "human_review_ops/skills/efficiency-label-rate-ops/scripts/resolve_label_rate_poc_routing.py",
-      "source_sha256": "e4bb0e4ce003fc0fa43aaf1c6ef03caa982db5362bd8bac02e484c77f3b9b50f",
-      "target_sha256": "e4bb0e4ce003fc0fa43aaf1c6ef03caa982db5362bd8bac02e484c77f3b9b50f"
+      "source_sha256": "9461eb9771062bff0a0a68fc08cfde0319d1a5f16d7e60ba4fbcfc118abfc148",
+      "target_sha256": "9461eb9771062bff0a0a68fc08cfde0319d1a5f16d7e60ba4fbcfc118abfc148"
     },
     {
       "kind": "copy",

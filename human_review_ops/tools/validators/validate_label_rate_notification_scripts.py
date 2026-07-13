@@ -28,6 +28,13 @@ from label_rate_notification_artifacts import (  # noqa: E402
 )
 from render_label_rate_grading_card import card_design_check  # noqa: E402
 
+FORBIDDEN_CARD_CONTRACT_TERMS = (
+    "各等级命中 " + "reason 数柱状图",
+    "Top " + "reason",
+    "四维策略" + "分组",
+    "送审" + "原因",
+)
+
 
 def make_row(
     *,
@@ -277,8 +284,38 @@ def validate_artifacts(artifacts: Any) -> None:
     verify_card_hash(card_with_meta, hash_rows)
     if hash_check.get("ok") is not True:
         raise AssertionError("hash_check must be ok.")
-    if card_design_check(card_with_meta).get("passes_p0_p3_basic_gate") is not True:
+    design_check = card_design_check(card_with_meta)
+    assert_no_old_card_contract(card_with_meta, design_check)
+    if design_check.get("passes_p0_p3_basic_gate") is not True:
         raise AssertionError("card design smoke gate failed.")
+
+
+def iter_card_tags(value: Any) -> list[str]:
+    tags: list[str] = []
+    if isinstance(value, dict):
+        tag = value.get("tag")
+        if isinstance(tag, str):
+            tags.append(tag)
+        for child in value.values():
+            tags.extend(iter_card_tags(child))
+    elif isinstance(value, list):
+        for item in value:
+            tags.extend(iter_card_tags(item))
+    return tags
+
+
+def assert_no_old_card_contract(
+    card: dict[str, Any],
+    design_check: dict[str, Any],
+) -> None:
+    rendered = json.dumps(card, ensure_ascii=False)
+    for term in FORBIDDEN_CARD_CONTRACT_TERMS:
+        if term in rendered:
+            raise AssertionError(f"Card still contains old contract term: {term}")
+    if "chart" in iter_card_tags(card):
+        raise AssertionError("Card must not contain chart elements.")
+    if "has_chart" in design_check:
+        raise AssertionError("card_design_check must not expose has_chart.")
 
 
 def main() -> None:

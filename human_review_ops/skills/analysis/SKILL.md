@@ -70,6 +70,17 @@ allowed-tools:
 - 质量检查结果 (`quality_checks`)：新鲜度、分母、字段映射、权限、样本池。
 - 停止原因 (`stop_reason`)：查询失败、权限不足或信息不足时必须输出。
 
+## 打标率能力矩阵
+
+命中 `efficiency-label-rate` 时，本 Skill 路径必须覆盖以下分析口径；分析阶段只生成 QueryPlan、SQL 和结果，不执行通知、在线导入或 manual tracking。
+
+- 数据方向：`manual_review_detail`（3888816）与 `report_flow`（3952594 / `enpool_reason`）。
+- 默认分级：`mach_root_label_name × strategy_id × strategy_name`；`reason` 不作为默认分组，只用于样本清洗或显式 `dimension_breakdown`。
+- 预警维度：`单策略维度` 与 `风险域维度`。
+- 治理标记：`是否+1同意`、`更新日期`、`+1同意日期是否在本次统计周期前`。
+- 报表口径：`综合`、`综合_剔除+1同意`、`汇总统计`、`汇总统计_剔除+1同意`。
+- 通知和闭环：POC 路由；`report_flow` 仅有 `enpool_reason` 时 fallback 到 `举报` POC；在线导入门禁 `--import-sheet` / `auto_import_sheet=true` 默认关闭；manual tracking (`manual_tracking`) 只记录本地调试闭环。
+
 ## 工作流
 
 1. 确认 `scenario_key` 和 `metric_ids` 已就绪；不明确时停止并交回感知技能。
@@ -140,9 +151,9 @@ allowed-tools:
 
 - 默认样本池必须复用 `references/scenarios/efficiency-label-rate.md#默认过滤` 中的过滤片段，不在 `SKILL.md` 重复维护。
 - 默认治理数据源和字段映射以 `references/scenarios/efficiency-label-rate.md#数据源与字段` 为准。
-- 标准分析粒度为 `mach_root_label_name × strategy_id × strategy_name × reason`，除非用户要求更粗或更细粒度且字段已治理。
+- 默认低打标率分级粒度为 `mach_root_label_name × strategy_id × strategy_name`；`reason` 默认只作为样本清洗过滤字段，不参与默认分级分组。用户明确要求送审原因拆解时，必须将任务标注为 `dimension_breakdown`，并在 QueryPlan 中显式声明 `reason` 维度。
 - 按维度字段聚合前，必须先用 `ifNull(...)` 把可空维度转换为稳定 key；内部 key 不得与底表物理字段同名，统一使用 `mach_root_label_key`、`strategy_id_key`、`strategy_name_key`、`reason_key` 这类 `*_key` 别名，并在 `GROUP BY` 中使用这些转换后的 key。外层再映射回标准输出字段名，避免 ClickHouse / Aeolus 把 `GROUP BY mach_root_label_name` 解析到同名物理字段，漏掉 NULL 维度记录。
-- 跨天、跨 reason、跨标签聚合时，必须分别 `SUM(label_cnt)` 和 `SUM(review_done_cnt)` 后重算 `label_rate`。
+- 跨天、跨标签或显式 `reason` 拆解聚合时，必须分别 `SUM(label_cnt)` 和 `SUM(review_done_cnt)` 后重算 `label_rate`。
 - 用户指定新维度时，先通过语义层或数据集字段发现确认字段含义、粒度和权限；未确认前不得拼接字段名。
 - 使用 `aeolus query` 查询时，按传入的数据集 ID 编译字段；优先使用 `` `[数据集字段名]` `` 语义字段写法，非必要时不手写底层字段逻辑。
 - SQL 只能是只读 `SELECT` 或公共表达式 (CTE)，不得包含写入、建表或状态更新语句。
@@ -152,7 +163,7 @@ allowed-tools:
 低打标率分级仅在 `task_type=low_label_rate_grading` 时启用。
 
 - 默认输出等级：`notice`、`P2`、`P1`、`P0`。
-- 综合清单按 `P0 > P1 > P2 > notice` 对同一 reason 取最高等级。
+- 综合清单按 `P0 > P1 > P2 > notice` 对同一 `预警维度 × mach_root_label_name × strategy_id × strategy_name` 取最高等级。
 - 每条命中必须带证据：日均进审量、日均完审量、日均打标量、打标率、命中条件、时间窗口。
 - 某等级无命中时写“本期 0 条”；查询失败时写失败原因，不写“0 条”。
 - 高打标率、普通趋势或普通排序不套用低效分级。
@@ -203,7 +214,7 @@ allowed-tools:
 `human_review_ops/skills/analysis/scripts/label_rate_analysis.py` 是打标率低效分级的可复用分析入口。该脚本无副作用，不执行 SQL、不发送通知、不写线上状态；它负责生成和标准化分析资产：
 
 - `parse_levels()`：解析 `notice`、`P2`、`P1`、`P0` 等级参数。
-- `sql_by_level()`：生成各等级只读 SQL，复用指标契约中的样本池过滤、四维粒度和低打标率分级规则。
+- `sql_by_level()`：生成各等级只读 SQL，复用指标契约中的样本池过滤、默认三维策略粒度、风险域维度和低打标率分级规则。
 - `build_query_plan(levels, sql_map)`：生成 QueryPlan，包含来源优先级、允许/禁止来源、质量检查和 `sql_by_level`。
 - `build_records(payloads, levels, sql_map, row_enricher=None)`：把只读查询返回 payload 标准化为 `environment`/`sample` 记录，包含 `readonly_execution`、`analysis_result`、`source_footer` 和 `provenance`。
 - `build_source_footer(...)`、`build_readonly_execution(...)`、`build_analysis_result(...)`：生成来源页脚、只读执行摘要和标准化分析结果。
@@ -257,7 +268,7 @@ python3 scripts/selfcheck.py
 用户输入：
 
 ```text
-已确认场景为 efficiency-label-rate，请看近 7 天低打标率策略，按机审一级标签、策略 ID、策略名称、送审原因拆分，并给 P0/P1/P2/notice。
+已确认场景为 efficiency-label-rate，请看近 7 天低打标率策略，默认按机审一级标签、策略 ID、策略名称三维分级，并给 P0/P1/P2/notice。
 ```
 
 期望输出要点：
@@ -268,8 +279,8 @@ python3 scripts/selfcheck.py
     "scenario_key": "efficiency-label-rate",
     "metric_id": "label_rate",
     "task_type": "low_label_rate_grading",
-    "dimensions": ["mach_root_label_name", "strategy_id", "strategy_name", "reason"],
-    "review_required": true
+    "dimensions": ["mach_root_label_name", "strategy_id", "strategy_name"],
+    "review_required": false
   },
   "readonly_execution_request": {
     "mode": "select_only",

@@ -149,7 +149,10 @@
           "path": "notification/scripts/label_rate_notification_artifacts.py",
           "entrypoint": "python3 scripts/label_rate_notification_artifacts.py --source <analysis_result.jsonl> --output-dir <output>",
           "smoke_command": "python3 scripts/selfcheck.py",
-          "side_effects": ["none"],
+          "side_effects": [
+            "none",
+            "conditional_online_write: --import-sheet or auto_import_sheet=true imports XLSX into Feishu Sheet and writes sheet_url; default disabled"
+          ],
           "outputs": [
             "notification_draft.json",
             "send_plan.json",
@@ -183,7 +186,10 @@
           "path": "notification/scripts/sheet_importer.py",
           "entrypoint": "module:import_xlsx_as_feishu_sheet",
           "smoke_command": "python3 scripts/selfcheck.py",
-          "side_effects": ["none"],
+          "side_effects": [
+            "none",
+            "conditional_online_write: import_xlsx_as_feishu_sheet writes a Feishu Sheet only when explicitly invoked by an opt-in caller"
+          ],
           "outputs": ["sheet_import_result.json", "sheet_url"]
         },
         {
@@ -277,7 +283,8 @@
         "efficiency-label-rate-ops/assets/test-prompts.json",
         "efficiency-label-rate-ops/assets/efficiency-label-rate/card_schema_notes.md",
         "efficiency-label-rate-ops/assets/efficiency-label-rate/low_efficiency_grading_card_template.json",
-        "efficiency-label-rate-ops/assets/efficiency-label-rate/mach_root_label_poc_mapping.json"
+        "efficiency-label-rate-ops/assets/efficiency-label-rate/mach_root_label_poc_mapping.json",
+        "efficiency-label-rate-ops/assets/efficiency-label-rate/plus1_agreed_strategy_updates.json"
       ],
       "scripts": [
         {
@@ -298,7 +305,10 @@
           "path": "efficiency-label-rate-ops/scripts/label_rate_notification_artifacts.py",
           "entrypoint": "python3 scripts/label_rate_notification_artifacts.py --source <analysis_result.jsonl> --output-dir <output>",
           "smoke_command": "python3 scripts/selfcheck.py",
-          "side_effects": ["none"],
+          "side_effects": [
+            "none",
+            "conditional_online_write: --import-sheet or auto_import_sheet=true imports XLSX into Feishu Sheet and writes sheet_url; default disabled"
+          ],
           "outputs": ["notification_draft.json", "send_plan.json", "poc_routing_plan.json", "CSV/XLSX report", "Card JSON"]
         },
         {
@@ -326,7 +336,10 @@
           "path": "efficiency-label-rate-ops/scripts/sheet_importer.py",
           "entrypoint": "module:import_xlsx_as_feishu_sheet",
           "smoke_command": "python3 scripts/selfcheck.py",
-          "side_effects": ["none"],
+          "side_effects": [
+            "none",
+            "conditional_online_write: import_xlsx_as_feishu_sheet writes a Feishu Sheet only when explicitly invoked by an opt-in caller"
+          ],
           "outputs": ["sheet_import_result.json", "sheet_url"]
         },
         {
@@ -353,6 +366,7 @@
         "efficiency-label-rate-ops/assets/efficiency-label-rate/card_schema_notes.md",
         "efficiency-label-rate-ops/assets/efficiency-label-rate/low_efficiency_grading_card_template.json",
         "efficiency-label-rate-ops/assets/efficiency-label-rate/mach_root_label_poc_mapping.json",
+        "efficiency-label-rate-ops/assets/efficiency-label-rate/plus1_agreed_strategy_updates.json",
         "efficiency-label-rate-ops/references/common.md",
         "efficiency-label-rate-ops/references/scenario-index.md",
         "efficiency-label-rate-ops/references/scenarios/efficiency-label-rate.md",

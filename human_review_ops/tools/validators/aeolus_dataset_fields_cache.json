@@ -17,6 +17,21 @@
         "进审量_reviewid"
       ]
     },
+    "3952594": {
+      "region": "cn",
+      "fields": [
+        "enpool_reason",
+        "report_id",
+        "一轮队列名称",
+        "人审完结量_report_id",
+        "任务类型",
+        "打标率_report_id",
+        "打标量_report_id",
+        "终轮队列名称",
+        "进审日期",
+        "进审量_report_id"
+      ]
+    },
     "3945965": {
       "region": "cn",
       "fields": [

@@ -66,7 +66,7 @@ def run_dry_run(request: str) -> dict[str, Any]:
 def validate_ready_case() -> None:
     payload = run_dry_run(
         "请判断这个需求属于哪个人审运营场景：帮我看近 7 天低打标率策略，"
-        "按机审一级标签、策略 ID、策略名称、送审原因拆解，并分 P0/P1/P2/notice。"
+        "默认按机审一级标签、策略 ID、策略名称分 P0/P1/P2/notice。"
     )
     assert_common_contract(payload)
 
@@ -85,7 +85,6 @@ def validate_ready_case() -> None:
         "mach_root_label_name",
         "strategy_id",
         "strategy_name",
-        "reason",
     }
     if set(payload.get("dimensions", [])) != expected_dimensions:
         raise AssertionError("Ready case dimensions mismatch.")

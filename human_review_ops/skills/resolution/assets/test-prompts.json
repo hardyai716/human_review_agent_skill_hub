@@ -8,7 +8,7 @@
       "coverage": [
         "efficiency-label-rate"
       ],
-      "prompt": "针对 efficiency-label-rate 的 P1 低打标率事件，记录 POC 已确认的人工处理动作、证据链接、处理结论，并判断是否满足关闭前动作-证据-结论三件套。",
+      "prompt": "针对 efficiency-label-rate 默认三维分级中的 P1 低打标率事件，记录 POC 已确认的人工处理动作、证据链接、+1 同意与剔除口径报表引用、处理结论，并判断是否满足关闭前动作-证据-结论三件套。",
       "expected": {
         "trigger": true,
         "scenario_key": "efficiency-label-rate",
@@ -20,12 +20,37 @@
           "closure_check",
           "follow_up",
           "safety",
-          "evidence_refs"
+          "evidence_refs",
+          "plus1_status",
+          "filtered_report_refs"
         ],
         "blocked_actions": [
           "write_online_status",
           "send_notification"
         ]
+      }
+    },
+    {
+      "id": "resolution-trigger-report-flow-manual-tracking",
+      "category": "should-trigger",
+      "coverage": [
+        "efficiency-label-rate",
+        "report-flow",
+        "manual_tracking"
+      ],
+      "prompt": "基于举报流转 report_flow 的 enpool_reason 低打标率通知草稿记录 manual tracking，证据里只有 enpool_reason、日均人审完结量、日均打标量和打标率。",
+      "expected": {
+        "trigger": true,
+        "scenario_key": "efficiency-label-rate",
+        "data_direction": "report_flow",
+        "task_type": "manual_tracking",
+        "evidence_refs": [
+          "enpool_reason",
+          "avg_report_review_done_cnt",
+          "avg_report_label_cnt",
+          "report_label_rate"
+        ],
+        "overall_status": "pending_manual_confirmation"
       }
     },
     {

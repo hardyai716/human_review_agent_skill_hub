@@ -82,36 +82,36 @@
   - [x] SubTask 15.4: 将当前受影响 Skill 发布到 AgentBuddy restricted 空间，至少覆盖 `efficiency-label-rate-ops`、`analysis`、`notification`，必要时覆盖五个可发布 Skill。
   - [x] SubTask 15.5: 记录发布摘要文件，包含 skill、版本/ID、commit、命令和状态。
 
-- [ ] Task 16: 收敛发布资产声明和安全副作用声明。
-  - [ ] SubTask 16.1: 将 `plus1_agreed_strategy_updates.json` 纳入 `skill_release_manifest.json`、场景级 package manifest 和必要的 registry/validator 覆盖。
-  - [ ] SubTask 16.2: 将 `sheet_importer.py` 与 `label_rate_notification_artifacts.py --import-sheet` 的副作用声明改为“默认无线上写入，显式 opt-in 后在线写入”。
-  - [ ] SubTask 16.3: 在 `efficiency-label-rate-ops/SKILL.md` 增加短版 `🔴 CHECKPOINT`，覆盖真实群发、在线表格导入、线上状态写入和敏感身份解析。
-  - [ ] SubTask 16.4: 运行 `build_skill_package.py efficiency-label-rate --target scenario-bundle --check-sync` 和相关 manifest/registry validator。
+- [x] Task 16: 收敛发布资产声明和安全副作用声明。
+  - [x] SubTask 16.1: 将 `plus1_agreed_strategy_updates.json` 纳入 `skill_release_manifest.json`、场景级 package manifest 和必要的 registry/validator 覆盖。
+  - [x] SubTask 16.2: 将 `sheet_importer.py` 与 `label_rate_notification_artifacts.py --import-sheet` 的副作用声明改为“默认无线上写入，显式 opt-in 后在线写入”。
+  - [x] SubTask 16.3: 在 `efficiency-label-rate-ops/SKILL.md` 增加短版 `🔴 CHECKPOINT`，覆盖真实群发、在线表格导入、线上状态写入和敏感身份解析。
+  - [x] SubTask 16.4: 运行 `build_skill_package.py efficiency-label-rate --target scenario-bundle --check-sync` 和相关 manifest/registry validator。
 
-- [ ] Task 17: 对齐四能力 Skill 与 `efficiency-label-rate-ops` 的打标率能力覆盖。
-  - [ ] SubTask 17.1: 建立打标率能力矩阵，覆盖手工审核明细方向、举报流转方向、默认三维分级、风险域维度、`+1同意`、剔除口径报表、POC 路由、在线导入门禁、manual tracking。
-  - [ ] SubTask 17.2: 更新四能力 Skill 的打标率运行态文档、`SKILL.md` 片段和 `assets/test-prompts.json`，消除默认按 `reason` 分级的过期表达。
-  - [ ] SubTask 17.3: 新增或增强一致性 validator，确保四能力 Skill 与场景级 Skill 的打标率能力矩阵无 gap。
-  - [ ] SubTask 17.4: 运行 perception、analysis、notification、resolution 自检和脚本级 validator。
+- [x] Task 17: 对齐四能力 Skill 与 `efficiency-label-rate-ops` 的打标率能力覆盖。
+  - [x] SubTask 17.1: 建立打标率能力矩阵，覆盖手工审核明细方向、举报流转方向、默认三维分级、风险域维度、`+1同意`、剔除口径报表、POC 路由、在线导入门禁、manual tracking。
+  - [x] SubTask 17.2: 更新四能力 Skill 的打标率运行态文档、`SKILL.md` 片段和 `assets/test-prompts.json`，消除默认按 `reason` 分级的过期表达。
+  - [x] SubTask 17.3: 新增或增强一致性 validator，确保四能力 Skill 与场景级 Skill 的打标率能力矩阵无 gap。
+  - [x] SubTask 17.4: 运行 perception、analysis、notification、resolution 自检和脚本级 validator。
 
-- [ ] Task 18: 修复 Aeolus 字段契约门禁，使全量产品化 strict 恢复通过。
-  - [ ] SubTask 18.1: 调整字段契约文档或 validator，使字段表头采用可校验格式，不误伤业务映射说明。
-  - [ ] SubTask 18.2: 让字段契约 validator 正确处理 `3888816` 与 `3952594` 双数据源，不把另一数据源字段判为当前数据集缺失字段。
-  - [ ] SubTask 18.3: 避免 JSON 数组、`forbidden_sources`、`fallback_reason` 等非字段内容被识别为 Aeolus 字段。
-  - [ ] SubTask 18.4: 运行 `validate_aeolus_field_contracts.py` 和 `validate_skill_productization.py --strict --profile all_releaseable`。
+- [x] Task 18: 修复 Aeolus 字段契约门禁，使全量产品化 strict 恢复通过。
+  - [x] SubTask 18.1: 调整字段契约文档或 validator，使字段表头采用可校验格式，不误伤业务映射说明。
+  - [x] SubTask 18.2: 让字段契约 validator 正确处理 `3888816` 与 `3952594` 双数据源，不把另一数据源字段判为当前数据集缺失字段。
+  - [x] SubTask 18.3: 避免 JSON 数组、`forbidden_sources`、`fallback_reason` 等非字段内容被识别为 Aeolus 字段。
+  - [x] SubTask 18.4: 运行 `validate_aeolus_field_contracts.py` 和 `validate_skill_productization.py --strict --profile all_releaseable`。
 
-- [ ] Task 19: 清理文档、Card 模板和迁移状态中的已知冲突。
-  - [ ] SubTask 19.1: 在 SOP 中明确“治理目标阈值 `<10%` / `<5%`”与“notice/P2/P1/P0 通知严重等级”是两个层级。
-  - [ ] SubTask 19.2: 清理 Card 模板中的“reason 数柱状图”旧描述，并处理未使用 chart 代码或校验字段，避免与当前卡片实现冲突。
-  - [ ] SubTask 19.3: 同步 `docs/skill_scenario_migration_checklist.md` 中 `efficiency-label-rate-ops` AgentBuddy 发布状态。
-  - [ ] SubTask 19.4: 更新相关回归样例，确保文档、模板和 validator 口径一致。
+- [x] Task 19: 清理文档、Card 模板和迁移状态中的已知冲突。
+  - [x] SubTask 19.1: 在 SOP 中明确“治理目标阈值 `<10%` / `<5%`”与“notice/P2/P1/P0 通知严重等级”是两个层级。
+  - [x] SubTask 19.2: 清理 Card 模板中的“reason 数柱状图”旧描述，并处理未使用 chart 代码或校验字段，避免与当前卡片实现冲突。
+  - [x] SubTask 19.3: 同步 `docs/skill_scenario_migration_checklist.md` 中 `efficiency-label-rate-ops` AgentBuddy 发布状态。
+  - [x] SubTask 19.4: 更新相关回归样例，确保文档、模板和 validator 口径一致。
 
-- [ ] Task 20: 最终回归、提交、推送并再次发布 AgentBuddy。
-  - [ ] SubTask 20.1: 运行全量回归：productization strict all_releaseable、standalone smoke all_releaseable、skill path registry、scenario package check-sync、能力一致性 validator、analysis/notification/perception/resolution 脚本 validator、Stage 1/Stage 2 关键 validator、AgentBuddy publish validator、`git diff --check`。
-  - [ ] SubTask 20.2: 修复回归发现的问题，直到全部关键门禁通过。
-  - [ ] SubTask 20.3: 提交并推送收敛后的最终状态到 `origin/main`。
-  - [ ] SubTask 20.4: 重新发布受影响 Skill 到 AgentBuddy restricted 空间，并记录最终发布摘要。
-  - [ ] SubTask 20.5: 汇总本轮完成情况到 `progress.md`。
+- [x] Task 20: 最终回归、提交、推送并再次发布 AgentBuddy。
+  - [x] SubTask 20.1: 运行全量回归：productization strict all_releaseable、standalone smoke all_releaseable、skill path registry、scenario package check-sync、能力一致性 validator、analysis/notification/perception/resolution 脚本 validator、Stage 1/Stage 2 关键 validator、AgentBuddy publish validator、`git diff --check`。
+  - [x] SubTask 20.2: 修复回归发现的问题，直到全部关键门禁通过。
+  - [x] SubTask 20.3: 提交并推送收敛后的最终状态到 `origin/main`。
+  - [x] SubTask 20.4: 重新发布受影响 Skill 到 AgentBuddy restricted 空间，并记录最终发布摘要。
+  - [x] SubTask 20.5: 汇总本轮完成情况到 `progress.md`。
 
 # Task Dependencies
 

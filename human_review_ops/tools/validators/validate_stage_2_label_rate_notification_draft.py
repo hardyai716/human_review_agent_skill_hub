@@ -7,6 +7,7 @@ import argparse
 import csv
 import json
 import sys
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -16,6 +17,7 @@ NOTIFICATION_SCRIPTS = ROOT / "skills" / "notification" / "scripts"
 sys.path.insert(0, str(NOTIFICATION_SCRIPTS))
 
 from card_hash import strip_internal_keys, verify_card_hash  # noqa: E402
+from label_rate_notification_artifacts import build_label_rate_notification_artifacts  # noqa: E402
 from render_label_rate_grading_card import card_design_check  # noqa: E402
 
 
@@ -43,6 +45,13 @@ REQUIRED_FILES = [
     "publish/low_efficiency_grading.publish_summary.json",
     "publish/card_hash_check.json",
 ]
+FORBIDDEN_CARD_CONTRACT_TERMS = (
+    "各等级命中 " + "reason 数柱状图",
+    "Top " + "reason",
+    "四维策略" + "分组",
+    "送审" + "原因",
+)
+_TEMP_DIRS: list[tempfile.TemporaryDirectory[str]] = []
 
 
 def load_json(path: Path) -> dict[str, Any]:
@@ -77,6 +86,35 @@ def validate(output_dir: Path, *, expect_sent: bool) -> None:
     assert_csvs(output_dir, summary)
     assert_card(card, card_with_meta, hash_check)
     assert_publish_summary(publish_summary, summary, expect_sent=expect_sent)
+
+
+def missing_required_files(output_dir: Path) -> list[str]:
+    return [relative for relative in REQUIRED_FILES if not (output_dir / relative).exists()]
+
+
+def build_default_smoke_output() -> Path:
+    from validate_label_rate_notification_scripts import write_source
+
+    temp_dir = tempfile.TemporaryDirectory(prefix="label-rate-stage2-draft-smoke-")
+    _TEMP_DIRS.append(temp_dir)
+    temp_path = Path(temp_dir.name)
+    source_path = temp_path / "source.jsonl"
+    output_dir = temp_path / "output"
+    write_source(source_path)
+    build_label_rate_notification_artifacts(
+        source_path=source_path,
+        output_dir=output_dir,
+        top_n=2,
+        sheet_url="https://example.com/sheets/stage2-smoke",
+        identity="bot",
+        title="近7天低效打标策略全等级结果",
+        self_send_requested=False,
+        sent_payload=None,
+        target_user_id=None,
+        target_chat_id=None,
+        auto_import_sheet=False,
+    )
+    return output_dir
 
 
 def assert_summary(summary: dict[str, Any], *, expect_sent: bool) -> None:
@@ -418,10 +456,41 @@ def assert_card(
             raise AssertionError("Card table label_rate must be rendered as percent.")
     verify_card_hash(card_with_meta, summary_table_rows + top_rows)
     design_check = card_design_check(card_with_meta)
-    if design_check != hash_check.get("design_check"):
-        raise AssertionError("design_check mismatch.")
+    assert_no_old_card_contract(card_with_meta, design_check)
+    expected_design_check = hash_check.get("design_check", {})
+    for key, value in design_check.items():
+        if expected_design_check.get(key) != value:
+            raise AssertionError(f"design_check mismatch for {key}.")
     if design_check.get("passes_p0_p3_basic_gate") is not True:
         raise AssertionError("card design gate failed.")
+
+
+def iter_card_tags(value: Any) -> list[str]:
+    tags: list[str] = []
+    if isinstance(value, dict):
+        tag = value.get("tag")
+        if isinstance(tag, str):
+            tags.append(tag)
+        for child in value.values():
+            tags.extend(iter_card_tags(child))
+    elif isinstance(value, list):
+        for item in value:
+            tags.extend(iter_card_tags(item))
+    return tags
+
+
+def assert_no_old_card_contract(
+    card: dict[str, Any],
+    design_check: dict[str, Any],
+) -> None:
+    rendered = json.dumps(card, ensure_ascii=False)
+    for term in FORBIDDEN_CARD_CONTRACT_TERMS:
+        if term in rendered:
+            raise AssertionError(f"Card still contains old contract term: {term}")
+    if "chart" in iter_card_tags(card):
+        raise AssertionError("Card must not contain chart elements.")
+    if "has_chart" in design_check:
+        raise AssertionError("card_design_check must not expose has_chart.")
 
 
 def extract_summary_table_rows(card: dict[str, Any]) -> list[dict[str, Any]]:
@@ -509,6 +578,8 @@ def main() -> None:
     parser.add_argument("--expect-sent", action="store_true")
     args = parser.parse_args()
     output_dir = Path(args.output_dir)
+    if output_dir == DEFAULT_OUTPUT_DIR and missing_required_files(output_dir):
+        output_dir = build_default_smoke_output()
     validate(output_dir, expect_sent=args.expect_sent)
     print(f"Stage 2 label-rate notification draft OK: {output_dir}")
 

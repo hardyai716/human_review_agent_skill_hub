@@ -262,6 +262,13 @@ allowed-tools:
 - 不替代 calling_agent 的权限判断、人工确认和真实外部执行。
 - 不把本发布包作为业务事实来源；业务事实以根目录场景包为准。
 
+## 🔴 CHECKPOINT · 安全边界
+
+- 真实群发、拉群或外部通知发送：必须先由 calling_agent 获得用户明确确认；本包只生成草稿和 send_plan。
+- 在线表格导入（`--import-sheet` / `auto_import_sheet=true`）：默认关闭，确认后才写入飞书 Sheet 并回填 `sheet_url`。
+- 线上状态写入、关闭事件或改业务工单：禁止由本包直接执行，只能生成本地 `manual_tracking.json`。
+- 敏感身份解析、open_id 反查或扩散：必须单独确认授权；默认保持已有 POC 映射，不主动解析。
+
 ## 输入
 
 - `raw_user_request` 或上游感知结果。
@@ -274,6 +281,17 @@ allowed-tools:
 - 分析结果：`QueryPlan`、SQL、`analysis_result`、`source_footer`、`provenance`。
 - 通知产物：`notification_draft.json`、`send_plan.json`、`poc_routing_plan.json`、Card JSON、CSV/XLSX 报表、可选 `sheet_url`。
 - 解决记录：`manual_tracking.json`。
+
+## 打标率能力矩阵
+
+本场景级 Skill 是 canonical 路径，必须覆盖以下能力口径，并与四能力 Skill 保持一致。
+
+- 数据方向：`manual_review_detail`（3888816）与 `report_flow`（3952594 / `enpool_reason`）。
+- 默认分级：`mach_root_label_name × strategy_id × strategy_name`；`reason` 不作为默认分组，只用于样本清洗或显式 `dimension_breakdown`。
+- 预警维度：`单策略维度` 与 `风险域维度`。
+- 治理标记：`是否+1同意`、`更新日期`、`+1同意日期是否在本次统计周期前`。
+- 报表口径：`综合`、`综合_剔除+1同意`、`汇总统计`、`汇总统计_剔除+1同意`。
+- 通知和闭环：POC 路由；`report_flow` 仅有 `enpool_reason` 时 fallback 到 `举报` POC；在线导入门禁 `--import-sheet` / `auto_import_sheet=true` 默认关闭；manual tracking (`manual_tracking`) 只记录本地调试闭环。
 
 ## 工作流
 
@@ -394,7 +412,7 @@ def scenario_bundle_test_prompts(scenario_key: str, bundle_name: str) -> str:
             {
                 "id": "label-rate-full-flow",
                 "category": "should-trigger",
-                "prompt": "帮我看近7天低打标率策略，按机审一级标签、策略ID、策略名称、送审原因拆解，并分P0/P1/P2/notice。",
+                "prompt": "帮我看近7天低打标率策略，默认按机审一级标签、策略ID、策略名称三维分级，并分P0/P1/P2/notice。",
                 "coverage": [
                     "efficiency-label-rate",
                     "full-workflow",
@@ -404,6 +422,31 @@ def scenario_bundle_test_prompts(scenario_key: str, bundle_name: str) -> str:
                     "trigger": True,
                     "scenario_key": scenario_key,
                     "task_type": "low_label_rate_grading",
+                    "run_mode": "debug_only",
+                    "dimensions": [
+                        "mach_root_label_name",
+                        "strategy_id",
+                        "strategy_name",
+                    ],
+                },
+            },
+            {
+                "id": "label-rate-reason-dimension-breakdown",
+                "category": "should-trigger",
+                "prompt": "帮我额外按送审原因 reason 拆解近7天打标率，输出机审一级标签 × reason 明细和汇总，不要作为默认低效分级。",
+                "coverage": [
+                    "efficiency-label-rate",
+                    "dimension_breakdown",
+                    "readonly-analysis",
+                ],
+                "expected": {
+                    "trigger": True,
+                    "scenario_key": scenario_key,
+                    "task_type": "dimension_breakdown",
+                    "dimensions": [
+                        "mach_root_label_name",
+                        "reason",
+                    ],
                     "run_mode": "debug_only",
                 },
             },

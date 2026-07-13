@@ -87,6 +87,12 @@
             "human_review_ops/references/scenarios/efficiency-label-rate/mach_root_label_poc_mapping.json"
           ]
         },
+        "plus1_agreed_strategy_updates": {
+          "canonical": "human_review_ops/skills/efficiency-label-rate-ops/assets/efficiency-label-rate/plus1_agreed_strategy_updates.json",
+          "legacy": [
+            "human_review_ops/references/scenarios/efficiency-label-rate/plus1_agreed_strategy_updates.json"
+          ]
+        },
         "card_template": {
           "canonical": "human_review_ops/skills/efficiency-label-rate-ops/assets/efficiency-label-rate/low_efficiency_grading_card_template.json",
           "legacy": [

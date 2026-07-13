@@ -116,31 +116,6 @@ def metrics_block(level_counts: dict[str, int]) -> dict[str, Any]:
     }
 
 
-def chart_block(level_counts: dict[str, int]) -> dict[str, Any]:
-    return {
-        "tag": "chart",
-        "height": "220px",
-        "color_theme": "primary",
-        "chart_spec": {
-            "type": "bar",
-            "title": {"visible": True, "text": "各等级命中策略分组数"},
-            "data": {
-                "values": [
-                    {"level": level, "count": int(level_counts.get(level, 0))}
-                    for level in LEVELS
-                ]
-            },
-            "xField": "level",
-            "yField": "count",
-            "label": {"visible": True},
-            "axes": [
-                {"orient": "left", "title": {"visible": True, "text": "命中数"}},
-                {"orient": "bottom", "title": {"visible": False}},
-            ],
-        },
-    }
-
-
 def table_columns() -> list[dict[str, Any]]:
     return [
         {"name": "rank", "display_name": "排名", "data_type": "number", "width": "80px"},
@@ -349,7 +324,8 @@ def methodology_panel(summary: dict[str, Any]) -> dict[str, Any]:
     lines = [
         f"- 数据集：`{summary.get('dataset_id')}` / `{summary.get('region')}`",
         f"- 当前窗口：`{summary.get('period', {}).get('current_start')}` ~ `{summary.get('period', {}).get('current_end')}`",
-        "- 分析粒度：`机审一级标签 × 策略ID × 策略名称 × 送审原因`",
+        "- 默认分级粒度：`机审一级标签 × 策略ID × 策略名称`",
+        "- `reason`：默认仅用于样本清洗；仅在用户明确要求维度拆解时作为分组字段",
         "- 打标率：`SUM(打标量) / SUM(完审量)`",
         f"- fallback_reason：`{summary.get('fallback_reason')}`",
         f"- source：`{summary.get('source_stage_1_result')}`",
@@ -381,7 +357,7 @@ def render_grading_card(
     report_title = title or "近7天低效打标策略全等级结果"
     period = summary.get("period", {})
     subtitle = (
-        f"四维策略分组 · {period.get('current_start')} ~ {period.get('current_end')}"
+        f"默认三维分级 · {period.get('current_start')} ~ {period.get('current_end')}"
     )
     card = card_base(report_title, subtitle)
     elements = card["body"]["elements"]
@@ -427,7 +403,6 @@ def card_design_check(card: dict[str, Any]) -> dict[str, Any]:
         "schema_2_0": card.get("schema") == "2.0",
         "has_header": isinstance(card.get("header"), dict),
         "has_metrics": "column_set" in tags,
-        "has_chart": "chart" in tags,
         "has_table": "table" in tags,
         "table_count": tags.count("table"),
         "has_methodology": "collapsible_panel" in tags,

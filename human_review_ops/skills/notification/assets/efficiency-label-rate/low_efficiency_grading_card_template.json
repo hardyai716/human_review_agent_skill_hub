@@ -8,10 +8,10 @@
   "layout_contract": {
     "header": "报告标题 + 周期 + 全等级标签",
     "metrics": "4 个等级指标卡：P0、P1、P2、notice",
-    "chart": "各等级命中 reason 数柱状图",
-    "table": "综合表 TopN，按 P0 > P1 > P2 > notice 展示最高等级",
+    "summary_table": "机审一级标签 × POC 汇总统计表",
+    "level_tables": "各等级 TopN 明细表，按 P0 > P1 > P2 > notice 展示最高等级",
     "actions": "查看完整飞书表格按钮",
-    "methodology": "折叠面板展示口径、数据集、窗口、fallback reason"
+    "methodology": "折叠面板展示默认三维分级、reason 显式拆解规则、数据集、窗口、fallback reason"
   },
   "required_inputs": [
     "summary.level_counts",

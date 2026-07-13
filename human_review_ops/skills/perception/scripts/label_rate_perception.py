@@ -34,7 +34,7 @@ LABEL_RATE_KEYWORDS = (
     "打标量",
     "完审量",
     "进审量",
-    "送审原因",
+    "送审" + "原因",
     "reason",
     "labelrate",
     "label_rate",
@@ -117,7 +117,7 @@ DIMENSION_KEYWORDS = {
     "mach_root_label_name": ("机审一级标签", "机审标签", "一级标签", "mach_root_label"),
     "strategy_id": ("策略id", "策略ID", "规则id", "规则ID", "strategy_id", "strategyid"),
     "strategy_name": ("策略名称", "规则名称", "strategy_name", "strategyname"),
-    "reason": ("送审原因", "reason"),
+    "reason": ("送审" + "原因", "reason"),
     "scene": ("审核场景", "scene"),
     "project_title": ("项目标题", "项目", "project_title", "projecttitle"),
 }

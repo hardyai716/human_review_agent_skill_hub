@@ -42,7 +42,7 @@ allowed-tools:
 - `analysis_result`：分析结果或 `analysis_result` JSONL，必须包含 `analysis_mode`、`readonly_execution`、`level_counts`、分级明细和 `source_footer`。
 - `scenario_key`：例如 `efficiency-label-rate`。
 - `risk_levels`：至少说明涉及 `notice`、`P2`、`P1`、`P0` 中哪些等级。
-- `evidence_rows`：每条命中的 reason、策略、打标率、日均量和命中条件。
+- `evidence_rows`：每条命中的策略三维、风险域、打标率、日均量、命中条件、`是否+1同意`、`更新日期` 和剔除口径标记；举报流转方向使用 `enpool_reason`、日均人审完结量、日均打标量和举报打标率作为证据。
 
 可选输入：
 
@@ -60,16 +60,28 @@ allowed-tools:
 - `poc_routing_plan.json`：负责人 (POC) 或触达对象路由计划。
 - `card_json`：飞书卡片 (Card) JSON 草稿，默认只预览。
 - `send_plan.json`：发送计划 (send_plan)，必须默认 `group_send_blocked=true`、`requires_confirmation=true`、`sent=false`。
+- 分级报表：必须包含完整口径与剔除口径，至少覆盖 `综合.csv`、`综合_剔除+1同意.csv`、`汇总统计.csv`、`汇总统计_剔除+1同意.csv`。
 - `escalation_draft`：P0/P1 等需要升级时的话术草稿。
 - `evidence_refs`：引用的分析结果、报表、卡片哈希和来源页脚。
 - `failure_branches`：未映射负责人、缺少 open_id、缺少报表或用户要求真实群发时的处理分支。
+
+## 打标率能力矩阵
+
+命中 `efficiency-label-rate` 时，本 Skill 路径必须覆盖以下通知口径；通知阶段只生成草稿、报表、POC 路由和 send_plan，不真实发送。
+
+- 数据方向：`manual_review_detail`（3888816）与 `report_flow`（3952594 / `enpool_reason`）。
+- 默认分级：`mach_root_label_name × strategy_id × strategy_name`；`reason` 不作为默认分组，只用于样本清洗或显式 `dimension_breakdown`。
+- 预警维度：`单策略维度` 与 `风险域维度`。
+- 治理标记：`是否+1同意`、`更新日期`、`+1同意日期是否在本次统计周期前`。
+- 报表口径：`综合`、`综合_剔除+1同意`、`汇总统计`、`汇总统计_剔除+1同意`。
+- 通知和闭环：POC 路由；`report_flow` 仅有 `enpool_reason` 时 fallback 到 `举报` POC；在线导入门禁 `--import-sheet` / `auto_import_sheet=true` 默认关闭；manual tracking (`manual_tracking`) 只记录本地调试闭环。
 
 ## 工作流
 
 1. 校验输入来自分析阶段：`scenario_key=efficiency-label-rate`，且分级任务应为 `low_label_rate_grading`。
 2. 校验分析结果包含 `readonly_execution`、分级明细、`level_counts`、查询计划 (QueryPlan) 和来源页脚 (source_footer)。
 3. 加载通知通用规则、场景索引、单场景运行态文档、卡片模板和映射资产。
-4. 生成或复用负责人 (POC) 路由计划：优先按 `mach_root_label_name` 映射，`reason`、`strategy_id`、`strategy_name` 只作为证据字段。
+4. 生成或复用负责人 (POC) 路由计划：优先按 `mach_root_label_name` 映射，`reason`、`strategy_id`、`strategy_name` 只作为证据字段；举报流转方向若只有 `enpool_reason` 且无机审标签，先 fallback 到 `举报` POC 低置信度预览。
 5. 生成通知草稿：包含等级、周期、摘要、证据、Owner 依据、置信度、限制说明和 debug_only 声明。
 6. 生成飞书卡片 (Card) 草稿：使用 Card 2.0 模板，嵌入卡片数据哈希，方便发送前核验数据是否变更。
 7. 生成发送计划 (send_plan)：默认只发给用户本人预览，真实群发被阻断。
@@ -84,6 +96,7 @@ allowed-tools:
 - 映射资产：`assets/efficiency-label-rate/mach_root_label_poc_mapping.json`。
 - 姓名级映射可用于草稿和预览；open_id 缺失时不得真实触达。
 - 输入缺少 `mach_root_label_name` 或标签未映射时，`fallback_to_default_user=true`，默认收件人为 `self` 预览。
+- 输入来自 `report_flow` 且只有 `enpool_reason` 时，先把路由标签补为 `举报`，映射到姓名级 POC 韩晶晶；真实触达前仍需人工确认是否按风险域或队列再拆分。
 - 触达范围按等级扩大：`notice` 周知，`P2` 要求 POC 说明，`P1` 扩展到负责人，`P0` 扩展到治理负责人。
 - 置信度为 `low` 或 `medium` 时，发送计划必须保持 `requires_confirmation=true`。
 
@@ -102,6 +115,8 @@ allowed-tools:
 - 明确“本通知为调试草稿，未真实发送”。
 - 打标率口径写为“打标量 / 完审量”。
 - 每个风险等级写清证据、Owner 依据、置信度和限制。
+- 默认三维分级结果必须展示 `是否+1同意`、`更新日期`、`+1同意日期是否在本次统计周期前`；报表链接需同时说明完整口径和剔除 `+1同意` 口径。
+- 举报流转摘要必须写明 `data_direction=report_flow`，并展示 `enpool_reason`、日均人审完结量、日均打标量、举报打标率和 source_footer。
 - 不能把 POC 姓名当作已确认 open_id。
 
 ## send_plan 门禁

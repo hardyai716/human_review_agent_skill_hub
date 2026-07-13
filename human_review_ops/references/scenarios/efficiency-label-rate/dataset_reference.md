@@ -71,7 +71,7 @@
 
 | 概念 | 逻辑字段 | 默认 Name | 说明 |
 | --- | --- | --- | --- |
-| 送审原因 / reason | `reason` | `reason` | 打标率分析主实体。 |
+| 可选 reason 拆解 | `reason` | `reason` | 样本清洗字段；仅在用户明确要求维度拆解时作为分组字段。 |
 | 策略 ID | `strategy_id` | `strategy_id` | 规则 ID；2026-07-09 通过 `bytedcli -j aeolus dataset-fields -r cn 3888816` 确认。 |
 | 策略名称 | `strategy_name` | `strategy_name` | 策略名称；2026-07-09 通过 `bytedcli -j aeolus dataset-fields -r cn 3888816` 确认。 |
 | 日期分区 | `date` | `p_date` | 用于时间窗口和分区就绪检查。 |

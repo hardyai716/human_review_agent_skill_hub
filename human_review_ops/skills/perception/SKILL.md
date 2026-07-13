@@ -94,6 +94,17 @@ allowed-tools:
 
 当信息不足时，`readiness.status` 必须为 `blocked` 或 `needs_clarification`，并列出 `blocking_reasons` 和 `clarification_fields`；不得假设缺失字段。
 
+## 打标率能力矩阵
+
+命中 `efficiency-label-rate` 时，本 Skill 路径必须保留以下能力口径用于下游编排；感知阶段只识别和传递，不执行 SQL、通知或闭环动作。
+
+- 数据方向：`manual_review_detail`（3888816）与 `report_flow`（3952594 / `enpool_reason`）。
+- 默认分级：`mach_root_label_name × strategy_id × strategy_name`；`reason` 不作为默认分组，只用于样本清洗或显式 `dimension_breakdown`。
+- 预警维度：`单策略维度` 与 `风险域维度`。
+- 治理标记：`是否+1同意`、`更新日期`、`+1同意日期是否在本次统计周期前`。
+- 报表口径：`综合`、`综合_剔除+1同意`、`汇总统计`、`汇总统计_剔除+1同意`。
+- 通知和闭环：POC 路由；`report_flow` 仅有 `enpool_reason` 时 fallback 到 `举报` POC；在线导入门禁 `--import-sheet` / `auto_import_sheet=true` 默认关闭；manual tracking (`manual_tracking`) 只记录本地调试闭环。
+
 ## 工作流
 
 1. 保留用户原文，不改写业务含义。

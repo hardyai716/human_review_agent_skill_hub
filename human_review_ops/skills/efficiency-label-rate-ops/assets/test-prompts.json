@@ -5,7 +5,7 @@
     {
       "id": "label-rate-full-flow",
       "category": "should-trigger",
-      "prompt": "帮我看近7天低打标率策略，按机审一级标签、策略ID、策略名称、送审原因拆解，并分P0/P1/P2/notice。",
+      "prompt": "帮我看近7天低打标率策略，默认按机审一级标签、策略ID、策略名称三维分级，并分P0/P1/P2/notice。",
       "coverage": [
         "efficiency-label-rate",
         "full-workflow",
@@ -15,6 +15,31 @@
         "trigger": true,
         "scenario_key": "efficiency-label-rate",
         "task_type": "low_label_rate_grading",
+        "run_mode": "debug_only",
+        "dimensions": [
+          "mach_root_label_name",
+          "strategy_id",
+          "strategy_name"
+        ]
+      }
+    },
+    {
+      "id": "label-rate-reason-dimension-breakdown",
+      "category": "should-trigger",
+      "prompt": "帮我额外按送审原因 reason 拆解近7天打标率，输出机审一级标签 × reason 明细和汇总，不要作为默认低效分级。",
+      "coverage": [
+        "efficiency-label-rate",
+        "dimension_breakdown",
+        "readonly-analysis"
+      ],
+      "expected": {
+        "trigger": true,
+        "scenario_key": "efficiency-label-rate",
+        "task_type": "dimension_breakdown",
+        "dimensions": [
+          "mach_root_label_name",
+          "reason"
+        ],
         "run_mode": "debug_only"
       }
     },

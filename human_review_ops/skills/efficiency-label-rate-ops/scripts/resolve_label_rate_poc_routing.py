@@ -12,6 +12,7 @@ from typing import Any
 LEVEL_ORDER = ["notice", "P2", "P1", "P0"]
 SCENARIO_REFERENCE = "references/scenarios/efficiency-label-rate.md"
 POC_MAPPING_ASSET = "assets/efficiency-label-rate/mach_root_label_poc_mapping.json"
+REPORT_FLOW_FALLBACK_LABEL = "举报"
 DEFAULT_POC_MAPPING_PATH = (
     Path(__file__).resolve().parents[1]
     / "assets"
@@ -127,6 +128,10 @@ def resolve_row_poc(
     mapping_index: dict[str, dict[str, Any]],
 ) -> dict[str, Any]:
     label = row_mach_root_label(row)
+    report_flow_fallback = False
+    if not label and normalize_label(row.get("enpool_reason")):
+        label = REPORT_FLOW_FALLBACK_LABEL
+        report_flow_fallback = True
     if not label:
         return {
             "mach_root_label_name": None,
@@ -141,14 +146,23 @@ def resolve_row_poc(
             "poc_name": None,
             "poc_open_id": None,
             "mapping_status": "unmapped_label",
+            "routing_fallback": "report_flow_enpool_reason_to_举报"
+            if report_flow_fallback
+            else None,
         }
+    mapping_status = (
+        "mapped_name_only" if not entry.get("poc_open_id") else "mapped_open_id"
+    )
+    if report_flow_fallback:
+        mapping_status = "mapped_report_flow_fallback"
     return {
         "mach_root_label_name": label,
         "poc_name": entry.get("poc_name"),
         "poc_open_id": entry.get("poc_open_id"),
-        "mapping_status": "mapped_name_only"
-        if not entry.get("poc_open_id")
-        else "mapped_open_id",
+        "mapping_status": mapping_status,
+        "routing_fallback": "report_flow_enpool_reason_to_举报"
+        if report_flow_fallback
+        else None,
     }
 
 
@@ -215,13 +229,21 @@ def build_custom_dimension_poc_routing_plan(
 
 
 def summarize_row(row: dict[str, Any]) -> dict[str, Any]:
+    data_direction = row.get("data_direction")
+    if not data_direction and normalize_label(row.get("enpool_reason")):
+        data_direction = "report_flow"
     return {
+        "data_direction": data_direction,
         "warning_dimension": row.get("warning_dimension"),
         "strategy_id": row.get("strategy_id"),
         "strategy_name": row.get("strategy_name"),
         "max_data_date": row.get("max_data_date"),
         "reason": row.get("reason"),
+        "enpool_reason": row.get("enpool_reason"),
         "avg_review_done_cnt": row.get("avg_review_done_cnt"),
+        "avg_report_review_done_cnt": row.get("avg_report_review_done_cnt"),
+        "avg_report_label_cnt": row.get("avg_report_label_cnt"),
+        "report_label_rate": row.get("report_label_rate"),
         "label_rate": row.get("label_rate"),
     }
 
@@ -251,8 +273,13 @@ def build_poc_summary(assignments: list[dict[str, Any]]) -> list[dict[str, Any]]
                     "strategy_id": item.get("strategy_id"),
                     "strategy_name": item.get("strategy_name"),
                     "max_data_date": item.get("max_data_date"),
+                    "enpool_reason": item.get("enpool_reason"),
                     "avg_review_done_cnt": item.get("avg_review_done_cnt"),
+                    "avg_report_review_done_cnt": item.get(
+                        "avg_report_review_done_cnt"
+                    ),
                     "label_rate": item.get("label_rate"),
+                    "report_label_rate": item.get("report_label_rate"),
                 }
             )
     result = []
@@ -420,6 +447,10 @@ def build_level_rule(
                 "strategy_id": row.get("strategy_id"),
                 "strategy_name": row.get("strategy_name"),
                 "max_data_date": row.get("max_data_date"),
+                "enpool_reason": row.get("enpool_reason"),
+                "avg_report_review_done_cnt": row.get("avg_report_review_done_cnt"),
+                "avg_report_label_cnt": row.get("avg_report_label_cnt"),
+                "report_label_rate": row.get("report_label_rate"),
                 "POC": row.get("POC") or row.get("poc_name"),
                 "hit_rule_ids": row.get("hit_rule_ids"),
                 "hit_conditions": row.get("hit_conditions"),

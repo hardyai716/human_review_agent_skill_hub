@@ -8,10 +8,12 @@
 
 - Header：报告标题、时间窗口、全等级标签。
 - Metrics：P0、P1、P2、notice 四个等级命中数。
-- Chart：各等级命中 reason 数柱状图。
-- Table：综合结果 Top reason，按 `P0 > P1 > P2 > notice` 展示最高等级。
+- Summary Table：机审一级标签 × POC 汇总统计。
+- Level Tables：各等级 TopN 明细，按 `P0 > P1 > P2 > notice` 展示最高等级。
 - Button：跳转完整飞书电子表格。
-- Methodology：折叠展示数据集、窗口、打标率口径、fallback reason 和来源。
+- Methodology：折叠展示数据集、窗口、打标率口径、默认三维分级粒度、reason 显式拆解规则、fallback reason 和来源。
+
+当前 Card 不包含 chart 元素。默认分级粒度为 `机审一级标签 × 策略ID × 策略名称`；`reason` 仅在用户明确要求维度拆解时作为分组字段，不作为默认分级或卡片图表契约。
 
 ## 安全约束
 

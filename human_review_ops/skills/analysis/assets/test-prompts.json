@@ -8,7 +8,7 @@
       "coverage": [
         "efficiency-label-rate"
       ],
-      "prompt": "已确认场景为 efficiency-label-rate，请基于近 7 天样本池生成只读 QueryPlan，并按机审一级标签、策略 ID、策略名称、送审原因拆分低打标率分级结果。",
+      "prompt": "已确认场景为 efficiency-label-rate，请基于近 7 天样本池生成只读 QueryPlan，并按机审一级标签、策略 ID、策略名称三维输出低打标率分级结果。",
       "expected": {
         "trigger": true,
         "scenario_key": "efficiency-label-rate",
@@ -23,12 +23,33 @@
         "must_include_constraints": [
           "total_review_in_cnt > 100",
           "label_rate = SUM(label_cnt) / SUM(review_done_cnt)",
-          "bracket_dataset_field_syntax"
+          "bracket_dataset_field_syntax",
+          "default_grading_dimensions=mach_root_label_name×strategy_id×strategy_name",
+          "reason_not_default_grouping"
         ],
         "blocked_actions": [
           "send_notification",
           "write_status"
         ]
+      }
+    },
+    {
+      "id": "analysis-should-trigger-label-rate-reason-dimension-breakdown",
+      "category": "should-trigger",
+      "coverage": [
+        "efficiency-label-rate",
+        "dimension_breakdown"
+      ],
+      "prompt": "已确认场景为 efficiency-label-rate，请额外做送审原因维度拆解，按机审一级标签 × reason 输出近 7 天打标率明细和汇总。",
+      "expected": {
+        "trigger": true,
+        "scenario_key": "efficiency-label-rate",
+        "task_type": "dimension_breakdown",
+        "dimensions": [
+          "mach_root_label_name",
+          "reason"
+        ],
+        "rationale": "reason 仅在用户显式要求维度拆解时进入分组，不属于默认低打标率分级粒度。"
       }
     },
     {

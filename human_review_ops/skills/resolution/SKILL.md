@@ -48,7 +48,7 @@ allowed-tools:
 可选输入：
 
 - `manual_response`：负责人 (POC) 或运营同学回复。
-- `evidence_refs`：报表、卡片哈希、source_footer、通知草稿、send_plan 等引用。
+- `evidence_refs`：报表、卡片哈希、source_footer、通知草稿、send_plan、`综合_剔除+1同意`、`汇总统计_剔除+1同意` 等引用；举报流转方向还需保留 `enpool_reason`、日均人审完结量、日均打标量和举报打标率证据。
 - `resolution_note`：处理结论。
 - `follow_up_due`：建议复查时间。
 - `operator`：记录人或当前执行者。
@@ -59,16 +59,27 @@ allowed-tools:
 
 - 人工跟踪 (`manual_tracking`)：本地调试记录，包含状态、证据、下一步、是否继续观察。
 - 状态机 (`state_machine`)：`state_machine_ref`、`previous_state`、`current_state`、`next_state`。
-- 来源引用 (`source_refs`)：通知草稿、send_plan、POC 路由计划、卡片和报表链接等前置产物路径。
+- 来源引用 (`source_refs`)：通知草稿、send_plan、POC 路由计划、卡片、完整报表和剔除 `+1同意` 口径报表链接等前置产物路径。
 - 闭环检查 (`closure_check`)：是否可关闭、缺失项和阻断原因。
 - 继续跟进 (`follow_up`)：负责人、建议响应时间、复查条件和升级条件。
 - 安全字段 (`safety`)：`group_send_blocked`、`real_group_send_executed`、`online_write_executed`、`online_state_write_allowed`。
 - 证据引用 (`evidence_refs`)：分析、通知、路由、卡片、报表和人工回复引用。
 
+## 打标率能力矩阵
+
+命中 `efficiency-label-rate` 时，本 Skill 路径必须覆盖以下闭环口径；解决阶段只记录本地 manual tracking，不写线上状态。
+
+- 数据方向：`manual_review_detail`（3888816）与 `report_flow`（3952594 / `enpool_reason`）。
+- 默认分级：`mach_root_label_name × strategy_id × strategy_name`；`reason` 不作为默认分组，只用于样本清洗或显式 `dimension_breakdown`。
+- 预警维度：`单策略维度` 与 `风险域维度`。
+- 治理标记：`是否+1同意`、`更新日期`、`+1同意日期是否在本次统计周期前`。
+- 报表口径：`综合`、`综合_剔除+1同意`、`汇总统计`、`汇总统计_剔除+1同意`。
+- 通知和闭环：POC 路由；`report_flow` 仅有 `enpool_reason` 时 fallback 到 `举报` POC；在线导入门禁 `--import-sheet` / `auto_import_sheet=true` 默认关闭；manual tracking (`manual_tracking`) 只记录本地调试闭环。
+
 ## 工作流
 
 1. 加载当前场景单文档，读取状态机、SLA、Owner 路由、manual tracking、关闭条件和示例章节。
-2. 校验输入来自前置阶段：分析结果应有 source_footer，通知阶段应有 `notification_draft` 和 `send_plan`。
+2. 校验输入来自前置阶段：分析结果应有 source_footer，通知阶段应有 `notification_draft` 和 `send_plan`；低打标率默认三维分级需保留 `是否+1同意`、`更新日期` 和剔除口径报表引用。
 3. 校验发送计划 (send_plan)：如果 `group_send_blocked=true` 或 `sent=false`，不得记录为“已发送”。
 4. 建立状态流转：从 `NOTIFICATION_DRAFTED`、`MANUAL_TRACKING_RECORDED`、异常状态或用户指定状态推导 `next_state`。
 5. 收集闭环三件套：动作、证据、结论。任一缺失时，`closure_check.can_close=false`。
@@ -104,6 +115,8 @@ allowed-tools:
 
 - `tracking_mode` 默认 `local_debug_only`。
 - POC 只有姓名级映射时，状态保持 `pending_manual_follow_up`。
+- `+1同意` 仅作为治理状态和剔除口径依据，不代表事件已解决；关闭前仍需动作、证据、结论三件套。
+- report_flow 事件的证据主键是 `enpool_reason`，路由可先 fallback 到 `举报` POC，但需要人工确认是否进一步按风险域或队列拆分。
 - 未完成人工确认、open_id 确认和真实响应前，不得关闭。
 - 每条记录必须包含证据来源，而不是只写结论。
 

@@ -5,7 +5,7 @@
 - `scenario_key`：`efficiency-label-rate`
 - 模块：效率模块
 - 指标对象：打标率
-- 运营对象：策略三维、风险域、送审原因 / reason、举报入池原因 / enpool_reason 在不同维度下的打标率表现
+- 运营对象：策略三维、风险域、可选 `reason` 拆解、举报入池原因 / enpool_reason 在不同维度下的打标率表现
 - 当前状态：阶段 1 主线样板场景
 
 ## 数据方向

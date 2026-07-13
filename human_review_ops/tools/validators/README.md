@@ -11,6 +11,7 @@
 - `validate_skill_standalone_smoke.py`：校验 Skill 独立发布包门禁，默认 profile 为 `legacy_core`；可通过 `--profile scenario_label_rate|all_releaseable` 覆盖场景级 Skill 或全量可发布 Skill。覆盖 `SKILL.md`、`references/`、`assets/`、`scripts/`、`skill_release_manifest.json`、Python 编译、外部依赖声明和最小 dry-run；四能力 Skill 复用脚本级 smoke，场景级 Skill 读取 manifest 中的 smoke command。
 - `validate_skill_path_registry.py`：校验 `configs/skill_path_registry.json` 中的 `auto/canonical/legacy` 路径、validation profile、canonical 场景 Skill、legacy fallback、脚本、资产和参考文件是否存在且可解析。
 - `validate_efficiency_label_rate_ops_skill.py`：聚合校验打标率场景级 Skill，串联路径注册表、场景级产品化、场景级 standalone smoke 和场景包 sync 检查。
+- `validate_label_rate_capability_matrix.py`：校验 `efficiency-label-rate-ops` 与 perception/analysis/notification/resolution 四能力 Skill 的打标率能力矩阵一致性，覆盖 manual_review_detail、report_flow、默认三维分级且 `reason` 非默认分组、风险域维度、`+1同意`、剔除口径报表、POC 路由、在线导入门禁和 manual tracking，并验证 report_flow `enpool_reason` 到“举报”POC 的 fallback。
 - `validate_aeolus_field_contracts.py`：校验 analysis 场景文档和脚本中的 Aeolus 语义字段契约，确认 `` `[数据集字段名]` `` 已登记、存在于数据集字段缓存、字段表表头符合 `common.md` 规范，且脚本 SQL 使用的语义字段已在场景文档登记。默认读取 `aeolus_dataset_fields_cache.json`；需要更新字段缓存时可运行 `--refresh-cache`。
 - `validate_query_plan.py`：校验 QueryPlan JSON 是否包含治理字段。
 - `validate_source_footer.py`：校验 source_footer JSON 是否包含来源说明字段。

@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -10,6 +11,21 @@ from pathlib import Path
 
 HUMAN_REVIEW_OPS_ROOT = Path(__file__).resolve().parents[2]
 REPO_ROOT = HUMAN_REVIEW_OPS_ROOT.parent
+SCENARIO_KEY = "efficiency-label-rate"
+SKILL_NAME = "efficiency-label-rate-ops"
+PLUS1_ASSET_FILENAME = "plus1_agreed_strategy_updates.json"
+PLUS1_RELEASE_PATH = (
+    f"{SKILL_NAME}/assets/{SCENARIO_KEY}/{PLUS1_ASSET_FILENAME}"
+)
+PLUS1_CANONICAL_PATH = f"human_review_ops/skills/{PLUS1_RELEASE_PATH}"
+PLUS1_LEGACY_PATH = (
+    f"human_review_ops/references/scenarios/{SCENARIO_KEY}/{PLUS1_ASSET_FILENAME}"
+)
+RELEASE_MANIFEST_PATH = HUMAN_REVIEW_OPS_ROOT / "skills" / "skill_release_manifest.json"
+REGISTRY_PATH = HUMAN_REVIEW_OPS_ROOT / "configs" / "skill_path_registry.json"
+PACKAGE_MANIFEST_PATH = (
+    HUMAN_REVIEW_OPS_ROOT / "skills" / SKILL_NAME / "package_manifest.json"
+)
 
 
 COMMANDS = [
@@ -41,7 +57,85 @@ COMMANDS = [
 ]
 
 
+def load_json(path: Path, issues: list[str]) -> dict:
+    if not path.exists():
+        issues.append(f"missing JSON file: {path.relative_to(REPO_ROOT)}")
+        return {}
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        issues.append(f"invalid JSON: {path.relative_to(REPO_ROOT)}: {exc}")
+        return {}
+    if not isinstance(payload, dict):
+        issues.append(f"JSON root must be object: {path.relative_to(REPO_ROOT)}")
+        return {}
+    return payload
+
+
+def validate_plus1_asset_tracking() -> None:
+    issues: list[str] = []
+    for raw_path in (PLUS1_CANONICAL_PATH, PLUS1_LEGACY_PATH):
+        if not (REPO_ROOT / raw_path).exists():
+            issues.append(f"plus1 asset path missing: {raw_path}")
+
+    release_manifest = load_json(RELEASE_MANIFEST_PATH, issues)
+    skill_entry = release_manifest.get("skills", {}).get(SKILL_NAME, {})
+    if not isinstance(skill_entry, dict):
+        issues.append(f"release manifest missing skill: {SKILL_NAME}")
+        skill_entry = {}
+    for field in ("assets", "release_assets"):
+        values = skill_entry.get(field)
+        if not isinstance(values, list) or PLUS1_RELEASE_PATH not in values:
+            issues.append(
+                f"release manifest {SKILL_NAME}.{field} missing {PLUS1_RELEASE_PATH}"
+            )
+
+    registry = load_json(REGISTRY_PATH, issues)
+    registry_entry = (
+        registry.get("scenario_skills", {})
+        .get(SCENARIO_KEY, {})
+        .get("assets", {})
+        .get("plus1_agreed_strategy_updates", {})
+    )
+    if not isinstance(registry_entry, dict):
+        issues.append("registry missing assets.plus1_agreed_strategy_updates entry")
+        registry_entry = {}
+    if registry_entry.get("canonical") != PLUS1_CANONICAL_PATH:
+        issues.append(
+            "registry plus1 canonical mismatch: "
+            f"expected {PLUS1_CANONICAL_PATH!r}, got {registry_entry.get('canonical')!r}"
+        )
+    legacy_paths = registry_entry.get("legacy")
+    if not isinstance(legacy_paths, list) or PLUS1_LEGACY_PATH not in legacy_paths:
+        issues.append(f"registry plus1 legacy missing {PLUS1_LEGACY_PATH}")
+
+    package_manifest = load_json(PACKAGE_MANIFEST_PATH, issues)
+    files = package_manifest.get("files")
+    if not isinstance(files, list):
+        issues.append("package manifest files must be an array")
+        files = []
+    package_record_found = any(
+        isinstance(record, dict)
+        and record.get("kind") == "copy"
+        and record.get("source") == PLUS1_LEGACY_PATH
+        and record.get("target") == PLUS1_CANONICAL_PATH
+        for record in files
+    )
+    if not package_record_found:
+        issues.append(
+            "package manifest missing plus1 copy record: "
+            f"{PLUS1_LEGACY_PATH} -> {PLUS1_CANONICAL_PATH}"
+        )
+
+    if issues:
+        raise SystemExit(
+            "Efficiency-label-rate plus1 asset tracking validation failed:\n"
+            + "\n".join(issues)
+        )
+
+
 def main() -> None:
+    validate_plus1_asset_tracking()
     for command in COMMANDS:
         completed = subprocess.run(
             command,

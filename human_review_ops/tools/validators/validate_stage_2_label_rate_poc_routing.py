@@ -5,11 +5,17 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[2]
+NOTIFICATION_SCRIPTS = ROOT / "skills" / "notification" / "scripts"
+sys.path.insert(0, str(NOTIFICATION_SCRIPTS))
+
+import resolve_label_rate_poc_routing as poc_routing  # noqa: E402
+
 DEFAULT_OUTPUT_DIR = (
     ROOT
     / "evals"
@@ -59,6 +65,7 @@ def main() -> None:
     args = parser.parse_args()
     output_dir = Path(args.output_dir)
     validate(output_dir)
+    validate_report_flow_enpool_reason_fallback()
     print(f"Stage 2 label-rate POC routing OK: {output_dir}")
 
 
@@ -76,6 +83,74 @@ def validate(output_dir: Path) -> None:
     assert_level_rules(plan)
     assert_no_group_send(plan)
     assert_no_online_write(plan)
+
+
+def validate_report_flow_enpool_reason_fallback() -> None:
+    row = {
+        "severity_level": "notice",
+        "data_direction": "report_flow",
+        "enpool_reason": "举报专项低打标",
+        "avg_report_review_done_cnt": 120,
+        "avg_report_label_cnt": 6,
+        "report_label_rate": 0.05,
+        "hit_rule_ids": ["report_flow_label_rate_lt_10pct"],
+        "hit_conditions": ["report_label_rate < 10%"],
+    }
+    sample = {
+        "record_type": "sample",
+        "QueryPlan": {
+            "query_plan_id": "QP-REPORT-FLOW-POC-FALLBACK",
+            "data_direction": "report_flow",
+            "source_profile": "report_flow_review",
+        },
+        "source_footer": {
+            "data_direction": "report_flow",
+            "source_profile": "report_flow_review",
+        },
+        "readonly_execution": {
+            "level_counts": {"notice": 1, "P2": 0, "P1": 0, "P0": 0},
+            "level_results": {
+                "notice": {"rows": [row]},
+                "P2": {"rows": []},
+                "P1": {"rows": []},
+                "P0": {"rows": []},
+            },
+            "comprehensive_results": [row],
+            "row_count": 1,
+        },
+    }
+    plan = poc_routing.build_poc_routing_plan(
+        sample,
+        source_stage_1_result="report_flow_enpool_reason_fixture.jsonl",
+    )
+    assert_plan_header(plan)
+    assert_level_rules(plan)
+    assert_no_group_send(plan)
+    assert_no_online_write(plan)
+
+    assignment = plan["assignment_preview"][0]
+    if assignment.get("mach_root_label_name") != "举报":
+        raise AssertionError("report_flow fallback must set route label to 举报.")
+    if assignment.get("poc_name") != "韩晶晶":
+        raise AssertionError("report_flow fallback must map to 举报 POC 韩晶晶.")
+    if assignment.get("mapping_status") != "mapped_report_flow_fallback":
+        raise AssertionError("report_flow fallback mapping_status mismatch.")
+    if assignment.get("routing_fallback") != "report_flow_enpool_reason_to_举报":
+        raise AssertionError("report_flow fallback marker missing.")
+    if plan.get("missing_route_dimension_count") != 0:
+        raise AssertionError("report_flow fallback must not be counted as missing route dimension.")
+    notice_rule = plan["routing_rules"]["notice"]
+    if "韩晶晶" not in notice_rule.get("poc_names", []):
+        raise AssertionError("notice rule must include report_flow fallback POC.")
+    evidence = notice_rule["evidence_refs"][0]
+    for field in (
+        "enpool_reason",
+        "avg_report_review_done_cnt",
+        "avg_report_label_cnt",
+        "report_label_rate",
+    ):
+        if field not in evidence:
+            raise AssertionError(f"report_flow evidence missing field: {field}")
 
 
 def assert_plan_header(plan: dict[str, Any]) -> None:
