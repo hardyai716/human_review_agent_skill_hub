@@ -1,0 +1,444 @@
+{
+  "schema_version": "label_rate_plus1_agreed_strategy_updates.v1",
+  "scenario_key": "efficiency-label-rate",
+  "source": {
+    "type": "lark_sheet",
+    "spreadsheet_token": "GzpCwP516imDB8kQ3g1cLr5bnPc",
+    "sheet_id": "0301e2",
+    "sheet_name": "Sheet1",
+    "range": "A1:N1000",
+    "read_at": "2026-07-13",
+    "refresh_policy": "current_sheet_authoritative",
+    "filter": "+1评估 == 同意"
+  },
+  "raw_agreed_count": 72,
+  "unique_strategy_count": 71,
+  "entries": [
+    {
+      "strategy_id": "10001819210",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10006016756",
+      "plus1_agreed": true,
+      "update_date": "2026-07-13",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10006128216",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10006128861",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10006133564",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10006180980",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10006577893",
+      "plus1_agreed": true,
+      "update_date": "2026-07-03",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10006581306",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10007720770",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10008349497",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10008387613",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10008387615",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10008459751",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10009565036",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10011016776",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10011121325",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10011158682",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10011409502",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10011920495",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10012388677",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10012547264",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10012921704",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10013160984",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10013518351",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10013902881",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10014233179",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10014438445",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10014768157",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10014845421",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10015391055",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10016288962",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10017732779",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10018104170",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10018975683",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10019026701",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10019067644",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10019351880",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10019373232",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10019542617",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10020529377",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10021368610",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10021451674",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10021513768",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10022135037",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10022193004",
+      "plus1_agreed": true,
+      "update_date": "2026-07-03",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10022929691",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10022998320",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10023035678",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10024918621",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10025109710",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10025821473",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10026231754",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10026840142",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10027554497",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10028612784",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10028741540",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10028916113",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10029715793",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10029715796",
+      "plus1_agreed": true,
+      "update_date": "2026-07-03",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "10033050349",
+      "plus1_agreed": true,
+      "update_date": "2026-06-28",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "15671028",
+      "plus1_agreed": true,
+      "update_date": "2026-07-03",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "15671069",
+      "plus1_agreed": true,
+      "update_date": "2026-07-03",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "15798693",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "15798695",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "15798711",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "15798715",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "15811709",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "15811713",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "15853530",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "15853534",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "strategy_id": "15857110",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    }
+  ]
+}

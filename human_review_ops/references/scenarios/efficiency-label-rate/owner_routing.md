@@ -6,7 +6,10 @@
 
 ## 当前开发阶段决策
 
-- POC 路由粒度：优先按 `mach_root_label_name` 映射 POC；`reason`、`strategy_id`、`strategy_name` 作为证据字段保留。
+- POC 路由粒度：优先按 `mach_root_label_name` 映射 POC；`warning_dimension`、`strategy_id`、`strategy_name` 作为证据字段保留。默认低效分级不按 `reason` 分组。
+- 风险域维度行的 `strategy_id`、`strategy_name` 为空，表示该机审一级标签下低效策略汇总后的风险域预警；此类行仍按 `mach_root_label_name` 映射 POC。
+- 若原始机审一级标签为空，分析取数层会先按策略名称补齐为高热、政媒、商业化或指令舆情相关，再进入 POC 路由。
+- 当前 POC 映射资产尚未包含 `商业化`，命中商业化补映射的行会进入未映射 / 人工确认路径。
 - 举报流转方向（`data_direction=report_flow`）默认没有 `mach_root_label_name`，以 `enpool_reason` 作为证据字段，Owner 建议先路由到“举报”POC，占位 POC 为韩晶晶；真实触达前必须由人审运营确认是否需要按风险域或队列进一步拆分。
 - 映射来源：飞书表格 `https://bytedance.larkoffice.com/sheets/TpxwsA8zohUZkVtJ4J9cDcXUnbg?sheet=HKdm9w`。
 - 当前身份粒度：仅完成 POC 姓名映射，`poc_open_id` 尚未解析。
@@ -56,6 +59,7 @@
 ## 低置信度条件
 
 - 输入数据只有 reason 名称，没有 `mach_root_label_name`。
+- 输入数据为风险域维度但 `mach_root_label_name` 为空或未映射。
 - 输入数据来自举报流转方向，仅有 `enpool_reason`，尚未完成风险域或队列 Owner 拆分。
 - `mach_root_label_name` 未命中 POC 映射。
 - POC 只有姓名，尚未解析飞书 open_id。

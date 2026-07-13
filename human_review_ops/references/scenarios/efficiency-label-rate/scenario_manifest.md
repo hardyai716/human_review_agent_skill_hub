@@ -5,7 +5,7 @@
 - `scenario_key`：`efficiency-label-rate`
 - 模块：效率模块
 - 指标对象：打标率
-- 运营对象：送审原因 / reason、举报入池原因 / enpool_reason 在不同维度下的打标率表现
+- 运营对象：策略三维、风险域、送审原因 / reason、举报入池原因 / enpool_reason 在不同维度下的打标率表现
 - 当前状态：阶段 1 主线样板场景
 
 ## 数据方向
@@ -14,7 +14,7 @@
 
 | `data_direction` | source profile | 数据集 | 适用问题 | 主维度 | 口径摘要 |
 | --- | --- | --- | --- | --- | --- |
-| `manual_review_detail` | `community_manual_review` | `[重点模型]-社区_人工审核明细数据` / `3888816` / appId `1128` | 人工审核明细、策略、机审一级标签、`reason` 维度的打标率查询和低效策略治理。 | `reason`、`mach_root_label_name`、`strategy_id`、`strategy_name` | `打标量__reviewid / 完审量_reviewid` |
+| `manual_review_detail` | `community_manual_review` | `[重点模型]-社区_人工审核明细数据` / `3888816` / appId `1128` | 人工审核明细、策略、机审一级标签、`reason` 维度的打标率查询和低效策略治理。 | 默认分级：`mach_root_label_name`、`strategy_id`、`strategy_name`；可选拆解：`reason` | `打标量__reviewid / 完审量_reviewid` |
 | `report_flow` | `report_flow_review` | `举报流转任务明细数据集` / `3952594` / appId `555137` | 举报场景、举报流转、`enpool_reason`、`report_id`、一轮/终轮队列维度的打标率查询。 | `enpool_reason` | `打标量_report_id / 人审完结量_report_id` |
 
 ## 参考来源
@@ -32,9 +32,9 @@
 - 查询高打标率或低打标率的策略 / reason。
 - 按机审一级标签、场景、项目等维度拆解打标率。
 - 查询举报场景下的打标率、低打标率 `enpool_reason`、举报流转任务的进审 / 人审完结 / 打标量。
-- 近 N 天有哪些高完审、低打标 reason。
-- 打标率低的策略 / reason 是否需要分级。
-- notice、P2、P1、P0 低效策略清单。
+- 近 N 天有哪些高完审、低打标策略或 reason。
+- 打标率低的策略是否需要按 notice/P2/P1/P0 分级。
+- notice、P2、P1、P0 低效策略清单，以及风险域维度爆量预警。
 
 ## 排除意图
 
@@ -47,7 +47,7 @@
 ## 方向识别规则
 
 - 命中 `举报`、`举报场景`、`举报流转`、`enpool_reason`、`report_id`、`一轮队列`、`终轮队列`、`举报流转任务明细数据集`、`3952594` 时，设置 `data_direction=report_flow`。
-- 命中 `机审一级标签`、`策略ID`、`策略名称`、`reason` 且未出现举报相关字段时，默认 `data_direction=manual_review_detail`。
+- 命中 `机审一级标签`、`策略ID`、`策略名称`、`reason` 且未出现举报相关字段时，默认 `data_direction=manual_review_detail`。其中低效分级默认按 `机审一级标签 × 策略ID × 策略名称`，`reason` 仅在用户明确要求拆解时作为分组维度。
 - 用户只说“打标率 reason”且上下文无举报字段时，默认 `manual_review_detail`；若同时出现 `举报` 或 `enpool_reason`，必须切换到 `report_flow`。
 - 方向不唯一时，感知阶段应输出澄清问题，不得同时拼接两个数据源字段。
 

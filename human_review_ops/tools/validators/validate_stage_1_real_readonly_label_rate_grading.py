@@ -20,8 +20,8 @@ DEFAULT_RESULTS = (
 )
 LEVEL_ORDER = ["P0", "P1", "P2", "notice"]
 LEVEL_PRIORITY = {"P0": 0, "P1": 1, "P2": 2, "notice": 3}
-DIMENSIONS = ["mach_root_label_name", "strategy_id", "strategy_name", "reason"]
-MIN_CURRENT_REVIEW_IN_CNT = 100
+DIMENSIONS = ["mach_root_label_name", "strategy_id", "strategy_name"]
+DEDUPE_DIMENSIONS = ["warning_dimension", *DIMENSIONS]
 REQUIRED_SQL_SNIPPETS = [
     "`[p_date]` >= today() - 7",
     "`[project_title]` NOT LIKE '%虚假%'",
@@ -39,21 +39,27 @@ REQUIRED_SQL_SNIPPETS = [
     "`[project_title]` NOT LIKE '%离线%'",
     "`[scene]` IN ('community_audit_safe', 'community_audit_style', 'community_audit_moderate')",
     "`[reason]` NOT IN ('recall_skip_L6', 'fatal_output')",
-    "`[机审一级标签]` IS NULL OR `[机审一级标签]` IN",
-    "ifNull(`[机审一级标签]`, '（空/机审一级标签）') AS mach_root_label_key",
+    "`[机审一级标签]` IS NULL OR `[机审一级标签]` = '' OR `[机审一级标签]` IN",
+    "multiIf(",
+    "高价值-兜底vv进审', '高热'",
+    "商业化付费视频全人审ugc', '商业化'",
+    "【ZL推人】麒麟芯片9030', '指令舆情相关'",
+    "position(ifNull(`[strategy_name]`, ''), 'ZL') > 0, '指令舆情相关'",
+    "position(ifNull(`[strategy_name]`, ''), '商业化') > 0, '商业化'",
+    "position(ifNull(`[strategy_name]`, ''), '政媒') > 0, '政媒'",
+    ") AS mach_root_label_key",
     "ifNull(`[strategy_id]`, '（空/strategy_id）') AS strategy_id_key",
     "ifNull(`[strategy_name]`, '（空/strategy_name）') AS strategy_name_key",
-    "ifNull(`[reason]`, '（空/reason）') AS reason_key",
-    "GROUP BY mach_root_label_key, strategy_id_key, strategy_name_key, reason_key",
+    "GROUP BY mach_root_label_key, strategy_id_key, strategy_name_key",
     "SUM(jin_shen) / COUNT(DISTINCT dt) AS avg_review_in_cnt",
     "if(SUM(wan_shen) = 0, 0, SUM(da_biao) / SUM(wan_shen)) AS label_rate",
-    "cur.total_review_in_cnt > 100",
+    "MAX(dt) AS max_data_date",
 ]
 LEVEL_WINDOW_SNIPPETS = {
     "notice": ["`[p_date]` >= today() - 7"],
-    "P2": ["`[p_date]` >= today() - 14"],
-    "P1": ["`[p_date]` >= today() - 14"],
-    "P0": ["`[p_date]` >= today() - 28"],
+    "P2": ["`[p_date]` >= today() - 14", "风险域维度"],
+    "P1": ["`[p_date]` >= today() - 14", "风险域维度"],
+    "P0": ["`[p_date]` >= today() - 28", "风险域维度"],
 }
 
 
@@ -129,7 +135,7 @@ def assert_query_plan(sample: dict[str, Any]) -> None:
     if query_plan.get("fallback_reason") != "complex_grading_rule_not_covered_by_semantic_layer":
         raise AssertionError("QueryPlan fallback_reason mismatch.")
     if query_plan.get("dimensions") != DIMENSIONS:
-        raise AssertionError("Grading dimensions must be mach label, strategy, reason.")
+        raise AssertionError("Grading dimensions must be mach label, strategy id, strategy name.")
     if query_plan.get("levels") != ["notice", "P2", "P1", "P0"]:
         raise AssertionError("Grading must run notice/P2/P1/P0.")
     if query_plan.get("level_priority") != LEVEL_PRIORITY:
@@ -213,7 +219,7 @@ def assert_readonly_execution(sample: dict[str, Any]) -> None:
             raise AssertionError(f"Level result priority mismatch: {level}")
         if result.get("truncated") is not False:
             raise AssertionError(f"Level result truncated: {level}")
-        seen_keys: set[tuple[str, str, str, str]] = set()
+        seen_keys: set[tuple[str, ...]] = set()
         for row in result.get("rows", []):
             assert_grading_row(row, level, priority)
             key = dimension_key(row)
@@ -224,7 +230,7 @@ def assert_readonly_execution(sample: dict[str, Any]) -> None:
     comprehensive = execution.get("comprehensive_results")
     if not isinstance(comprehensive, list):
         raise AssertionError("Missing comprehensive_results.")
-    seen_comprehensive: set[tuple[str, str, str, str]] = set()
+    seen_comprehensive: set[tuple[str, ...]] = set()
     for row in comprehensive:
         assert_grading_row(row, row["severity_level"], row["severity_priority"])
         key = dimension_key(row)
@@ -238,16 +244,19 @@ def assert_readonly_execution(sample: dict[str, Any]) -> None:
         raise AssertionError("readonly_execution row_count mismatch.")
 
     for field in (
+        "warning_dimension",
         "severity_level",
         "mach_root_label_name",
         "strategy_id",
         "strategy_name",
-        "reason",
+        "max_data_date",
         "POC",
         "avg_review_in_cnt",
         "avg_review_done_cnt",
         "avg_label_cnt",
         "label_rate",
+        "is_plus1_agreed",
+        "plus1_update_date",
         "hit_rule_ids",
         "hit_conditions",
     ):
@@ -260,17 +269,27 @@ def assert_grading_row(row: dict[str, Any], level: str, priority: int) -> None:
         raise AssertionError("Row severity_level mismatch.")
     if row.get("severity_priority") != priority:
         raise AssertionError("Row severity_priority mismatch.")
-    for field in DIMENSIONS:
-        if not row.get(field):
-            raise AssertionError(f"Row {field} is required.")
-    if not row.get("reason"):
-        raise AssertionError("Row reason is required.")
+    if row.get("warning_dimension") not in {"单策略维度", "风险域维度"}:
+        raise AssertionError("Row warning_dimension mismatch.")
+    if not row.get("mach_root_label_name"):
+        raise AssertionError("Row mach_root_label_name is required.")
+    if row.get("warning_dimension") == "单策略维度":
+        for field in ("strategy_id", "strategy_name"):
+            if not row.get(field):
+                raise AssertionError(f"Single-strategy row {field} is required.")
+    if row.get("warning_dimension") == "风险域维度":
+        if row.get("strategy_id") or row.get("strategy_name"):
+            raise AssertionError("Risk-domain row strategy fields must be empty.")
+    if not row.get("max_data_date"):
+        raise AssertionError("Row max_data_date is required.")
     if not row.get("POC") and not row.get("poc_name"):
         raise AssertionError("Row POC is required.")
+    if row.get("is_plus1_agreed") not in {"是", "否"}:
+        raise AssertionError("Row is_plus1_agreed must be 是 or 否.")
+    if row.get("is_plus1_agreed") == "否" and row.get("plus1_update_date"):
+        raise AssertionError("Non-plus1 row must not have plus1_update_date.")
     if row.get("avg_review_in_cnt", 0) < 0:
         raise AssertionError("avg_review_in_cnt must be non-negative.")
-    if row.get("total_review_in_cnt", 0) <= MIN_CURRENT_REVIEW_IN_CNT:
-        raise AssertionError("total_review_in_cnt must be greater than 100.")
     if row.get("avg_review_done_cnt", 0) <= 0:
         raise AssertionError("avg_review_done_cnt must be positive.")
     if row.get("avg_label_cnt", 0) < 0:
@@ -283,12 +302,12 @@ def assert_grading_row(row: dict[str, Any], level: str, priority: int) -> None:
         raise AssertionError("hit_conditions required.")
 
 
-def dimension_key(row: dict[str, Any]) -> tuple[str, str, str, str]:
-    return tuple(str(row.get(field, "")) for field in DIMENSIONS)  # type: ignore[return-value]
+def dimension_key(row: dict[str, Any]) -> tuple[str, ...]:
+    return tuple(str(row.get(field, "")) for field in DEDUPE_DIMENSIONS)
 
 
 def highest_level_for_key(
-    key: tuple[str, str, str, str],
+    key: tuple[str, ...],
     level_results: dict[str, dict[str, Any]],
 ) -> str:
     for level in LEVEL_ORDER:

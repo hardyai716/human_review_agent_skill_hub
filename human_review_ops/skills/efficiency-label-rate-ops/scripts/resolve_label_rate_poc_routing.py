@@ -216,8 +216,10 @@ def build_custom_dimension_poc_routing_plan(
 
 def summarize_row(row: dict[str, Any]) -> dict[str, Any]:
     return {
+        "warning_dimension": row.get("warning_dimension"),
         "strategy_id": row.get("strategy_id"),
         "strategy_name": row.get("strategy_name"),
+        "max_data_date": row.get("max_data_date"),
         "reason": row.get("reason"),
         "avg_review_done_cnt": row.get("avg_review_done_cnt"),
         "label_rate": row.get("label_rate"),
@@ -245,8 +247,10 @@ def build_poc_summary(assignments: list[dict[str, Any]]) -> list[dict[str, Any]]
         if len(bucket["top_reasons"]) < 5:
             bucket["top_reasons"].append(
                 {
-                    "reason": item.get("reason"),
+                    "warning_dimension": item.get("warning_dimension"),
                     "strategy_id": item.get("strategy_id"),
+                    "strategy_name": item.get("strategy_name"),
+                    "max_data_date": item.get("max_data_date"),
                     "avg_review_done_cnt": item.get("avg_review_done_cnt"),
                     "label_rate": item.get("label_rate"),
                 }
@@ -313,6 +317,7 @@ def build_poc_routing_plan(
         "real_poc_mapping_source": mapping.get("source"),
         "contact_resolution_status": mapping.get("contact_resolution_status", "name_only"),
         "level_counts": {level: int(level_counts.get(level, 0)) for level in LEVEL_ORDER},
+        "comprehensive_alert_count": int(execution.get("row_count", 0)),
         "comprehensive_reason_count": int(execution.get("row_count", 0)),
         "comprehensive_strategy_group_count": int(execution.get("row_count", 0)),
         "mapped_row_count": len(mapped),
@@ -397,6 +402,7 @@ def build_level_rule(
         "requires_human_confirmation_before_real_send": True,
         "group_send_blocked": True,
         "online_write_executed": False,
+        "alert_count": len(rows),
         "reason_count": len(rows),
         "strategy_group_count": len(rows),
         "poc_names": poc_names,
@@ -409,10 +415,11 @@ def build_level_rule(
         ),
         "evidence_refs": [
             {
+                "warning_dimension": row.get("warning_dimension"),
                 "mach_root_label_name": row.get("mach_root_label_name"),
                 "strategy_id": row.get("strategy_id"),
                 "strategy_name": row.get("strategy_name"),
-                "reason": row.get("reason"),
+                "max_data_date": row.get("max_data_date"),
                 "POC": row.get("POC") or row.get("poc_name"),
                 "hit_rule_ids": row.get("hit_rule_ids"),
                 "hit_conditions": row.get("hit_conditions"),

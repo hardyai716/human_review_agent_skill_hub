@@ -18,7 +18,7 @@
 - `scenario_key`：`efficiency-label-rate`
 - 模块：效率模块
 - 指标对象：打标率
-- 运营对象：送审原因 / reason、举报入池原因 / enpool_reason 在不同维度下的打标率表现
+- 运营对象：策略三维、风险域、送审原因 / reason、举报入池原因 / enpool_reason 在不同维度下的打标率表现
 - 当前状态：阶段 1 主线样板场景
 
 ## 数据方向
@@ -27,7 +27,7 @@
 
 | `data_direction` | source profile | 数据集 | 适用问题 | 主维度 | 口径摘要 |
 | --- | --- | --- | --- | --- | --- |
-| `manual_review_detail` | `community_manual_review` | `[重点模型]-社区_人工审核明细数据` / `3888816` / appId `1128` | 人工审核明细、策略、机审一级标签、`reason` 维度的打标率查询和低效策略治理。 | `reason`、`mach_root_label_name`、`strategy_id`、`strategy_name` | `打标量__reviewid / 完审量_reviewid` |
+| `manual_review_detail` | `community_manual_review` | `[重点模型]-社区_人工审核明细数据` / `3888816` / appId `1128` | 人工审核明细、策略、机审一级标签、`reason` 维度的打标率查询和低效策略治理。 | 默认分级：`mach_root_label_name`、`strategy_id`、`strategy_name`；可选拆解：`reason` | `打标量__reviewid / 完审量_reviewid` |
 | `report_flow` | `report_flow_review` | `举报流转任务明细数据集` / `3952594` / appId `555137` | 举报场景、举报流转、`enpool_reason`、`report_id`、一轮/终轮队列维度的打标率查询。 | `enpool_reason` | `打标量_report_id / 人审完结量_report_id` |
 
 ## 参考来源
@@ -45,9 +45,9 @@
 - 查询高打标率或低打标率的策略 / reason。
 - 按机审一级标签、场景、项目等维度拆解打标率。
 - 查询举报场景下的打标率、低打标率 `enpool_reason`、举报流转任务的进审 / 人审完结 / 打标量。
-- 近 N 天有哪些高完审、低打标 reason。
-- 打标率低的策略 / reason 是否需要分级。
-- notice、P2、P1、P0 低效策略清单。
+- 近 N 天有哪些高完审、低打标策略或 reason。
+- 打标率低的策略是否需要按 notice/P2/P1/P0 分级。
+- notice、P2、P1、P0 低效策略清单，以及风险域维度爆量预警。
 
 ## 排除意图
 
@@ -60,7 +60,7 @@
 ## 方向识别规则
 
 - 命中 `举报`、`举报场景`、`举报流转`、`enpool_reason`、`report_id`、`一轮队列`、`终轮队列`、`举报流转任务明细数据集`、`3952594` 时，设置 `data_direction=report_flow`。
-- 命中 `机审一级标签`、`策略ID`、`策略名称`、`reason` 且未出现举报相关字段时，默认 `data_direction=manual_review_detail`。
+- 命中 `机审一级标签`、`策略ID`、`策略名称`、`reason` 且未出现举报相关字段时，默认 `data_direction=manual_review_detail`。其中低效分级默认按 `机审一级标签 × 策略ID × 策略名称`，`reason` 仅在用户明确要求拆解时作为分组维度。
 - 用户只说“打标率 reason”且上下文无举报字段时，默认 `manual_review_detail`；若同时出现 `举报` 或 `enpool_reason`，必须切换到 `report_flow`。
 - 方向不唯一时，感知阶段应输出澄清问题，不得同时拼接两个数据源字段。
 
@@ -84,7 +84,7 @@
 ## 低打标率策略预警草稿
 
 ```text
-【人审效率预警｜低打标率 reason】
+【人审效率预警｜低效策略 / 风险域】
 
 场景：{scenario_key}
 等级：{severity}
@@ -94,12 +94,18 @@
 {summary}
 
 证据：
-- reason：{reason}
+- 预警维度：{warning_dimension}
+- 机审一级标签：{mach_root_label_name}
+- 策略ID：{strategy_id}
+- 策略名称：{strategy_name}
 - 日均进审量：{avg_review_in_cnt}
 - 日均完审量：{avg_review_done_cnt}
 - 日均打标量：{avg_label_cnt}
 - 打标率：{label_rate}
+- 命中规则：{hit_rule_id}
 - 命中条件：{hit_condition}
+- 是否+1同意：{is_plus1_agreed}
+- 更新日期：{plus1_update_date}
 
 建议 Owner：{owner}
 Owner 依据：{routing_evidence}
@@ -108,6 +114,7 @@ Owner 依据：{routing_evidence}
 说明：
 - 本通知为 debug_only 草稿，未真实发送。
 - 打标率口径：打标量 / 完审量。
+- 风险域维度行的策略ID、策略名称可为空，POC 按机审一级标签映射。
 - source_footer：{source_footer}
 ```
 
@@ -180,7 +187,10 @@ TOP 低效组合：
 
 ## 当前开发阶段决策
 
-- POC 路由粒度：优先按 `mach_root_label_name` 映射 POC；`reason`、`strategy_id`、`strategy_name` 作为证据字段保留。
+- POC 路由粒度：优先按 `mach_root_label_name` 映射 POC；`warning_dimension`、`strategy_id`、`strategy_name` 作为证据字段保留。默认低效分级不按 `reason` 分组。
+- 风险域维度行的 `strategy_id`、`strategy_name` 为空，表示该机审一级标签下低效策略汇总后的风险域预警；此类行仍按 `mach_root_label_name` 映射 POC。
+- 若原始机审一级标签为空，分析取数层会先按策略名称补齐为高热、政媒、商业化或指令舆情相关，再进入 POC 路由。
+- 当前 POC 映射资产尚未包含 `商业化`，命中商业化补映射的行会进入未映射 / 人工确认路径。
 - 举报流转方向（`data_direction=report_flow`）默认没有 `mach_root_label_name`，以 `enpool_reason` 作为证据字段，Owner 建议先路由到“举报”POC，占位 POC 为韩晶晶；真实触达前必须由人审运营确认是否需要按风险域或队列进一步拆分。
 - 映射来源：飞书表格 `https://bytedance.larkoffice.com/sheets/TpxwsA8zohUZkVtJ4J9cDcXUnbg?sheet=HKdm9w`。
 - 当前身份粒度：仅完成 POC 姓名映射，`poc_open_id` 尚未解析。
@@ -230,6 +240,7 @@ TOP 低效组合：
 ## 低置信度条件
 
 - 输入数据只有 reason 名称，没有 `mach_root_label_name`。
+- 输入数据为风险域维度但 `mach_root_label_name` 为空或未映射。
 - 输入数据来自举报流转方向，仅有 `enpool_reason`，尚未完成风险域或队列 Owner 拆分。
 - `mach_root_label_name` 未命中 POC 映射。
 - POC 只有姓名，尚未解析飞书 open_id。

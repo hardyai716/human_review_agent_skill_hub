@@ -18,7 +18,7 @@
 - `scenario_key`：`efficiency-label-rate`
 - 模块：效率模块
 - 指标对象：打标率
-- 运营对象：送审原因 / reason、举报入池原因 / enpool_reason 在不同维度下的打标率表现
+- 运营对象：策略三维、风险域、送审原因 / reason、举报入池原因 / enpool_reason 在不同维度下的打标率表现
 - 当前状态：阶段 1 主线样板场景
 
 ## 数据方向
@@ -27,7 +27,7 @@
 
 | `data_direction` | source profile | 数据集 | 适用问题 | 主维度 | 口径摘要 |
 | --- | --- | --- | --- | --- | --- |
-| `manual_review_detail` | `community_manual_review` | `[重点模型]-社区_人工审核明细数据` / `3888816` / appId `1128` | 人工审核明细、策略、机审一级标签、`reason` 维度的打标率查询和低效策略治理。 | `reason`、`mach_root_label_name`、`strategy_id`、`strategy_name` | `打标量__reviewid / 完审量_reviewid` |
+| `manual_review_detail` | `community_manual_review` | `[重点模型]-社区_人工审核明细数据` / `3888816` / appId `1128` | 人工审核明细、策略、机审一级标签、`reason` 维度的打标率查询和低效策略治理。 | 默认分级：`mach_root_label_name`、`strategy_id`、`strategy_name`；可选拆解：`reason` | `打标量__reviewid / 完审量_reviewid` |
 | `report_flow` | `report_flow_review` | `举报流转任务明细数据集` / `3952594` / appId `555137` | 举报场景、举报流转、`enpool_reason`、`report_id`、一轮/终轮队列维度的打标率查询。 | `enpool_reason` | `打标量_report_id / 人审完结量_report_id` |
 
 ## 参考来源
@@ -45,9 +45,9 @@
 - 查询高打标率或低打标率的策略 / reason。
 - 按机审一级标签、场景、项目等维度拆解打标率。
 - 查询举报场景下的打标率、低打标率 `enpool_reason`、举报流转任务的进审 / 人审完结 / 打标量。
-- 近 N 天有哪些高完审、低打标 reason。
-- 打标率低的策略 / reason 是否需要分级。
-- notice、P2、P1、P0 低效策略清单。
+- 近 N 天有哪些高完审、低打标策略或 reason。
+- 打标率低的策略是否需要按 notice/P2/P1/P0 分级。
+- notice、P2、P1、P0 低效策略清单，以及风险域维度爆量预警。
 
 ## 排除意图
 
@@ -60,7 +60,7 @@
 ## 方向识别规则
 
 - 命中 `举报`、`举报场景`、`举报流转`、`enpool_reason`、`report_id`、`一轮队列`、`终轮队列`、`举报流转任务明细数据集`、`3952594` 时，设置 `data_direction=report_flow`。
-- 命中 `机审一级标签`、`策略ID`、`策略名称`、`reason` 且未出现举报相关字段时，默认 `data_direction=manual_review_detail`。
+- 命中 `机审一级标签`、`策略ID`、`策略名称`、`reason` 且未出现举报相关字段时，默认 `data_direction=manual_review_detail`。其中低效分级默认按 `机审一级标签 × 策略ID × 策略名称`，`reason` 仅在用户明确要求拆解时作为分组维度。
 - 用户只说“打标率 reason”且上下文无举报字段时，默认 `manual_review_detail`；若同时出现 `举报` 或 `enpool_reason`，必须切换到 `report_flow`。
 - 方向不唯一时，感知阶段应输出澄清问题，不得同时拼接两个数据源字段。
 
@@ -79,7 +79,7 @@
 - `metric_id`：`label_rate`
 - 中文名：打标率
 - 模块：效率模块
-- 场景：送审原因 / reason 在不同维度下的打标率查询、对比、趋势和分级分析
+- 场景：策略、风险域、送审原因 / reason 在不同维度下的打标率查询、对比、趋势和分级分析
 - 状态：active
 
 ## 相关指标
@@ -88,13 +88,13 @@
 
 | 业务概念 | `metric_id` | 口径 | 默认粒度 |
 | --- | --- | --- | --- |
-| 打标率 | `label_rate` | `SUM(label_cnt) / SUM(review_done_cnt)` | `day × reason` |
-| 进审量 | `review_in_cnt` | 进入人审的审核量 | `day × reason` |
-| 完审量 | `review_done_cnt` | 完成人审的审核量 | `day × reason` |
-| 打标量 | `label_cnt` | 被打标的审核量 | `day × reason` |
-| 日均进审量 | `avg_daily_review_in_cnt` | `SUM(review_in_cnt) / COUNT(DISTINCT p_date)` | `reason` |
-| 日均完审量 | `avg_daily_review_done_cnt` | `SUM(review_done_cnt) / COUNT(DISTINCT p_date)` | `reason` |
-| 日均打标量 | `avg_daily_label_cnt` | `SUM(label_cnt) / COUNT(DISTINCT p_date)` | `reason` |
+| 打标率 | `label_rate` | `SUM(label_cnt) / SUM(review_done_cnt)` | `day × mach_root_label_name × strategy_id × strategy_name` |
+| 进审量 | `review_in_cnt` | 进入人审的审核量 | `day × mach_root_label_name × strategy_id × strategy_name` |
+| 完审量 | `review_done_cnt` | 完成人审的审核量 | `day × mach_root_label_name × strategy_id × strategy_name` |
+| 打标量 | `label_cnt` | 被打标的审核量 | `day × mach_root_label_name × strategy_id × strategy_name` |
+| 日均进审量 | `avg_daily_review_in_cnt` | `SUM(review_in_cnt) / COUNT(DISTINCT p_date)` | `mach_root_label_name × strategy_id × strategy_name` |
+| 日均完审量 | `avg_daily_review_done_cnt` | `SUM(review_done_cnt) / COUNT(DISTINCT p_date)` | `mach_root_label_name × strategy_id × strategy_name` |
+| 日均打标量 | `avg_daily_label_cnt` | `SUM(label_cnt) / COUNT(DISTINCT p_date)` | `mach_root_label_name × strategy_id × strategy_name` |
 
 ### 方向 2：举报流转
 
@@ -117,6 +117,13 @@
 - 举报方向默认输出字段为 `enpool_reason`、`日均人审完结量`、`日均打标量`、`打标率`。
 - 环比增长率：`(本期日均进审量 - 上期日均进审量) / NULLIF(上期日均进审量, 0)`。
 - 日均增量：`本期日均进审量 - 上期日均进审量`。
+- 低打标率分级默认使用三维单策略粒度：`mach_root_label_name × strategy_id × strategy_name`；`reason` 默认只作为样本清洗过滤字段，不参与默认分级分组。
+- 风险域维度即 `mach_root_label_name`。风险域爆量类规则必须先在本期和上期分别按三维筛出打标率 `< 10%` 的低效策略，再按风险域汇总这些低效策略的进审量、完审量、打标量并计算环比。
+- 若原始 `mach_root_label_name` 为空或空串，必须先按 `dataset_reference.md#空机审一级标签补映射` 使用 `strategy_name` 补齐机审一级标签，再计算三维分级和风险域汇总。非空机审一级标签保持原值。
+- 输出等级结果必须按 `strategy_id` 补充 `是否+1同意`、`更新日期`、`+1同意日期是否在本次统计周期前`。这些字段来自 `+1评估=同意` 治理资产及当前统计周期，只做状态标记，不改变分级命中逻辑；该资产默认每天首次使用时从飞书表 `GzpCwP516imDB8kQ3g1cLr5bnPc` 只读刷新。
+- 全等级结果需额外输出剔除口径综合表：从综合结果中移除 `是否+1同意=是` 且 `更新日期` 早于当前统计周期开始日期的策略。
+- 全等级结果的汇总统计需同步输出剔除口径版本：`汇总统计_剔除+1同意` 必须基于剔除口径综合表重新聚合。
+- 汇总统计的 `低效策略打标率` 按表内展示的 `低效策略日均打标量 / 低效策略日均完审量` 计算，不使用周期总打标量 / 周期总完审量，确保与汇总统计表内展示字段可直接复核。
 
 ## 默认样本池
 
@@ -231,10 +238,10 @@ AND `[一轮队列名称]` NOT LIKE '%特殊%'
 
 | 等级 | 判定方向 | 说明 |
 | --- | --- | --- |
-| `P0` | 最严重 | 四周持续低效、高量低效或进审量异常爆量。 |
-| `P1` | 高 | 双周持续低效、单周高量低效或低效爆量。 |
-| `P2` | 中 | 单策略低效或低效策略环比增长。 |
-| `notice` | 观察 | 单周期打标率偏低，需要观察。 |
+| `P0` | 最严重 | 四周持续低效、高量低效、单周超高量低效或风险域低效策略进审量异常爆量。 |
+| `P1` | 高 | 双周持续低效、单周高量低效或风险域低效策略爆量。 |
+| `P2` | 中 | 单策略低效或风险域低效策略环比增长。 |
+| `notice` | 观察 | 单周期打标率偏低，需要观察，不限制累计进审量。 |
 
 低打标率分级阈值由 `analysis.md` 维护，默认来源于已验证的 `low-efficiency-strategy-analysis/references/grading_rules.md`。高打标率或普通打标率查询不套用低效分级，按用户指定的排序、TopN、维度和时间窗口输出。
 
@@ -242,6 +249,7 @@ AND `[一轮队列名称]` NOT LIKE '%特殊%'
 
 - 不得把打标率分母写成进审量。
 - 不得直接跨天、跨 reason、跨标签累加 `打标率` 字段。
+- 不得在默认分级中重新引入 `reason` 分组；如用户显式要求 reason 拆解，必须在 QueryPlan 中标注为维度拆解而非默认分级。
 - 不得在分区缺失或数据未就绪时输出“无低效策略”。
 - 不得把查询失败、权限失败解释成业务无异常。
 - 不得使用自动处置准确率、质检准确率或底线事故数字段替代打标率。
@@ -321,7 +329,7 @@ AND `[一轮队列名称]` NOT LIKE '%特殊%'
 - 引擎：ClickHouse
 - 分区：`p_date`
 - 默认新鲜度：T+1，查询前必须确认 `MAX(p_date)` 和目标分区行数。
-- 支持粒度：`p_date × reason`；维度拆解支持 `p_date × dimensions × reason`。
+- 支持粒度：默认分级使用 `p_date × 机审一级标签 × strategy_id × strategy_name`；维度拆解可扩展到 `p_date × dimensions × reason`。
 - 不用于：人员明细、责任人解析、open_id / chat_id、触达对象。
 
 ## 字段映射
@@ -334,11 +342,57 @@ AND `[一轮队列名称]` NOT LIKE '%特殊%'
 | 日期分区 | `date` | `p_date` | 用于时间窗口和分区就绪检查。 |
 | 项目标题 | `project_title` | `project_title` | 用于排除测试、质检、离线等项目。 |
 | 审核场景 | `scene` | `scene` | 默认保留社区审核三类场景。 |
-| 机审一级标签 | `mach_root_label_name` | `机审一级标签` | 空值必须保留，维度拆解使用。 |
+| 机审一级标签 / 风险域 | `mach_root_label_name` | `机审一级标签` | 低打标率治理中的风险域即机审一级标签；空值必须保留，维度拆解和风险域汇总使用。 |
 | 进审量 | `review_in_cnt` | `进审量_reviewid` | 聚合字段。 |
 | 完审量 | `review_done_cnt` | `完审量_reviewid` | 打标率分母。 |
 | 打标量 | `label_cnt` | `打标量__reviewid` | 双下划线，打标率分子。 |
 | 打标率 | `label_rate` | `打标率__reviewid` | 不直接跨粒度聚合，应重算。 |
+
+## 空机审一级标签补映射
+
+默认分级取数时，若原始 `[机审一级标签]` 为空或空串，必须在 SQL 取数层按 `strategy_name` 补齐 `mach_root_label_key`，再进入聚合、分级和 POC 路由。非空 `[机审一级标签]` 保持原值。
+
+明确策略名映射：
+
+| strategy_name | 补齐后的机审一级标签 |
+| --- | --- |
+| 高价值-兜底vv进审 | 高热 |
+| 短视频-特殊账号-达到VV阈值 | 高热 |
+| 非白名单政媒账号投稿vv大于5万vv送审 | 政媒 |
+| 商业化付费视频全人审ugc | 商业化 |
+| 白名单账号投稿vv大于5万vv送审 | 政媒 |
+| 中视频-特殊账号-达到VV阈值 | 高热 |
+| 星图预审35wvv强制召回 | 高热 |
+| 【ZL推人】麒麟芯片9030 | 指令舆情相关 |
+| 【ZL推人】涉日股市负面-词 | 指令舆情相关 |
+| 高热虐猫虐狗上升召回-内容现象 | 高热 |
+| 【兜底送审】普通视频豁免25W进审 | 高热 |
+
+若空标签策略未命中上表，再按策略名称包含关系兜底：
+
+| 包含关键词 | 补齐后的机审一级标签 |
+| --- | --- |
+| `ZL` | 指令舆情相关 |
+| `商业化` | 商业化 |
+| `政媒` | 政媒 |
+
+仍无法命中时输出 `（空/机审一级标签）`，并按低置信度路由处理。
+
+## +1评估同意标记
+
+低打标率全等级结果必须基于 `plus1_agreed_strategy_updates.json` 补充两个治理状态字段：
+
+| 输出字段 | 来源 | 说明 |
+| --- | --- | --- |
+| `是否+1同意` | `strategy_id` 命中 `+1评估=同意` 策略资产 | 命中输出 `是`，未命中输出 `否`；风险域维度因策略 ID 为空默认 `否`。 |
+| `更新日期` | 同一策略在原始飞书表中的 `更新日期` | 命中且存在日期时输出 `YYYY-MM-DD`；历史同意清单中无当前日期的策略输出空。 |
+| `+1同意日期是否在本次统计周期前` | `是否+1同意`、`更新日期`、当前统计周期开始日期 | `是否+1同意 = 是` 且 `更新日期 < 当前统计周期开始日期` 时输出 `是`，否则输出 `否`。 |
+
+资产来源为飞书表格 `GzpCwP516imDB8kQ3g1cLr5bnPc`，筛选条件为 `+1评估 = 同意`。该清单会持续更新，默认每天第一次使用该策略清单时必须只读刷新飞书表格，并用当前表内容覆盖本地 `plus1_agreed_strategy_updates.json`；日内重复使用可复用当日已刷新的本地资产。
+
+全等级报表除保留完整 `综合` 外，还必须输出 `综合_剔除+1同意`：以当前统计周期开始日期为 cutoff，剔除 `是否+1同意 = 是` 且 `更新日期 < cutoff` 的策略。示例：周期为 `2026-07-06` 至 `2026-07-12` 时，剔除 `2026-07-06` 之前已同意的策略；`更新日期` 为空或不早于 `2026-07-06` 的行保留。
+
+汇总统计也必须成对输出：`汇总统计` 基于完整 `综合` 聚合，`汇总统计_剔除+1同意` 基于 `综合_剔除+1同意` 聚合，二者字段结构保持一致。汇总统计中的 `低效策略打标率` 必须与表内展示量一致，按 `低效策略日均打标量 / 低效策略日均完审量` 计算。
 
 ## 字段映射：举报流转
 
@@ -438,10 +492,13 @@ AND `[一轮队列名称]` NOT LIKE '%特殊%'
 - 日均量必须用 `COUNT(DISTINCT p_date)`，不得硬编码 `/7`。
 - NULL 机审标签必须用 `field IS NULL OR field IN (...)`，不得写 `IN (NULL, ...)`。
 - 可空维度做 `ifNull` / `coalesce` / `case` 归一化后，内部别名不得与底表物理字段或 Aeolus 展示字段同名，统一使用 `*_key`。例如必须写 `ifNull(`[机审一级标签]`, '（空/机审一级标签）') AS mach_root_label_key` 并 `GROUP BY mach_root_label_key`，外层再 `mach_root_label_key AS mach_root_label_name`。禁止写 `AS mach_root_label_name GROUP BY mach_root_label_name`，否则 Aeolus / ClickHouse 可能解析到原始字段，导致 NULL 维度桶丢失。
+- 空机审一级标签补映射也必须输出到内部稳定别名 `mach_root_label_key`，不得直接写为展示字段 `mach_root_label_name` 后参与 `GROUP BY`。
+- 默认低打标率分级不得按 `reason` 分组；`reason` 只保留为样本过滤字段，即必须继续排除 `recall_skip_L6` 和 `fatal_output`。
+- 风险域爆量类查询必须先按 `mach_root_label_key × strategy_id_key × strategy_name_key` 筛出低效策略，再按 `mach_root_label_key` 汇总。风险域维度输出时 `strategy_id`、`strategy_name` 置空。
 
 ## 查询模板参数化
 
-- `reason` 是默认维度，不是固定唯一维度；Agent 必须从用户问题中解析 `dimensions`。
+- `reason` 是可选拆解维度，不是默认分级维度；Agent 必须从用户问题中解析 `dimensions`。
 - 已确认维度可直接进入 SQL：`reason`、`p_date`、`scene`、`project_title`、`mach_root_label_name`、`strategy_id`、`strategy_name`。
 - 多维度问题按 `dimensions` 生成 `SELECT` 和 `GROUP BY`，例如 `reason, scene`。
 - “有哪些 / 排名 / 明细”类问题使用 `query_mode=ranking`，返回维度明细、完审量、打标量和打标率。
@@ -521,7 +578,8 @@ AND `[一轮队列名称]` NOT LIKE '%特殊%'
 期望：
 
 - 命中 `low_label_rate_grading` 模式。
-- 输出四级分级规则摘要。
+- 输出四级分级规则摘要，默认包含 `单策略维度` 和 `风险域维度`。
+- 单策略维度按 `机审一级标签 × strategy_id × strategy_name` 聚合；风险域维度按机审一级标签汇总低效策略，策略ID和策略名称为空。
 - 说明打标率口径为打标量 / 完审量。
 
 ### 维度拆解

@@ -81,21 +81,27 @@ REQUIRED_SQL_SNIPPETS = [
     "`[project_title]` NOT LIKE '%离线%'",
     "`[scene]` IN ('community_audit_safe', 'community_audit_style', 'community_audit_moderate')",
     "`[reason]` NOT IN ('recall_skip_L6', 'fatal_output')",
-    "`[机审一级标签]` IS NULL OR `[机审一级标签]` IN",
-    "ifNull(`[机审一级标签]`, '（空/机审一级标签）') AS mach_root_label_key",
+    "`[机审一级标签]` IS NULL OR `[机审一级标签]` = '' OR `[机审一级标签]` IN",
+    "multiIf(",
+    "高价值-兜底vv进审', '高热'",
+    "商业化付费视频全人审ugc', '商业化'",
+    "【ZL推人】麒麟芯片9030', '指令舆情相关'",
+    "position(ifNull(`[strategy_name]`, ''), 'ZL') > 0, '指令舆情相关'",
+    "position(ifNull(`[strategy_name]`, ''), '商业化') > 0, '商业化'",
+    "position(ifNull(`[strategy_name]`, ''), '政媒') > 0, '政媒'",
+    ") AS mach_root_label_key",
     "ifNull(`[strategy_id]`, '（空/strategy_id）') AS strategy_id_key",
     "ifNull(`[strategy_name]`, '（空/strategy_name）') AS strategy_name_key",
-    "ifNull(`[reason]`, '（空/reason）') AS reason_key",
-    "GROUP BY mach_root_label_key, strategy_id_key, strategy_name_key, reason_key",
+    "GROUP BY mach_root_label_key, strategy_id_key, strategy_name_key",
     "SUM(jin_shen) / COUNT(DISTINCT dt) AS avg_review_in_cnt",
     "if(SUM(wan_shen) = 0, 0, SUM(da_biao) / SUM(wan_shen)) AS label_rate",
-    "cur.total_review_in_cnt > 100",
+    "MAX(dt) AS max_data_date",
 ]
 LEVEL_WINDOW_SNIPPETS = {
     "notice": ["`[p_date]` >= today() - 7"],
-    "P2": ["`[p_date]` >= today() - 14"],
-    "P1": ["`[p_date]` >= today() - 14"],
-    "P0": ["`[p_date]` >= today() - 28"],
+    "P2": ["`[p_date]` >= today() - 14", "风险域维度"],
+    "P1": ["`[p_date]` >= today() - 14", "风险域维度"],
+    "P0": ["`[p_date]` >= today() - 28", "风险域维度"],
 }
 
 
@@ -319,12 +325,13 @@ def assert_readonly_execution(
             raise AssertionError(f"{level} smoke result must not be truncated.")
         row = result["rows"][0]
         for field in (
+            "warning_dimension",
             "severity_level",
             "severity_priority",
             "mach_root_label_name",
             "strategy_id",
             "strategy_name",
-            "reason",
+            "max_data_date",
             "POC",
             "avg_review_in_cnt",
             "avg_review_done_cnt",

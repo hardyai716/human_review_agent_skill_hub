@@ -31,11 +31,13 @@ REQUIRED_FILES = [
     "notification_draft.json",
     "send_plan.json",
     "汇总统计.csv",
+    "汇总统计_剔除+1同意.csv",
     "notice.csv",
     "P2.csv",
     "P1.csv",
     "P0.csv",
     "综合.csv",
+    "综合_剔除+1同意.csv",
     "publish/low_efficiency_grading.card.json",
     "publish/low_efficiency_grading.card.with_meta.json",
     "publish/low_efficiency_grading.publish_summary.json",
@@ -69,7 +71,7 @@ def validate(output_dir: Path, *, expect_sent: bool) -> None:
     )
     hash_check = load_json(output_dir / "publish" / "card_hash_check.json")
 
-    assert_summary(summary)
+    assert_summary(summary, expect_sent=expect_sent)
     assert_notification_draft(notification_draft, summary)
     assert_send_plan(send_plan, notification_draft)
     assert_csvs(output_dir, summary)
@@ -77,7 +79,7 @@ def validate(output_dir: Path, *, expect_sent: bool) -> None:
     assert_publish_summary(publish_summary, summary, expect_sent=expect_sent)
 
 
-def assert_summary(summary: dict[str, Any]) -> None:
+def assert_summary(summary: dict[str, Any], *, expect_sent: bool) -> None:
     if summary.get("schema_version") != "stage_2_notification_draft.v1":
         raise AssertionError("summary schema_version mismatch.")
     if summary.get("report_type") != "low_efficiency_grading":
@@ -85,7 +87,7 @@ def assert_summary(summary: dict[str, Any]) -> None:
     if summary.get("scenario_key") != "efficiency-label-rate":
         raise AssertionError("summary scenario_key mismatch.")
     assert_level_counts(summary)
-    if not summary.get("sheet_url"):
+    if expect_sent and not summary.get("sheet_url"):
         raise AssertionError("summary sheet_url is required for the sent card.")
 
     outputs = summary.get("outputs", {})
@@ -97,6 +99,13 @@ def assert_summary(summary: dict[str, Any]) -> None:
             raise AssertionError(f"summary outputs.{field} missing.")
     if outputs.get("summary_by_label_poc_csv") != "汇总统计.csv":
         raise AssertionError("summary outputs.summary_by_label_poc_csv missing.")
+    if (
+        outputs.get("summary_by_label_poc_exclude_pre_period_plus1_csv")
+        != "汇总统计_剔除+1同意.csv"
+    ):
+        raise AssertionError(
+            "summary outputs.summary_by_label_poc_exclude_pre_period_plus1_csv missing."
+        )
 
 
 def assert_level_counts(summary: dict[str, Any]) -> None:
@@ -110,11 +119,35 @@ def assert_level_counts(summary: dict[str, Any]) -> None:
     comprehensive_reason_count = summary.get("comprehensive_reason_count")
     if not isinstance(comprehensive_reason_count, int) or comprehensive_reason_count < 0:
         raise AssertionError("summary comprehensive_reason_count must be a non-negative integer.")
+    comprehensive_alert_count = summary.get(
+        "comprehensive_alert_count", comprehensive_reason_count
+    )
+    if comprehensive_alert_count != comprehensive_reason_count:
+        raise AssertionError("summary comprehensive_alert_count mismatch.")
     if comprehensive_reason_count > level_counts.get("notice", 0):
         raise AssertionError("summary comprehensive_reason_count cannot exceed notice count.")
     comprehensive_group_count = summary.get("comprehensive_strategy_group_count")
     if comprehensive_group_count != comprehensive_reason_count:
         raise AssertionError("summary comprehensive_strategy_group_count mismatch.")
+    filtered_count = summary.get("comprehensive_exclude_pre_period_plus1_count")
+    if not isinstance(filtered_count, int) or filtered_count < 0:
+        raise AssertionError(
+            "summary comprehensive_exclude_pre_period_plus1_count must be a non-negative integer."
+        )
+    if filtered_count > comprehensive_reason_count:
+        raise AssertionError("filtered comprehensive count cannot exceed comprehensive count.")
+    if not summary.get("plus1_exclusion_cutoff_date"):
+        raise AssertionError("summary plus1_exclusion_cutoff_date missing.")
+    filtered_summary_count = summary.get(
+        "label_poc_summary_exclude_pre_period_plus1_count"
+    )
+    if not isinstance(filtered_summary_count, int) or filtered_summary_count < 0:
+        raise AssertionError(
+            "summary label_poc_summary_exclude_pre_period_plus1_count "
+            "must be a non-negative integer."
+        )
+    if filtered_summary_count > summary.get("label_poc_summary_count", 0):
+        raise AssertionError("filtered label/POC summary count cannot exceed full count.")
 
 
 def assert_notification_draft(
@@ -137,6 +170,10 @@ def assert_notification_draft(
         "comprehensive_reason_count"
     ):
         raise AssertionError("notification_draft comprehensive count mismatch.")
+    if notification_draft.get(
+        "comprehensive_alert_count", notification_draft.get("comprehensive_reason_count")
+    ) != summary.get("comprehensive_alert_count", summary.get("comprehensive_reason_count")):
+        raise AssertionError("notification_draft comprehensive alert count mismatch.")
     if notification_draft.get("comprehensive_strategy_group_count") != summary.get(
         "comprehensive_strategy_group_count"
     ):
@@ -147,6 +184,13 @@ def assert_notification_draft(
         raise AssertionError("notification_draft data link sheet_url mismatch.")
     if not data_link.get("workbook"):
         raise AssertionError("notification_draft data link workbook missing.")
+    csv_files = data_link.get("csv_files", {})
+    if csv_files.get("summary_by_label_poc_exclude_pre_period_plus1") != (
+        "汇总统计_剔除+1同意.csv"
+    ):
+        raise AssertionError(
+            "notification_draft filtered label/POC summary link missing."
+        )
 
     card_draft = notification_draft.get("card_draft", {})
     if card_draft.get("send_card_meta_removed") is not True:
@@ -176,7 +220,7 @@ def assert_notification_draft(
             raise AssertionError(f"{level} recipient_resolution mode mismatch.")
         if resolution.get("routing_key") != "mach_root_label_name":
             raise AssertionError(f"{level} recipient_resolution routing_key mismatch.")
-        if rule.get("reason_count", 0) > 0 and not rule.get("poc_names"):
+        if rule.get("alert_count", rule.get("reason_count", 0)) > 0 and not rule.get("poc_names"):
             raise AssertionError(f"{level} poc_names missing.")
         if rule.get("group_send_blocked") is not True:
             raise AssertionError(f"{level} group_send_blocked must be true.")
@@ -234,17 +278,21 @@ def assert_csvs(output_dir: Path, summary: dict[str, Any]) -> None:
     level_counts = summary["level_counts"]
     expected_counts = {
         "汇总统计.csv": summary.get("label_poc_summary_count"),
+        "汇总统计_剔除+1同意.csv": summary.get(
+            "label_poc_summary_exclude_pre_period_plus1_count"
+        ),
         "notice.csv": level_counts["notice"],
         "P2.csv": level_counts["P2"],
         "P1.csv": level_counts["P1"],
         "P0.csv": level_counts["P0"],
-        "综合.csv": summary["comprehensive_reason_count"],
+        "综合.csv": summary.get("comprehensive_alert_count", summary["comprehensive_reason_count"]),
+        "综合_剔除+1同意.csv": summary["comprehensive_exclude_pre_period_plus1_count"],
     }
     for filename, expected_count in expected_counts.items():
         rows = read_csv_rows(output_dir / filename)
         if len(rows) != expected_count:
             raise AssertionError(f"{filename} row count mismatch.")
-        if filename == "汇总统计.csv":
+        if filename in {"汇总统计.csv", "汇总统计_剔除+1同意.csv"}:
             for field in (
                 "机审一级标签",
                 "POC",
@@ -256,21 +304,60 @@ def assert_csvs(output_dir: Path, summary: dict[str, Any]) -> None:
             ):
                 if rows and field not in rows[0]:
                     raise AssertionError(f"{filename} missing field: {field}")
+            assert_summary_label_rate_matches_displayed_counts(rows, filename)
             continue
         for field in (
             "机审一级标签",
             "策略ID",
             "策略名称",
-            "送审原因",
+            "预警维度",
+            "最大有数日期",
             "POC",
             "日均进审量",
             "日均完审量",
             "日均打标量",
             "打标率",
             "命中原因",
+            "是否+1同意",
+            "更新日期",
+            "+1同意日期是否在本次统计周期前",
         ):
             if rows and field not in rows[0]:
                 raise AssertionError(f"{filename} missing field: {field}")
+        assert_plus1_period_flag(rows, summary["plus1_exclusion_cutoff_date"], filename)
+
+
+def assert_summary_label_rate_matches_displayed_counts(
+    rows: list[dict[str, str]],
+    filename: str,
+) -> None:
+    for row in rows:
+        done = float(row.get("低效策略日均完审量") or 0)
+        label = float(row.get("低效策略日均打标量") or 0)
+        actual = float(row.get("低效策略打标率") or 0)
+        expected = label / done if done else 0.0
+        if abs(actual - expected) > 1e-12:
+            raise AssertionError(f"{filename} 低效策略打标率 must equal 打标量 / 完审量.")
+
+
+def assert_plus1_period_flag(
+    rows: list[dict[str, str]],
+    cutoff_date: str,
+    filename: str,
+) -> None:
+    field = "+1同意日期是否在本次统计周期前"
+    for row in rows:
+        actual = row.get(field)
+        if actual not in {"是", "否"}:
+            raise AssertionError(f"{filename} {field} must be 是/否.")
+        update_date = (row.get("更新日期") or "").strip().replace("/", "-")
+        expected = (
+            "是"
+            if row.get("是否+1同意") == "是" and bool(update_date) and update_date < cutoff_date
+            else "否"
+        )
+        if actual != expected:
+            raise AssertionError(f"{filename} {field} mismatch.")
 
 
 def assert_card(
@@ -321,7 +408,8 @@ def assert_card(
             "mach_root_label_name",
             "strategy_id",
             "strategy_name",
-            "reason",
+            "warning_dimension",
+            "max_data_date",
             "hit_reason",
         ):
             if field not in row:
@@ -388,6 +476,16 @@ def assert_publish_summary(
         raise AssertionError("publish_summary report_type mismatch.")
     if publish_summary.get("sheet_url") != summary.get("sheet_url"):
         raise AssertionError("publish_summary sheet_url mismatch.")
+    if not str(publish_summary.get("summary_by_label_poc_csv", "")).endswith(
+        "汇总统计.csv"
+    ):
+        raise AssertionError("publish_summary summary_by_label_poc_csv missing.")
+    if not str(
+        publish_summary.get("summary_by_label_poc_exclude_pre_period_plus1_csv", "")
+    ).endswith("汇总统计_剔除+1同意.csv"):
+        raise AssertionError(
+            "publish_summary summary_by_label_poc_exclude_pre_period_plus1_csv missing."
+        )
     if publish_summary.get("sent") is not expect_sent:
         raise AssertionError("publish_summary sent mismatch.")
     if expect_sent:

@@ -21,3 +21,19 @@
 - [x] 严格回归通过：productization、standalone smoke、perception/analysis/notification/resolution 脚本 validator、Stage 1/Stage 2 关键 validator、AgentBuddy publish validator 和 `git diff --check`。
 - [x] 感知、分析、通知流程可跑通，并产出 readiness、QueryPlan、source_footer、notification_draft、Card、poc_routing_plan 和 send_plan。
 - [x] 验证群发送完成；若无法唯一定位验证群或权限不足，则记录明确阻断原因且不伪造发送结果。
+- [ ] 收敛前当前工作态已提交并推送到 `origin/main`。
+- [ ] 收敛前当前受影响 Skill 已发布到 AgentBuddy，或已记录明确阻断原因。
+- [ ] `plus1_agreed_strategy_updates.json` 已纳入场景级 Skill 的发布资产声明、package manifest 和一致性校验覆盖。
+- [ ] `sheet_importer.py` / `--import-sheet` 的副作用声明准确表达“默认无线上写入，显式 opt-in 后在线写入”。
+- [ ] `efficiency-label-rate-ops/SKILL.md` 含 `🔴 CHECKPOINT`，覆盖真实群发、在线导入、线上状态写入、敏感身份解析。
+- [ ] 四能力 Skill 与 `efficiency-label-rate-ops` 的打标率能力矩阵一致，无手工审核明细方向、举报流转方向、默认三维分级、风险域维度、`+1同意`、剔除口径报表、POC 路由、在线导入门禁、manual tracking 缺口。
+- [ ] 四能力 Skill 的打标率文档和测试样例不再把默认低打标率分级描述为按 `reason` 分组。
+- [ ] 已有一致性 validator 能检查四能力 Skill 与场景级 Skill 的打标率能力无 gap。
+- [ ] `validate_aeolus_field_contracts.py` 通过。
+- [ ] `validate_skill_productization.py --strict --profile all_releaseable` 通过。
+- [ ] SOP 明确区分治理目标阈值和通知严重等级规则。
+- [ ] Card 模板与渲染实现一致，不再保留“reason 数柱状图”等过期展示契约。
+- [ ] `docs/skill_scenario_migration_checklist.md` 中 `efficiency-label-rate-ops` AgentBuddy 发布状态与实际发布记录一致。
+- [ ] 最终全量回归通过：productization strict、standalone smoke、skill path registry、scenario package check-sync、能力一致性 validator、脚本级 validator、Stage 1/Stage 2 关键 validator、AgentBuddy publish validator、`git diff --check`。
+- [ ] 收敛后最终状态已提交并推送到 `origin/main`。
+- [ ] 收敛后受影响 Skill 已重新发布到 AgentBuddy，并记录最终发布摘要。

@@ -180,6 +180,8 @@ def validate_artifacts(artifacts: Any) -> None:
         "P1.csv",
         "P0.csv",
         "综合.csv",
+        "综合_剔除+1同意.csv",
+        "汇总统计_剔除+1同意.csv",
         "publish/low_efficiency_grading.card.json",
         "publish/low_efficiency_grading.card.with_meta.json",
         "publish/card_hash_check.json",
@@ -224,8 +226,21 @@ def validate_artifacts(artifacts: Any) -> None:
     for field in ("机审一级标签", "POC", "低效策略打标率"):
         if field not in summary_rows[0]:
             raise AssertionError(f"summary CSV missing field: {field}")
-    if len(read_csv_rows(output_dir / "综合.csv")) != 4:
+    for row in summary_rows:
+        done = float(row.get("低效策略日均完审量") or 0)
+        label = float(row.get("低效策略日均打标量") or 0)
+        rate = float(row.get("低效策略打标率") or 0)
+        expected_rate = label / done if done else 0.0
+        if abs(rate - expected_rate) > 1e-12:
+            raise AssertionError("summary CSV label_rate must equal label / done.")
+    comprehensive_rows = read_csv_rows(output_dir / "综合.csv")
+    if len(comprehensive_rows) != 4:
         raise AssertionError("comprehensive CSV row count mismatch.")
+    plus1_period_field = "+1同意日期是否在本次统计周期前"
+    if plus1_period_field not in comprehensive_rows[0]:
+        raise AssertionError(f"comprehensive CSV missing field: {plus1_period_field}")
+    if {row.get(plus1_period_field) for row in comprehensive_rows} - {"是", "否"}:
+        raise AssertionError("comprehensive CSV plus1 period flag must be 是/否.")
     if len(read_csv_rows(output_dir / "P0.csv")) != 1:
         raise AssertionError("P0 CSV row count mismatch.")
 
@@ -234,7 +249,16 @@ def validate_artifacts(artifacts: Any) -> None:
         raise AssertionError("expected exactly one smoke workbook.")
     workbook = load_workbook(workbook_files[0], read_only=True)
     try:
-        expected_sheets = {"P0", "P1", "P2", "Notice", "综合", "汇总统计"}
+        expected_sheets = {
+            "P0",
+            "P1",
+            "P2",
+            "Notice",
+            "综合",
+            "综合_剔除+1同意",
+            "汇总统计",
+            "汇总统计_剔除+1同意",
+        }
         if set(workbook.sheetnames) != expected_sheets:
             raise AssertionError("workbook sheet structure mismatch.")
     finally:

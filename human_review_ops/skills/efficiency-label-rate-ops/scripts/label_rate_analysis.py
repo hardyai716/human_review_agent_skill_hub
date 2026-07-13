@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import json
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any
 
 
@@ -32,7 +33,6 @@ REPORT_FLOW_PHYSICAL_TABLE = (
     "`aeolus_data_table_22_3373535_migrate_v1_prod`"
 )
 QUERY_LIMIT = "50000"
-MIN_CURRENT_REVIEW_IN_CNT = 100
 METRIC_FORMULA = (
     "`label_rate` = SUM(`[打标量__reviewid]`) / SUM(`[完审量_reviewid]`)"
 )
@@ -48,10 +48,14 @@ DATASET_REFERENCE_PATH = (
 ANALYSIS_RULE_PATH = (
     "references/scenarios/efficiency-label-rate.md#分析模式"
 )
+PLUS1_AGREED_ASSET = "plus1_agreed_strategy_updates.json"
 LEVEL_ORDER = ["P0", "P1", "P2", "notice"]
 LEVEL_PRIORITY = {"P0": 0, "P1": 1, "P2": 2, "notice": 3}
 DEFAULT_LEVELS = ["notice", "P2", "P1", "P0"]
-DIMENSIONS = ["mach_root_label_name", "strategy_id", "strategy_name", "reason"]
+WARNING_DIMENSION_SINGLE_STRATEGY = "单策略维度"
+WARNING_DIMENSION_RISK_DOMAIN = "风险域维度"
+DIMENSIONS = ["mach_root_label_name", "strategy_id", "strategy_name"]
+DEDUPE_DIMENSIONS = ["warning_dimension", *DIMENSIONS]
 FLOAT_FIELDS = {
     "total_review_in_cnt",
     "total_review_done_cnt",
@@ -67,13 +71,14 @@ FLOAT_FIELDS = {
 }
 INT_FIELDS = {"severity_priority", "data_days"}
 GRADING_COLUMNS = [
+    "warning_dimension",
     "severity_level",
     "severity_priority",
     "mach_root_label_name",
     "strategy_id",
     "strategy_name",
-    "reason",
     "data_days",
+    "max_data_date",
     "total_review_in_cnt",
     "total_review_done_cnt",
     "total_label_cnt",
@@ -87,6 +92,8 @@ GRADING_COLUMNS = [
     "daily_delta",
     "hit_rule_id",
     "hit_condition",
+    "is_plus1_agreed",
+    "plus1_update_date",
 ]
 RowEnricher = Callable[[dict[str, Any]], dict[str, Any]]
 
@@ -212,7 +219,7 @@ def base_filter_sql(indent: str = "    ") -> str:
         "`[project_title]` NOT LIKE '%离线%'",
         "`[scene]` IN ('community_audit_safe', 'community_audit_style', 'community_audit_moderate')",
         "`[reason]` NOT IN ('recall_skip_L6', 'fatal_output')",
-        """(`[机审一级标签]` IS NULL OR `[机审一级标签]` IN (
+        """(`[机审一级标签]` IS NULL OR `[机审一级标签]` = '' OR `[机审一级标签]` IN (
       '不良行为或争议价值观',
       '侵犯未成年权益',
       '偏激社会情绪和涉外言论',
@@ -228,6 +235,35 @@ def base_filter_sql(indent: str = "    ") -> str:
     ))""",
     ]
     return "\n".join(f"{indent}AND {item}" for item in filters)
+
+
+def mach_root_label_key_sql(indent: str = "    ") -> str:
+    """Return normalized mach-root-label SQL with null-label strategy mapping."""
+    strategy_name = "ifNull(`[strategy_name]`, '')"
+    pad = indent
+    inner = indent + "  "
+    return "\n".join(
+        [
+            f"{pad}multiIf(",
+            f"{inner}not isNull(`[机审一级标签]`) AND `[机审一级标签]` != '', `[机审一级标签]`,",
+            f"{inner}{strategy_name} = '高价值-兜底vv进审', '高热',",
+            f"{inner}{strategy_name} = '短视频-特殊账号-达到VV阈值', '高热',",
+            f"{inner}{strategy_name} = '非白名单政媒账号投稿vv大于5万vv送审', '政媒',",
+            f"{inner}{strategy_name} = '商业化付费视频全人审ugc', '商业化',",
+            f"{inner}{strategy_name} = '白名单账号投稿vv大于5万vv送审', '政媒',",
+            f"{inner}{strategy_name} = '中视频-特殊账号-达到VV阈值', '高热',",
+            f"{inner}{strategy_name} = '星图预审35wvv强制召回', '高热',",
+            f"{inner}{strategy_name} = '【ZL推人】麒麟芯片9030', '指令舆情相关',",
+            f"{inner}{strategy_name} = '【ZL推人】涉日股市负面-词', '指令舆情相关',",
+            f"{inner}{strategy_name} = '高热虐猫虐狗上升召回-内容现象', '高热',",
+            f"{inner}{strategy_name} = '【兜底送审】普通视频豁免25W进审', '高热',",
+            f"{inner}position({strategy_name}, 'ZL') > 0, '指令舆情相关',",
+            f"{inner}position({strategy_name}, '商业化') > 0, '商业化',",
+            f"{inner}position({strategy_name}, '政媒') > 0, '政媒',",
+            f"{inner}'（空/机审一级标签）'",
+            f"{pad}) AS mach_root_label_key",
+        ]
+    )
 
 
 def quote_sql_string(value: str) -> str:
@@ -461,8 +497,8 @@ SELECT
   mach_root_label_key AS mach_root_label_name,
   strategy_id_key AS strategy_id,
   strategy_name_key AS strategy_name,
-  reason_key AS reason,
   COUNT(DISTINCT dt) AS data_days,
+  MAX(dt) AS max_data_date,
   SUM(jin_shen) AS total_review_in_cnt,
   SUM(wan_shen) AS total_review_done_cnt,
   SUM(da_biao) AS total_label_cnt,
@@ -472,10 +508,9 @@ SELECT
   if(SUM(wan_shen) = 0, 0, SUM(da_biao) / SUM(wan_shen)) AS label_rate
 FROM (
   SELECT
-    ifNull(`[机审一级标签]`, '（空/机审一级标签）') AS mach_root_label_key,
+{mach_root_label_key_sql("    ")},
     ifNull(`[strategy_id]`, '（空/strategy_id）') AS strategy_id_key,
     ifNull(`[strategy_name]`, '（空/strategy_name）') AS strategy_name_key,
-    ifNull(`[reason]`, '（空/reason）') AS reason_key,
     `[p_date]` AS dt,
     `[进审量_reviewid]` AS jin_shen,
     `[完审量_reviewid]` AS wan_shen,
@@ -484,15 +519,100 @@ FROM (
   WHERE `[p_date]` >= today() - {start_days_ago}
     AND `[p_date]` < {end_expr}
 {base_filter_sql("    ")}
-  GROUP BY mach_root_label_key, strategy_id_key, strategy_name_key, reason_key, dt
+  GROUP BY mach_root_label_key, strategy_id_key, strategy_name_key, dt
 ) daily
-GROUP BY mach_root_label_key, strategy_id_key, strategy_name_key, reason_key
+GROUP BY mach_root_label_key, strategy_id_key, strategy_name_key
 HAVING SUM(wan_shen) > 0
 """.strip()
 
 
 def dimension_join(left: str, right: str) -> str:
     return " AND ".join(f"{left}.{field} = {right}.{field}" for field in DIMENSIONS)
+
+
+def daily_strategy_sql(start_days_ago: int, end_days_ago: int) -> str:
+    end_expr = "today()" if end_days_ago == 0 else f"today() - {end_days_ago}"
+    return f"""
+SELECT
+{mach_root_label_key_sql("  ")},
+  ifNull(`[strategy_id]`, '（空/strategy_id）') AS strategy_id_key,
+  ifNull(`[strategy_name]`, '（空/strategy_name）') AS strategy_name_key,
+  `[p_date]` AS dt,
+  `[进审量_reviewid]` AS jin_shen,
+  `[完审量_reviewid]` AS wan_shen,
+  `[打标量__reviewid]` AS da_biao
+FROM {SOURCE_TABLE}
+WHERE `[p_date]` >= today() - {start_days_ago}
+  AND `[p_date]` < {end_expr}
+{base_filter_sql("  ")}
+GROUP BY mach_root_label_key, strategy_id_key, strategy_name_key, dt
+""".strip()
+
+
+def risk_domain_spike_source_sql() -> str:
+    cur = f"({period_aggregate_sql(7, 0)}) cur_strategy"
+    prev = f"({period_aggregate_sql(14, 7)}) prev_strategy"
+    cur_daily = f"({daily_strategy_sql(7, 0)}) cur_daily"
+    prev_daily = f"({daily_strategy_sql(14, 7)}) prev_daily"
+    return f"""
+(
+  WITH
+  cur_low_keys AS (
+    SELECT mach_root_label_name, strategy_id, strategy_name
+    FROM {cur}
+    WHERE label_rate < 0.1
+  ),
+  prev_low_keys AS (
+    SELECT mach_root_label_name, strategy_id, strategy_name
+    FROM {prev}
+    WHERE label_rate < 0.1
+  ),
+  cur_domain AS (
+    SELECT
+      cur_daily.mach_root_label_key AS mach_root_label_name,
+      '' AS strategy_id,
+      '' AS strategy_name,
+      COUNT(DISTINCT cur_daily.dt) AS data_days,
+      MAX(cur_daily.dt) AS max_data_date,
+      SUM(cur_daily.jin_shen) AS total_review_in_cnt,
+      SUM(cur_daily.wan_shen) AS total_review_done_cnt,
+      SUM(cur_daily.da_biao) AS total_label_cnt,
+      SUM(cur_daily.jin_shen) / COUNT(DISTINCT cur_daily.dt) AS avg_review_in_cnt,
+      SUM(cur_daily.wan_shen) / COUNT(DISTINCT cur_daily.dt) AS avg_review_done_cnt,
+      SUM(cur_daily.da_biao) / COUNT(DISTINCT cur_daily.dt) AS avg_label_cnt,
+      if(SUM(cur_daily.wan_shen) = 0, 0, SUM(cur_daily.da_biao) / SUM(cur_daily.wan_shen)) AS label_rate
+    FROM {cur_daily}
+    INNER JOIN cur_low_keys
+      ON cur_daily.mach_root_label_key = cur_low_keys.mach_root_label_name
+     AND cur_daily.strategy_id_key = cur_low_keys.strategy_id
+     AND cur_daily.strategy_name_key = cur_low_keys.strategy_name
+    GROUP BY cur_daily.mach_root_label_key
+  ),
+  prev_domain AS (
+    SELECT
+      prev_daily.mach_root_label_key AS mach_root_label_name,
+      SUM(prev_daily.jin_shen) / COUNT(DISTINCT prev_daily.dt) AS prev_avg_review_in_cnt,
+      if(SUM(prev_daily.wan_shen) = 0, 0, SUM(prev_daily.da_biao) / SUM(prev_daily.wan_shen)) AS prev_label_rate
+    FROM {prev_daily}
+    INNER JOIN prev_low_keys
+      ON prev_daily.mach_root_label_key = prev_low_keys.mach_root_label_name
+     AND prev_daily.strategy_id_key = prev_low_keys.strategy_id
+     AND prev_daily.strategy_name_key = prev_low_keys.strategy_name
+    GROUP BY prev_daily.mach_root_label_key
+  )
+  SELECT
+    cur_domain.*,
+    ifNull(prev_domain.prev_avg_review_in_cnt, 0) AS prev_avg_review_in_cnt,
+    ifNull(prev_domain.prev_label_rate, 0) AS prev_label_rate,
+    if(prev_domain.prev_avg_review_in_cnt = 0 OR isNull(prev_domain.prev_avg_review_in_cnt), 0,
+      (cur_domain.avg_review_in_cnt - prev_domain.prev_avg_review_in_cnt)
+      / prev_domain.prev_avg_review_in_cnt
+    ) AS growth_rate,
+    cur_domain.avg_review_in_cnt - ifNull(prev_domain.prev_avg_review_in_cnt, 0) AS daily_delta
+  FROM cur_domain
+  LEFT JOIN prev_domain ON cur_domain.mach_root_label_name = prev_domain.mach_root_label_name
+) cur
+""".strip()
 
 
 def level_select_sql(
@@ -502,6 +622,7 @@ def level_select_sql(
     hit_condition: str,
     from_sql: str,
     where_sql: str,
+    warning_dimension: str = WARNING_DIMENSION_SINGLE_STRATEGY,
     prev_fields_sql: str | None = None,
 ) -> str:
     prev_fields = prev_fields_sql or """
@@ -511,13 +632,14 @@ def level_select_sql(
   0.0 AS daily_delta,"""
     return f"""
 SELECT
+  '{warning_dimension}' AS warning_dimension,
   '{level}' AS severity_level,
   {LEVEL_PRIORITY[level]} AS severity_priority,
   cur.mach_root_label_name AS mach_root_label_name,
   cur.strategy_id AS strategy_id,
   cur.strategy_name AS strategy_name,
-  cur.reason AS reason,
   cur.data_days AS data_days,
+  cur.max_data_date AS max_data_date,
   cur.total_review_in_cnt AS total_review_in_cnt,
   cur.total_review_done_cnt AS total_review_done_cnt,
   cur.total_label_cnt AS total_label_cnt,
@@ -530,7 +652,6 @@ SELECT
   '{hit_condition}' AS hit_condition
 FROM {from_sql}
 WHERE ({where_sql})
-  AND cur.total_review_in_cnt > {MIN_CURRENT_REVIEW_IN_CNT}
 """.strip()
 
 
@@ -540,7 +661,7 @@ def build_notice_sql() -> str:
 {level_select_sql(
     level="notice",
     hit_rule_id="notice_low_label_rate",
-    hit_condition="近7天打标率<10%且进审量>100，纳入观察",
+    hit_condition="近7天三维粒度打标率<10%，不限制累计进审量",
     from_sql=cur,
     where_sql="cur.label_rate < 0.1",
 )}
@@ -551,30 +672,29 @@ LIMIT {QUERY_LIMIT}
 
 def build_p2_sql() -> str:
     cur = f"({period_aggregate_sql(7, 0)}) cur"
-    prev = f"({period_aggregate_sql(14, 7)}) prev"
     growth_fields = """
-  prev.avg_review_in_cnt AS prev_avg_review_in_cnt,
-  prev.label_rate AS prev_label_rate,
-  (cur.avg_review_in_cnt - prev.avg_review_in_cnt) / NULLIF(prev.avg_review_in_cnt, 0) AS growth_rate,
-  (cur.avg_review_in_cnt - prev.avg_review_in_cnt) AS daily_delta,"""
+  cur.prev_avg_review_in_cnt AS prev_avg_review_in_cnt,
+  cur.prev_label_rate AS prev_label_rate,
+  cur.growth_rate AS growth_rate,
+  cur.daily_delta AS daily_delta,"""
     condition_one = level_select_sql(
         level="P2",
         hit_rule_id="p2_single_strategy_low_efficiency",
-        hit_condition="近7天累计进审量>14000且打标率<3%",
+        hit_condition="近7天日均进审量>2000且打标率<3%",
         from_sql=cur,
-        where_sql="cur.total_review_in_cnt > 14000 AND cur.label_rate < 0.03",
+        where_sql="cur.avg_review_in_cnt > 2000 AND cur.label_rate < 0.03",
     )
     condition_two = level_select_sql(
         level="P2",
-        hit_rule_id="p2_low_efficiency_growth",
-        hit_condition="本期打标率<10%，上期日均进审>0，环比>20%，日均增量>2000",
-        from_sql=f"{cur} INNER JOIN {prev} ON {dimension_join('cur', 'prev')}",
+        hit_rule_id="p2_risk_domain_low_efficiency_growth",
+        hit_condition="风险域下低效策略汇总日均进审量环比上涨>20%，日均增量>2000，上期进审量>0",
+        from_sql=risk_domain_spike_source_sql(),
         where_sql=(
-            "cur.label_rate < 0.1 AND prev.avg_review_in_cnt > 0 "
-            "AND (cur.avg_review_in_cnt - prev.avg_review_in_cnt) "
-            "/ NULLIF(prev.avg_review_in_cnt, 0) > 0.2 "
-            "AND (cur.avg_review_in_cnt - prev.avg_review_in_cnt) > 2000"
+            "cur.prev_avg_review_in_cnt > 0 "
+            "AND cur.growth_rate > 0.2 "
+            "AND cur.daily_delta > 2000"
         ),
+        warning_dimension=WARNING_DIMENSION_RISK_DOMAIN,
         prev_fields_sql=growth_fields,
     )
     return f"""
@@ -598,10 +718,10 @@ def build_p1_sql() -> str:
   0.0 AS growth_rate,
   0.0 AS daily_delta,"""
     growth_fields = """
-  prev.avg_review_in_cnt AS prev_avg_review_in_cnt,
-  prev.label_rate AS prev_label_rate,
-  (cur.avg_review_in_cnt - prev.avg_review_in_cnt) / NULLIF(prev.avg_review_in_cnt, 0) AS growth_rate,
-  (cur.avg_review_in_cnt - prev.avg_review_in_cnt) AS daily_delta,"""
+  cur.prev_avg_review_in_cnt AS prev_avg_review_in_cnt,
+  cur.prev_label_rate AS prev_label_rate,
+  cur.growth_rate AS growth_rate,
+  cur.daily_delta AS daily_delta,"""
     condition_one = level_select_sql(
         level="P1",
         hit_rule_id="p1_two_week_persistent_low_efficiency",
@@ -622,16 +742,15 @@ def build_p1_sql() -> str:
     )
     condition_three = level_select_sql(
         level="P1",
-        hit_rule_id="p1_low_efficiency_volume_spike",
-        hit_condition="本期/上期打标率<10%，环比>30%，日均增量>5000",
-        from_sql=f"{cur} INNER JOIN {prev} ON {dimension_join('cur', 'prev')}",
+        hit_rule_id="p1_risk_domain_low_efficiency_volume_spike",
+        hit_condition="风险域下低效策略汇总日均进审量环比上涨>30%，日均增量>5000，上期进审量>0",
+        from_sql=risk_domain_spike_source_sql(),
         where_sql=(
-            "cur.label_rate < 0.1 AND prev.label_rate < 0.1 "
-            "AND prev.avg_review_in_cnt > 0 "
-            "AND (cur.avg_review_in_cnt - prev.avg_review_in_cnt) "
-            "/ NULLIF(prev.avg_review_in_cnt, 0) > 0.3 "
-            "AND (cur.avg_review_in_cnt - prev.avg_review_in_cnt) > 5000"
+            "cur.prev_avg_review_in_cnt > 0 "
+            "AND cur.growth_rate > 0.3 "
+            "AND cur.daily_delta > 5000"
         ),
+        warning_dimension=WARNING_DIMENSION_RISK_DOMAIN,
         prev_fields_sql=growth_fields,
     )
     return f"""
@@ -659,10 +778,10 @@ def build_p0_sql() -> str:
   0.0 AS growth_rate,
   0.0 AS daily_delta,"""
     growth_fields = """
-  w2.avg_review_in_cnt AS prev_avg_review_in_cnt,
-  w2.label_rate AS prev_label_rate,
-  (cur.avg_review_in_cnt - w2.avg_review_in_cnt) / NULLIF(w2.avg_review_in_cnt, 0) AS growth_rate,
-  (cur.avg_review_in_cnt - w2.avg_review_in_cnt) AS daily_delta,"""
+  cur.prev_avg_review_in_cnt AS prev_avg_review_in_cnt,
+  cur.prev_label_rate AS prev_label_rate,
+  cur.growth_rate AS growth_rate,
+  cur.daily_delta AS daily_delta,"""
 
     condition_a = level_select_sql(
         level="P0",
@@ -699,15 +818,15 @@ def build_p0_sql() -> str:
     )
     condition_d = level_select_sql(
         level="P0",
-        hit_rule_id="p0_review_in_volume_spike",
-        hit_condition="近1周打标率<10%，日均进审环比>50%，日均增量>10000",
-        from_sql=f"{cur} INNER JOIN {w2} ON {dimension_join('cur', 'w2')}",
+        hit_rule_id="p0_risk_domain_review_in_volume_spike",
+        hit_condition="风险域下低效策略汇总日均进审量环比上涨>50%，日均增量>10000，上期进审量>0",
+        from_sql=risk_domain_spike_source_sql(),
         where_sql=(
-            "cur.label_rate < 0.1 AND w2.avg_review_in_cnt > 0 "
-            "AND (cur.avg_review_in_cnt - w2.avg_review_in_cnt) "
-            "/ NULLIF(w2.avg_review_in_cnt, 0) > 0.5 "
-            "AND (cur.avg_review_in_cnt - w2.avg_review_in_cnt) > 10000"
+            "cur.prev_avg_review_in_cnt > 0 "
+            "AND cur.growth_rate > 0.5 "
+            "AND cur.daily_delta > 10000"
         ),
+        warning_dimension=WARNING_DIMENSION_RISK_DOMAIN,
         prev_fields_sql=growth_fields,
     )
     return f"""
@@ -783,7 +902,7 @@ def build_records(
         {
             "record_type": "sample",
             "id": event_id(),
-            "input": "近7天低打标率策略按机审一级标签×策略ID×策略名称×送审原因分P0/P1/P2/notice的情况",
+            "input": "近7天低打标率策略按单策略维度和风险域维度分P0/P1/P2/notice的情况",
             "run_mode": "debug_only",
             "scenario_key": SCENARIO_KEY,
             "task_type": "query_only",
@@ -841,7 +960,8 @@ def build_query_plan(levels: list[str], sql_map: dict[str, str]) -> dict[str, An
         "filters": [
             "standard_review_scope",
             "label_rate_lt_thresholds",
-            "current_review_in_gt_100",
+            "default_three_dimension_strategy_grain",
+            "risk_domain_low_strategy_rollup",
         ],
         "levels": levels,
         "level_priority": LEVEL_PRIORITY,
@@ -868,8 +988,8 @@ def build_query_plan(levels: list[str], sql_map: dict[str, str]) -> dict[str, An
             "freshness_gate",
             "denominator_not_zero",
             "field_mapping_check",
-            "grain_check_four_dimension_strategy",
-            "min_current_review_in_gate",
+            "grain_check_three_dimension_strategy",
+            "risk_domain_rollup_check",
             "forbidden_source_check",
             "truncation_check",
             "grading_rule_check",
@@ -932,6 +1052,7 @@ def normalize_rows(
     row_enricher: RowEnricher | None = None,
 ) -> list[dict[str, Any]]:
     columns = payload["data"]["columns"]
+    plus1_index = load_plus1_agreed_index()
     rows: list[dict[str, Any]] = []
     for raw_row in payload["data"]["rows"]:
         row = dict(zip(columns, raw_row))
@@ -946,6 +1067,7 @@ def normalize_rows(
         if row_enricher:
             normalized.update(row_enricher(dict(normalized)))
         ensure_poc_fields(normalized)
+        ensure_plus1_fields(normalized, plus1_index)
         rows.append(normalized)
     return rows
 
@@ -958,12 +1080,60 @@ def ensure_poc_fields(row: dict[str, Any]) -> None:
     row.setdefault("poc_mapping_status", "not_resolved_by_analysis_script")
 
 
-def dimension_key(row: dict[str, Any]) -> tuple[str, str, str, str]:
-    return tuple(str(row.get(field, "")) for field in DIMENSIONS)  # type: ignore[return-value]
+def plus1_asset_candidate_paths() -> list[Path]:
+    script_path = Path(__file__).resolve()
+    return [
+        script_path.parents[1]
+        / "assets"
+        / "efficiency-label-rate"
+        / PLUS1_AGREED_ASSET,
+        script_path.parents[3]
+        / "references"
+        / "scenarios"
+        / SCENARIO_KEY
+        / PLUS1_AGREED_ASSET,
+        script_path.parents[3]
+        / "skills"
+        / "efficiency-label-rate-ops"
+        / "assets"
+        / "efficiency-label-rate"
+        / PLUS1_AGREED_ASSET,
+    ]
+
+
+def load_plus1_agreed_index() -> dict[str, dict[str, Any]]:
+    for path in plus1_asset_candidate_paths():
+        if not path.exists():
+            continue
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        return {
+            str(entry.get("strategy_id", "")).strip(): entry
+            for entry in payload.get("entries", [])
+            if str(entry.get("strategy_id", "")).strip()
+        }
+    return {}
+
+
+def ensure_plus1_fields(
+    row: dict[str, Any],
+    plus1_index: dict[str, dict[str, Any]],
+) -> None:
+    strategy_id = str(row.get("strategy_id") or "").strip()
+    entry = plus1_index.get(strategy_id)
+    if entry:
+        row["is_plus1_agreed"] = "是"
+        row["plus1_update_date"] = entry.get("update_date") or ""
+    else:
+        row["is_plus1_agreed"] = "否"
+        row["plus1_update_date"] = ""
+
+
+def dimension_key(row: dict[str, Any]) -> tuple[str, ...]:
+    return tuple(str(row.get(field, "")) for field in DEDUPE_DIMENSIONS)
 
 
 def dedupe_level_rows(rows: list[dict[str, Any]], level: str) -> list[dict[str, Any]]:
-    deduped: dict[tuple[str, str, str, str], dict[str, Any]] = {}
+    deduped: dict[tuple[str, ...], dict[str, Any]] = {}
     for row in rows:
         key = dimension_key(row)
         existing = deduped.get(key)
@@ -989,7 +1159,7 @@ def dedupe_level_rows(rows: list[dict[str, Any]], level: str) -> list[dict[str, 
 def build_comprehensive_results(
     level_results: dict[str, dict[str, Any]]
 ) -> list[dict[str, Any]]:
-    best_by_key: dict[tuple[str, str, str, str], dict[str, Any]] = {}
+    best_by_key: dict[tuple[str, ...], dict[str, Any]] = {}
     for level in LEVEL_ORDER:
         if level not in level_results:
             continue
@@ -1070,17 +1240,20 @@ def build_readonly_execution(
         "level_results": level_results,
         "comprehensive_results": comprehensive_results,
         "evidence_fields": [
+            "warning_dimension",
             "severity_level",
             "mach_root_label_name",
             "strategy_id",
             "strategy_name",
-            "reason",
+            "max_data_date",
             "POC",
             "poc_name",
             "avg_review_in_cnt",
             "avg_review_done_cnt",
             "avg_label_cnt",
             "label_rate",
+            "is_plus1_agreed",
+            "plus1_update_date",
             "hit_rule_ids",
             "hit_conditions",
         ],
@@ -1090,9 +1263,9 @@ def build_readonly_execution(
             "freshness_gate": "passed_via_p_date_filter",
             "denominator_not_zero": "passed",
             "field_mapping_check": "passed",
-            "grain_check": "passed_mach_root_label_strategy_reason",
+            "grain_check": "passed_warning_dimension_mach_root_label_strategy",
+            "risk_domain_rollup": "passed_low_strategy_rollup_by_mach_root_label",
             "poc_name_mapping": "passed_name_only",
-            "min_current_review_in_gate": f"passed_cur_total_review_in_cnt_gt_{MIN_CURRENT_REVIEW_IN_CNT}",
             "forbidden_source_check": "passed",
             "truncation_check": "passed",
             "grading_rule_check": "passed",
@@ -1157,7 +1330,7 @@ def build_analysis_result(
         "query_plan": compact_query_plan(query_plan),
         "readonly_execution": readonly_execution,
         "impact_assessment": {
-            "summary": f"近7天低打标率四维分级完成，综合命中 {readonly_execution['row_count']} 个策略分组；{summary}。",
+            "summary": f"近7天低打标率分级完成，综合命中 {readonly_execution['row_count']} 个预警分组；{summary}。",
             "impact_scope": f"comprehensive_strategy_group_count={readonly_execution['row_count']}",
             "risk_level": highest_hit_level(level_counts),
             "business_risk": "本结果为分级查询结果，不自动触发通知或状态写入。",
@@ -1226,13 +1399,14 @@ def build_smoke_payloads(levels: list[str]) -> dict[str, dict[str, Any]]:
 
 def build_smoke_payload(level: str, index: int = 0) -> dict[str, Any]:
     row = [
+        WARNING_DIMENSION_SINGLE_STRATEGY,
         level,
         LEVEL_PRIORITY[level],
         "不良行为或争议价值观",
         f"strategy_{level.lower()}_{index}",
         f"{level}低打标率策略",
-        f"{level.lower()}_low_label_reason",
         7,
+        "2026-07-12",
         21000.0 + index,
         20000.0 + index,
         400.0,
@@ -1246,6 +1420,8 @@ def build_smoke_payload(level: str, index: int = 0) -> dict[str, Any]:
         2000.0,
         f"smoke_{level.lower()}_rule",
         f"{level} smoke hit condition",
+        "否",
+        "",
     ]
     return {
         "status": "success",

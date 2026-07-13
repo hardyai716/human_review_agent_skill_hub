@@ -10,7 +10,7 @@
 ## 低打标率策略预警草稿
 
 ```text
-【人审效率预警｜低打标率 reason】
+【人审效率预警｜低效策略 / 风险域】
 
 场景：{scenario_key}
 等级：{severity}
@@ -20,12 +20,18 @@
 {summary}
 
 证据：
-- reason：{reason}
+- 预警维度：{warning_dimension}
+- 机审一级标签：{mach_root_label_name}
+- 策略ID：{strategy_id}
+- 策略名称：{strategy_name}
 - 日均进审量：{avg_review_in_cnt}
 - 日均完审量：{avg_review_done_cnt}
 - 日均打标量：{avg_label_cnt}
 - 打标率：{label_rate}
+- 命中规则：{hit_rule_id}
 - 命中条件：{hit_condition}
+- 是否+1同意：{is_plus1_agreed}
+- 更新日期：{plus1_update_date}
 
 建议 Owner：{owner}
 Owner 依据：{routing_evidence}
@@ -34,6 +40,7 @@ Owner 依据：{routing_evidence}
 说明：
 - 本通知为 debug_only 草稿，未真实发送。
 - 打标率口径：打标量 / 完审量。
+- 风险域维度行的策略ID、策略名称可为空，POC 按机审一级标签映射。
 - source_footer：{source_footer}
 ```
 

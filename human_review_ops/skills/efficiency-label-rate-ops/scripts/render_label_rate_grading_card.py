@@ -150,6 +150,12 @@ def table_columns() -> list[dict[str, Any]]:
             "data_type": "options",
             "width": "100px",
         },
+        {
+            "name": "warning_dimension",
+            "display_name": "预警维度",
+            "data_type": "text",
+            "width": "110px",
+        },
         {"name": "poc_name", "display_name": "POC", "data_type": "text", "width": "100px"},
         {
             "name": "mach_root_label_name",
@@ -169,7 +175,12 @@ def table_columns() -> list[dict[str, Any]]:
             "data_type": "text",
             "width": "200px",
         },
-        {"name": "reason", "display_name": "送审原因", "data_type": "text", "width": "220px"},
+        {
+            "name": "max_data_date",
+            "display_name": "最大有数日期",
+            "data_type": "text",
+            "width": "120px",
+        },
         {
             "name": "avg_in",
             "display_name": "日均进审量",

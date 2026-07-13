@@ -36,17 +36,26 @@ POC_MAPPING_ASSET = "assets/efficiency-label-rate/mach_root_label_poc_mapping.js
 REPORT_TYPE = "low_efficiency_grading"
 CSV_LEVELS = ["notice", "P2", "P1", "P0"]
 CARD_LEVELS = ["P0", "P1", "P2", "notice"]
+FILTERED_COMPREHENSIVE_CSV = "综合_剔除+1同意.csv"
+FILTERED_SUMMARY_CSV = "汇总统计_剔除+1同意.csv"
 LEVEL_COLUMN_SPECS = [
+    ("warning_dimension", "预警维度"),
     ("mach_root_label_name", "机审一级标签"),
     ("strategy_id", "策略ID"),
     ("strategy_name", "策略名称"),
-    ("reason", "送审原因"),
+    ("max_data_date", "最大有数日期"),
     ("POC", "POC"),
     ("avg_review_in_cnt", "日均进审量"),
     ("avg_review_done_cnt", "日均完审量"),
     ("avg_label_cnt", "日均打标量"),
     ("label_rate", "打标率"),
     ("hit_conditions", "命中原因"),
+    ("is_plus1_agreed", "是否+1同意"),
+    ("plus1_update_date", "更新日期"),
+    (
+        "plus1_agreed_before_current_period",
+        "+1同意日期是否在本次统计周期前",
+    ),
 ]
 SUMMARY_COLUMN_SPECS = [
     ("mach_root_label_name", "机审一级标签"),
@@ -64,8 +73,12 @@ class ReportArtifacts:
     """CSV/XLSX report files and the rows used by card summary tables."""
 
     summary_rows: list[dict[str, Any]]
+    filtered_summary_rows: list[dict[str, Any]]
     workbook_path: Path
     summary_csv_path: Path
+    filtered_summary_csv_path: Path
+    filtered_comprehensive_csv_path: Path
+    filtered_comprehensive_row_count: int
 
 
 @dataclass(frozen=True)
@@ -191,6 +204,8 @@ def build_label_rate_notification_artifacts(
         top_n=top_n,
         self_send_requested=self_send_requested,
         label_poc_summary_count=len(report.summary_rows),
+        filtered_label_poc_summary_count=len(report.filtered_summary_rows),
+        filtered_comprehensive_row_count=report.filtered_comprehensive_row_count,
     )
     poc_routing_path = write_poc_routing_artifact(
         output_dir=output_dir,
@@ -217,6 +232,7 @@ def build_label_rate_notification_artifacts(
         summary_path=summary_path,
         workbook_path=report.workbook_path,
         summary_csv_path=report.summary_csv_path,
+        filtered_summary_csv_path=report.filtered_summary_csv_path,
         sheet_url=sheet_url,
         card=card,
         notification_draft_path=notification_draft_path,
@@ -286,23 +302,60 @@ def write_report_artifacts(
     execution: dict[str, Any],
     period: dict[str, str],
 ) -> ReportArtifacts:
-    write_level_csvs(output_dir, execution)
-    summary_rows = build_label_poc_summary_rows(execution["comprehensive_results"])
+    current_start = period["current_start"]
+    level_rows = {
+        level: add_plus1_period_flag_to_rows(
+            execution["level_results"][level]["rows"],
+            current_start,
+        )
+        for level in CSV_LEVELS
+    }
+    comprehensive_rows = add_plus1_period_flag_to_rows(
+        execution["comprehensive_results"],
+        current_start,
+    )
+    filtered_comprehensive_rows = build_filtered_comprehensive_rows(
+        comprehensive_rows,
+        current_start,
+    )
+    filtered_comprehensive_csv_path = output_dir / FILTERED_COMPREHENSIVE_CSV
+    write_level_csvs(output_dir, level_rows, comprehensive_rows, filtered_comprehensive_rows)
+    summary_rows = build_label_poc_summary_rows(comprehensive_rows)
+    filtered_summary_rows = build_label_poc_summary_rows(filtered_comprehensive_rows)
     summary_csv_path = output_dir / "汇总统计.csv"
+    filtered_summary_csv_path = output_dir / FILTERED_SUMMARY_CSV
     write_summary_csv(summary_csv_path, summary_rows)
-    workbook_path = write_workbook(output_dir, execution, period, summary_rows)
+    write_summary_csv(filtered_summary_csv_path, filtered_summary_rows)
+    workbook_path = write_workbook(
+        output_dir,
+        period,
+        level_rows,
+        comprehensive_rows,
+        summary_rows,
+        filtered_summary_rows,
+        filtered_comprehensive_rows,
+    )
     return ReportArtifacts(
         summary_rows=summary_rows,
+        filtered_summary_rows=filtered_summary_rows,
         workbook_path=workbook_path,
         summary_csv_path=summary_csv_path,
+        filtered_summary_csv_path=filtered_summary_csv_path,
+        filtered_comprehensive_csv_path=filtered_comprehensive_csv_path,
+        filtered_comprehensive_row_count=len(filtered_comprehensive_rows),
     )
 
 
-def write_level_csvs(output_dir: Path, execution: dict[str, Any]) -> None:
+def write_level_csvs(
+    output_dir: Path,
+    level_rows: dict[str, list[dict[str, Any]]],
+    comprehensive_rows: list[dict[str, Any]],
+    filtered_comprehensive_rows: list[dict[str, Any]],
+) -> None:
     for level in CSV_LEVELS:
-        rows = execution["level_results"][level]["rows"]
-        write_level_csv(output_dir / f"{level}.csv", rows)
-    write_level_csv(output_dir / "综合.csv", execution["comprehensive_results"])
+        write_level_csv(output_dir / f"{level}.csv", level_rows[level])
+    write_level_csv(output_dir / "综合.csv", comprehensive_rows)
+    write_level_csv(output_dir / FILTERED_COMPREHENSIVE_CSV, filtered_comprehensive_rows)
 
 
 def write_level_csv(path: Path, rows: list[dict[str, Any]]) -> None:
@@ -339,9 +392,12 @@ def write_summary_csv(path: Path, rows: list[dict[str, Any]]) -> None:
 
 def write_workbook(
     output_dir: Path,
-    execution: dict[str, Any],
     period: dict[str, str],
+    level_rows: dict[str, list[dict[str, Any]]],
+    comprehensive_rows: list[dict[str, Any]],
     summary_rows: list[dict[str, Any]],
+    filtered_summary_rows: list[dict[str, Any]],
+    filtered_comprehensive_rows: list[dict[str, Any]],
 ) -> Path:
     workbook_path = (
         output_dir
@@ -352,11 +408,12 @@ def write_workbook(
     workbook.remove(default_sheet)
 
     for sheet_name, rows in [
-        ("P0", execution["level_results"]["P0"]["rows"]),
-        ("P1", execution["level_results"]["P1"]["rows"]),
-        ("P2", execution["level_results"]["P2"]["rows"]),
-        ("Notice", execution["level_results"]["notice"]["rows"]),
-        ("综合", execution["comprehensive_results"]),
+        ("P0", level_rows["P0"]),
+        ("P1", level_rows["P1"]),
+        ("P2", level_rows["P2"]),
+        ("Notice", level_rows["notice"]),
+        ("综合", comprehensive_rows),
+        ("综合_剔除+1同意", filtered_comprehensive_rows),
     ]:
         sheet = workbook.create_sheet(sheet_name)
         sheet.append([header for _, header in LEVEL_COLUMN_SPECS])
@@ -376,8 +433,54 @@ def write_workbook(
             [csv_value(row.get(field)) for field, _ in SUMMARY_COLUMN_SPECS]
         )
     style_sheet_header(summary_sheet)
+
+    filtered_summary_sheet = workbook.create_sheet("汇总统计_剔除+1同意")
+    filtered_summary_sheet.append([header for _, header in SUMMARY_COLUMN_SPECS])
+    for row in filtered_summary_rows:
+        filtered_summary_sheet.append(
+            [csv_value(row.get(field)) for field, _ in SUMMARY_COLUMN_SPECS]
+        )
+    style_sheet_header(filtered_summary_sheet)
     workbook.save(workbook_path)
     return workbook_path
+
+
+def build_filtered_comprehensive_rows(
+    rows: list[dict[str, Any]],
+    current_start: str,
+) -> list[dict[str, Any]]:
+    return [
+        row
+        for row in rows
+        if not is_pre_period_plus1_agreed(row, current_start)
+    ]
+
+
+def add_plus1_period_flag_to_rows(
+    rows: list[dict[str, Any]],
+    current_start: str,
+) -> list[dict[str, Any]]:
+    enriched_rows: list[dict[str, Any]] = []
+    for row in rows:
+        enriched = dict(row)
+        enriched["plus1_agreed_before_current_period"] = (
+            "是" if is_pre_period_plus1_agreed(row, current_start) else "否"
+        )
+        enriched_rows.append(enriched)
+    return enriched_rows
+
+
+def is_pre_period_plus1_agreed(row: dict[str, Any], current_start: str) -> bool:
+    update_date = normalize_date_str(row.get("plus1_update_date"))
+    return (
+        row.get("is_plus1_agreed") == "是"
+        and bool(update_date)
+        and update_date < current_start
+    )
+
+
+def normalize_date_str(value: Any) -> str:
+    return str(value or "").strip().replace("/", "-")
 
 
 def write_poc_routing_artifact(
@@ -406,6 +509,8 @@ def build_summary(
     top_n: int,
     self_send_requested: bool,
     label_poc_summary_count: int,
+    filtered_label_poc_summary_count: int,
+    filtered_comprehensive_row_count: int,
 ) -> dict[str, Any]:
     execution = sample["readonly_execution"]
     provenance = sample["provenance"]
@@ -428,13 +533,19 @@ def build_summary(
         "region": provenance["region"],
         "period": period,
         "level_counts": execution["level_counts"],
+        "comprehensive_alert_count": execution["row_count"],
         "comprehensive_reason_count": execution["row_count"],
         "comprehensive_strategy_group_count": execution["row_count"],
+        "comprehensive_exclude_pre_period_plus1_count": filtered_comprehensive_row_count,
+        "plus1_exclusion_cutoff_date": period["current_start"],
         "fallback_reason": sample["QueryPlan"]["fallback_reason"],
         "metric_formula": execution["metric_formula"],
         "top_n": top_n,
         "sheet_url": sheet_url,
         "label_poc_summary_count": label_poc_summary_count,
+        "label_poc_summary_exclude_pre_period_plus1_count": (
+            filtered_label_poc_summary_count
+        ),
         "outputs": {
             "summary_json": "summary.json",
             "notice_csv": "notice.csv",
@@ -442,11 +553,13 @@ def build_summary(
             "P1_csv": "P1.csv",
             "P0_csv": "P0.csv",
             "comprehensive_csv": "综合.csv",
+            "comprehensive_exclude_pre_period_plus1_csv": FILTERED_COMPREHENSIVE_CSV,
             "workbook": workbook_path.name,
             "poc_routing_plan": "poc_routing_plan.json",
             "notification_draft": "notification_draft.json",
             "send_plan": "send_plan.json",
             "summary_by_label_poc_csv": "汇总统计.csv",
+            "summary_by_label_poc_exclude_pre_period_plus1_csv": FILTERED_SUMMARY_CSV,
         },
         "source_footer": sample["source_footer"],
     }
@@ -508,6 +621,7 @@ def build_publish_summary(
     summary_path: Path,
     workbook_path: Path,
     summary_csv_path: Path,
+    filtered_summary_csv_path: Path,
     sheet_url: str | None,
     card: CardArtifacts,
     notification_draft_path: Path,
@@ -525,6 +639,9 @@ def build_publish_summary(
         "summary_json": relative_to_root(summary_path),
         "workbook": relative_to_root(workbook_path),
         "summary_by_label_poc_csv": relative_to_root(summary_csv_path),
+        "summary_by_label_poc_exclude_pre_period_plus1_csv": relative_to_root(
+            filtered_summary_csv_path
+        ),
         "sheet_url": sheet_url,
         "card_json": relative_to_root(card.card_path),
         "card_json_with_meta": relative_to_root(card.card_with_meta_path),
@@ -567,6 +684,7 @@ def build_notification_draft(
         "source_stage_1_result": summary["source_stage_1_result"],
         "level_counts": summary["level_counts"],
         "comprehensive_reason_count": summary["comprehensive_reason_count"],
+        "comprehensive_alert_count": summary["comprehensive_alert_count"],
         "comprehensive_strategy_group_count": summary[
             "comprehensive_strategy_group_count"
         ],
@@ -577,11 +695,17 @@ def build_notification_draft(
                 "summary_by_label_poc": summary["outputs"].get(
                     "summary_by_label_poc_csv"
                 ),
+                "summary_by_label_poc_exclude_pre_period_plus1": summary[
+                    "outputs"
+                ].get("summary_by_label_poc_exclude_pre_period_plus1_csv"),
                 "notice": summary["outputs"].get("notice_csv"),
                 "P2": summary["outputs"].get("P2_csv"),
                 "P1": summary["outputs"].get("P1_csv"),
                 "P0": summary["outputs"].get("P0_csv"),
                 "comprehensive": summary["outputs"].get("comprehensive_csv"),
+                "comprehensive_exclude_pre_period_plus1": summary["outputs"].get(
+                    "comprehensive_exclude_pre_period_plus1_csv"
+                ),
             },
         },
         "card_draft": {
@@ -735,17 +859,19 @@ def build_label_poc_summary_rows(rows: list[dict[str, Any]]) -> list[dict[str, A
 
     result: list[dict[str, Any]] = []
     for bucket in grouped.values():
-        total_done = bucket["_total_review_done_cnt"]
+        avg_review_in_cnt = round(bucket["_avg_review_in_cnt"])
+        avg_review_done_cnt = round(bucket["_avg_review_done_cnt"])
+        avg_label_cnt = round(bucket["_avg_label_cnt"])
         result.append(
             {
                 "mach_root_label_name": bucket["mach_root_label_name"],
                 "POC": bucket["POC"],
                 "low_efficiency_strategy_count": len(bucket["_strategy_names"]),
-                "avg_review_in_cnt": round(bucket["_avg_review_in_cnt"]),
-                "avg_review_done_cnt": round(bucket["_avg_review_done_cnt"]),
-                "avg_label_cnt": round(bucket["_avg_label_cnt"]),
-                "label_rate": bucket["_total_label_cnt"] / total_done
-                if total_done
+                "avg_review_in_cnt": avg_review_in_cnt,
+                "avg_review_done_cnt": avg_review_done_cnt,
+                "avg_label_cnt": avg_label_cnt,
+                "label_rate": avg_label_cnt / avg_review_done_cnt
+                if avg_review_done_cnt
                 else 0.0,
             }
         )
@@ -806,10 +932,11 @@ def build_top_rows(rows: list[dict[str, Any]], top_n: int) -> list[dict[str, Any
                 "rank": index,
                 "level": [{"text": level, "color": LEVEL_COLORS.get(level, "blue")}],
                 "poc_name": row.get("POC") or row.get("poc_name", "未映射"),
+                "warning_dimension": row.get("warning_dimension", ""),
                 "mach_root_label_name": row.get("mach_root_label_name", ""),
                 "strategy_id": row.get("strategy_id", ""),
                 "strategy_name": row.get("strategy_name", ""),
-                "reason": row["reason"],
+                "max_data_date": row.get("max_data_date", ""),
                 "avg_in": round(float(row["avg_review_in_cnt"])),
                 "avg_done": round(float(row["avg_review_done_cnt"])),
                 "avg_labeled": round(float(row["avg_label_cnt"])),
@@ -832,6 +959,7 @@ def summarize_routing_rules(poc_routing: dict[str, Any]) -> dict[str, Any]:
                 "requires_human_confirmation_before_real_send"
             ),
             "group_send_blocked": rule.get("group_send_blocked"),
+            "alert_count": rule.get("alert_count", rule.get("strategy_group_count")),
             "reason_count": rule.get("reason_count"),
             "strategy_group_count": rule.get("strategy_group_count"),
             "poc_names": rule.get("poc_names", []),

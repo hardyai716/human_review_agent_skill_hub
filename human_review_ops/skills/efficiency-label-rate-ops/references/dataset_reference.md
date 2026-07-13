@@ -64,7 +64,7 @@
 - 引擎：ClickHouse
 - 分区：`p_date`
 - 默认新鲜度：T+1，查询前必须确认 `MAX(p_date)` 和目标分区行数。
-- 支持粒度：`p_date × reason`；维度拆解支持 `p_date × dimensions × reason`。
+- 支持粒度：默认分级使用 `p_date × 机审一级标签 × strategy_id × strategy_name`；维度拆解可扩展到 `p_date × dimensions × reason`。
 - 不用于：人员明细、责任人解析、open_id / chat_id、触达对象。
 
 ## 字段映射
@@ -77,11 +77,57 @@
 | 日期分区 | `date` | `p_date` | 用于时间窗口和分区就绪检查。 |
 | 项目标题 | `project_title` | `project_title` | 用于排除测试、质检、离线等项目。 |
 | 审核场景 | `scene` | `scene` | 默认保留社区审核三类场景。 |
-| 机审一级标签 | `mach_root_label_name` | `机审一级标签` | 空值必须保留，维度拆解使用。 |
+| 机审一级标签 / 风险域 | `mach_root_label_name` | `机审一级标签` | 低打标率治理中的风险域即机审一级标签；空值必须保留，维度拆解和风险域汇总使用。 |
 | 进审量 | `review_in_cnt` | `进审量_reviewid` | 聚合字段。 |
 | 完审量 | `review_done_cnt` | `完审量_reviewid` | 打标率分母。 |
 | 打标量 | `label_cnt` | `打标量__reviewid` | 双下划线，打标率分子。 |
 | 打标率 | `label_rate` | `打标率__reviewid` | 不直接跨粒度聚合，应重算。 |
+
+## 空机审一级标签补映射
+
+默认分级取数时，若原始 `[机审一级标签]` 为空或空串，必须在 SQL 取数层按 `strategy_name` 补齐 `mach_root_label_key`，再进入聚合、分级和 POC 路由。非空 `[机审一级标签]` 保持原值。
+
+明确策略名映射：
+
+| strategy_name | 补齐后的机审一级标签 |
+| --- | --- |
+| 高价值-兜底vv进审 | 高热 |
+| 短视频-特殊账号-达到VV阈值 | 高热 |
+| 非白名单政媒账号投稿vv大于5万vv送审 | 政媒 |
+| 商业化付费视频全人审ugc | 商业化 |
+| 白名单账号投稿vv大于5万vv送审 | 政媒 |
+| 中视频-特殊账号-达到VV阈值 | 高热 |
+| 星图预审35wvv强制召回 | 高热 |
+| 【ZL推人】麒麟芯片9030 | 指令舆情相关 |
+| 【ZL推人】涉日股市负面-词 | 指令舆情相关 |
+| 高热虐猫虐狗上升召回-内容现象 | 高热 |
+| 【兜底送审】普通视频豁免25W进审 | 高热 |
+
+若空标签策略未命中上表，再按策略名称包含关系兜底：
+
+| 包含关键词 | 补齐后的机审一级标签 |
+| --- | --- |
+| `ZL` | 指令舆情相关 |
+| `商业化` | 商业化 |
+| `政媒` | 政媒 |
+
+仍无法命中时输出 `（空/机审一级标签）`，并按低置信度路由处理。
+
+## +1评估同意标记
+
+低打标率全等级结果必须基于 `plus1_agreed_strategy_updates.json` 补充两个治理状态字段：
+
+| 输出字段 | 来源 | 说明 |
+| --- | --- | --- |
+| `是否+1同意` | `strategy_id` 命中 `+1评估=同意` 策略资产 | 命中输出 `是`，未命中输出 `否`；风险域维度因策略 ID 为空默认 `否`。 |
+| `更新日期` | 同一策略在原始飞书表中的 `更新日期` | 命中且存在日期时输出 `YYYY-MM-DD`；历史同意清单中无当前日期的策略输出空。 |
+| `+1同意日期是否在本次统计周期前` | `是否+1同意`、`更新日期`、当前统计周期开始日期 | `是否+1同意 = 是` 且 `更新日期 < 当前统计周期开始日期` 时输出 `是`，否则输出 `否`。 |
+
+资产来源为飞书表格 `GzpCwP516imDB8kQ3g1cLr5bnPc`，筛选条件为 `+1评估 = 同意`。该清单会持续更新，默认每天第一次使用该策略清单时必须只读刷新飞书表格，并用当前表内容覆盖本地 `plus1_agreed_strategy_updates.json`；日内重复使用可复用当日已刷新的本地资产。
+
+全等级报表除保留完整 `综合` 外，还必须输出 `综合_剔除+1同意`：以当前统计周期开始日期为 cutoff，剔除 `是否+1同意 = 是` 且 `更新日期 < cutoff` 的策略。示例：周期为 `2026-07-06` 至 `2026-07-12` 时，剔除 `2026-07-06` 之前已同意的策略；`更新日期` 为空或不早于 `2026-07-06` 的行保留。
+
+汇总统计也必须成对输出：`汇总统计` 基于完整 `综合` 聚合，`汇总统计_剔除+1同意` 基于 `综合_剔除+1同意` 聚合，二者字段结构保持一致。汇总统计中的 `低效策略打标率` 必须与表内展示量一致，按 `低效策略日均打标量 / 低效策略日均完审量` 计算。
 
 ## 字段映射：举报流转
 
@@ -181,10 +227,13 @@ AND `[一轮队列名称]` NOT LIKE '%特殊%'
 - 日均量必须用 `COUNT(DISTINCT p_date)`，不得硬编码 `/7`。
 - NULL 机审标签必须用 `field IS NULL OR field IN (...)`，不得写 `IN (NULL, ...)`。
 - 可空维度做 `ifNull` / `coalesce` / `case` 归一化后，内部别名不得与底表物理字段或 Aeolus 展示字段同名，统一使用 `*_key`。例如必须写 `ifNull(`[机审一级标签]`, '（空/机审一级标签）') AS mach_root_label_key` 并 `GROUP BY mach_root_label_key`，外层再 `mach_root_label_key AS mach_root_label_name`。禁止写 `AS mach_root_label_name GROUP BY mach_root_label_name`，否则 Aeolus / ClickHouse 可能解析到原始字段，导致 NULL 维度桶丢失。
+- 空机审一级标签补映射也必须输出到内部稳定别名 `mach_root_label_key`，不得直接写为展示字段 `mach_root_label_name` 后参与 `GROUP BY`。
+- 默认低打标率分级不得按 `reason` 分组；`reason` 只保留为样本过滤字段，即必须继续排除 `recall_skip_L6` 和 `fatal_output`。
+- 风险域爆量类查询必须先按 `mach_root_label_key × strategy_id_key × strategy_name_key` 筛出低效策略，再按 `mach_root_label_key` 汇总。风险域维度输出时 `strategy_id`、`strategy_name` 置空。
 
 ## 查询模板参数化
 
-- `reason` 是默认维度，不是固定唯一维度；Agent 必须从用户问题中解析 `dimensions`。
+- `reason` 是可选拆解维度，不是默认分级维度；Agent 必须从用户问题中解析 `dimensions`。
 - 已确认维度可直接进入 SQL：`reason`、`p_date`、`scene`、`project_title`、`mach_root_label_name`、`strategy_id`、`strategy_name`。
 - 多维度问题按 `dimensions` 生成 `SELECT` 和 `GROUP BY`，例如 `reason, scene`。
 - “有哪些 / 排名 / 明细”类问题使用 `query_mode=ranking`，返回维度明细、完审量、打标量和打标率。

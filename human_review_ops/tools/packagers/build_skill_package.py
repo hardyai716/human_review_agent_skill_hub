@@ -142,6 +142,10 @@ SCENARIO_BUNDLE_ASSET_SOURCES = [
         "assets/{scenario_key}/mach_root_label_poc_mapping.json",
     ),
     (
+        "references/scenarios/{scenario_key}/plus1_agreed_strategy_updates.json",
+        "assets/{scenario_key}/plus1_agreed_strategy_updates.json",
+    ),
+    (
         "skills/notification/assets/efficiency-label-rate/card_schema_notes.md",
         "assets/{scenario_key}/card_schema_notes.md",
     ),
