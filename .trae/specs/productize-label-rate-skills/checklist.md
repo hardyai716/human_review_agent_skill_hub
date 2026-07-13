@@ -35,8 +35,8 @@
 - [x] Card 模板与渲染实现一致，不再保留“reason 数柱状图”等过期展示契约。
 - [x] `docs/skill_scenario_migration_checklist.md` 中 `efficiency-label-rate-ops` AgentBuddy 发布状态与实际发布记录一致。
 - [x] 最终全量回归通过：productization strict、standalone smoke、skill path registry、scenario package check-sync、能力一致性 validator、脚本级 validator、Stage 1/Stage 2 关键 validator、AgentBuddy publish validator、`git diff --check`。
-- [ ] 收敛后最终状态已提交并推送到 `origin/main`。
-- [ ] 收敛后受影响 Skill 已重新发布到 AgentBuddy，并记录最终发布摘要。
+- [x] 收敛后最终状态已提交并推送到 `origin/main`。
+- [x] 收敛后受影响 Skill 已重新发布到 AgentBuddy，并记录最终发布摘要。
 - [x] `efficiency-label-rate-ops/SKILL.md` 的 description 可独立理解，不依赖“四个通用能力 Skill”或“根场景包”上下文。
 - [x] `efficiency-label-rate-ops/references/scenario_manifest.md` 和合并场景文档不再出现 `.trae/skills/warehouse-skill`、`.trae/skills/low-efficiency-strategy-analysis` 等外部不可读来源。
 - [x] `默认运行约束` 已解释 `debug_only`、默认只读、QueryPlan 和 mock / 只读查询链路的含义，外部 Agent 单独安装后可理解。

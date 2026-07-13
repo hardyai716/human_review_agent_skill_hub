@@ -1,0 +1,77 @@
+{
+  "schema_version": "agentbuddy_label_rate_ops_standalone_republish.v1",
+  "published_at": "2026-07-14T00:30:50+08:00",
+  "git_commit": "10d33c0c4352e938bf0cf04241110056cede9ada",
+  "group": "skills.byted.org/lizhongtao/hunman_review_ops",
+  "access": "restricted",
+  "region": "cn",
+  "status": "published",
+  "skills": [
+    {
+      "path": "human_review_ops/skills/efficiency-label-rate-ops",
+      "name": "efficiency-label-rate-ops",
+      "status": "published",
+      "skill_id": "skills:skills.byted.org/lizhongtao/hunman_review_ops/efficiency-label-rate-ops:1.0.3"
+    }
+  ],
+  "skill_ids": {
+    "efficiency-label-rate-ops": "skills:skills.byted.org/lizhongtao/hunman_review_ops/efficiency-label-rate-ops:1.0.3"
+  },
+  "commands": [
+    {
+      "name": "scenario_bundle_check_sync",
+      "command": "python3 human_review_ops/tools/packagers/build_skill_package.py efficiency-label-rate --target scenario-bundle --check-sync",
+      "status": "passed"
+    },
+    {
+      "name": "efficiency_label_rate_ops_skill_validator",
+      "command": "HRO_SKILL_PATH_MODE=canonical python3 human_review_ops/tools/validators/validate_efficiency_label_rate_ops_skill.py",
+      "status": "passed"
+    },
+    {
+      "name": "label_rate_capability_matrix",
+      "command": "python3 human_review_ops/tools/validators/validate_label_rate_capability_matrix.py",
+      "status": "passed"
+    },
+    {
+      "name": "skill_productization_all_releaseable",
+      "command": "python3 human_review_ops/tools/validators/validate_skill_productization.py --strict --profile all_releaseable",
+      "status": "passed"
+    },
+    {
+      "name": "skill_standalone_smoke_all_releaseable",
+      "command": "python3 human_review_ops/tools/validators/validate_skill_standalone_smoke.py --profile all_releaseable",
+      "status": "passed"
+    },
+    {
+      "name": "agentbuddy_publish_validator",
+      "command": "python3 human_review_ops/tools/validators/validate_agentbuddy_publish.py",
+      "status": "passed"
+    },
+    {
+      "name": "git_diff_check",
+      "command": "git diff --check",
+      "status": "passed"
+    },
+    {
+      "name": "git_push",
+      "command": "git push origin main",
+      "status": "passed",
+      "result": "f99308e..10d33c0 main -> main"
+    },
+    {
+      "name": "agentbuddy_publish_efficiency_label_rate_ops",
+      "command": "NPM_CONFIG_REGISTRY=http://bnpm.byted.org /Users/bytedance/.nvm/versions/node/v24.17.0/bin/npx -y agentbuddy@latest skill publish ./human_review_ops/skills/efficiency-label-rate-ops --group skills.byted.org/lizhongtao/hunman_review_ops --access restricted --region cn -y",
+      "status": "published",
+      "skill_id": "skills:skills.byted.org/lizhongtao/hunman_review_ops/efficiency-label-rate-ops:1.0.3"
+    },
+    {
+      "name": "agentbuddy_find_efficiency_label_rate_ops",
+      "command": "NPM_CONFIG_REGISTRY=http://bnpm.byted.org /Users/bytedance/.nvm/versions/node/v24.17.0/bin/npx -y agentbuddy@latest skill find efficiency-label-rate-ops",
+      "status": "passed",
+      "result": "skills.byted.org/lizhongtao/hunman_review_ops@efficiency-label-rate-ops"
+    }
+  ],
+  "retries": [],
+  "blocking_reasons": []
+}

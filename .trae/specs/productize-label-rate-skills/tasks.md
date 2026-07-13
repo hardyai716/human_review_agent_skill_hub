@@ -113,13 +113,13 @@
   - [x] SubTask 20.4: 重新发布受影响 Skill 到 AgentBuddy restricted 空间，并记录最终发布摘要。
   - [x] SubTask 20.5: 汇总本轮完成情况到 `progress.md`。
 
-- [ ] Task 21: 修复 `efficiency-label-rate-ops` 独立可读性，并补齐最终发布闭环。
+- [x] Task 21: 修复 `efficiency-label-rate-ops` 独立可读性，并补齐最终发布闭环。
   - [x] SubTask 21.1: 将 `efficiency-label-rate-ops/SKILL.md` 的 description 改为独立完整描述，不引用“四个通用能力 Skill”或“根场景包”作为理解前提。
   - [x] SubTask 21.2: 将 `efficiency-label-rate-ops/references/scenario_manifest.md` 和合并场景文档中的 `.trae/skills/*` 参考来源改为通用来源说明，避免外部 Agent 读到不可解析路径。
   - [x] SubTask 21.3: 将 `默认运行约束` 中的 `debug_only`、默认只读、QueryPlan、mock / 只读查询链路解释为独立安装时可理解的运行模式和安全边界。
   - [x] SubTask 21.4: 同步 `build_skill_package.py` 的场景级 SKILL.md / scenario manifest 生成模板，确保 `--check-sync` 不回滚独立可读文案。
   - [x] SubTask 21.5: 新增或增强 validator，检查场景级 Skill 发布包不含 `.trae/skills/`、`warehouse-skill`、`low-efficiency-strategy-analysis`、作为理解前提的“四个通用能力 Skill”等不可独立理解文本。
-  - [ ] SubTask 21.6: 运行关键回归、提交并推送最终状态，重新发布受影响 Skill 到 AgentBuddy，记录最终发布摘要，并勾选剩余 checklist。
+  - [x] SubTask 21.6: 运行关键回归、提交并推送最终状态，重新发布受影响 Skill 到 AgentBuddy，记录最终发布摘要，并勾选剩余 checklist。
 
 # Task Dependencies
 
