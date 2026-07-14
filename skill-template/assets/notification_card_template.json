@@ -1,0 +1,14 @@
+{
+  "schema_version": "scenario_notification_card_template.v1",
+  "scenario_key": "scenario-key",
+  "card": {
+    "title": "SCENARIO_NAME 结果预览",
+    "mode": "debug_only",
+    "sections": ["summary", "top_items", "source_footer"],
+    "_meta": {
+      "requires_confirmation": true,
+      "group_send_blocked": true,
+      "data_hash": null
+    }
+  }
+}

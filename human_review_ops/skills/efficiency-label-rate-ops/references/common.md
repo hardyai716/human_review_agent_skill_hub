@@ -5,7 +5,7 @@
 ## 运行依据
 
 - 独立安装后以本发布包内的 `SKILL.md`、`references/`、`assets/` 和 `scripts/` 为运行依据。
-- `package_manifest.json` 记录文件生成来源和 sha256，用于工程同步校验，不是运行前置条件。
+- `package_manifest.json` 的 `build_provenance` / `build_source` 只记录仓库构建溯源和 sha256；独立安装运行不依赖这些路径。
 - 业务结论必须来自 QueryPlan 约束下的只读查询结果或用户提供的可复核证据；不能用草稿或 mock 输出替代真实数据结论。
 
 ## 安全边界

@@ -75,7 +75,7 @@ SKILL_PREAMBLES = {
     "perception": [
         "## 运行态定位",
         "",
-        "本文件是 perception Skill 的运行态单场景文档，由根场景包合并生成。运行态只使用本文件判断场景、任务类型、指标意图、readiness 和 handoff；不执行 SQL、不生成通知、不写线上状态。",
+        "本文件是 perception Skill 的运行态单场景文档，由仓库构建流程合并生成。运行态只使用本文件判断场景、任务类型、指标意图、readiness 和 handoff；不执行 SQL、不生成通知、不写线上状态。",
         "",
         "## Readiness 与 Handoff",
         "",
@@ -85,12 +85,12 @@ SKILL_PREAMBLES = {
         "- 口径冲突、样本池覆盖、未治理字段、权限风险、真实群发、自动拉群、线上写状态或敏感明细导出必须阻断。",
     ],
     "analysis": [
-        "本文件是 analysis Skill 的运行态单场景文档，由根场景包合并生成。运行态 Skill 只读取本文件，不再拆读四件套。",
+        "本文件是 analysis Skill 的运行态单场景文档，由仓库构建流程合并生成。运行态 Skill 只读取本文件，不再拆读四件套。",
     ],
     "notification": [
         "## 运行态定位",
         "",
-        "本文件是 notification Skill 的运行态单场景文档，由根场景包合并生成。运行态只生成通知草稿、Owner/POC 路由、Card 或报表准备说明和 send_plan 门禁；不真实发送、不拉群、不写线上状态。",
+        "本文件是 notification Skill 的运行态单场景文档，由仓库构建流程合并生成。运行态只生成通知草稿、Owner/POC 路由、Card 或报表准备说明和 send_plan 门禁；不真实发送、不拉群、不写线上状态。",
         "",
         "## 输入与输出门禁",
         "",
@@ -102,7 +102,7 @@ SKILL_PREAMBLES = {
     "resolution": [
         "## 运行态定位",
         "",
-        "本文件是 resolution Skill 的运行态单场景文档，由根场景包合并生成。运行态只记录人工处理状态、闭环检查、继续观察和升级建议；不重新查数、不生成通知内容、不执行线上写入。",
+        "本文件是 resolution Skill 的运行态单场景文档，由仓库构建流程合并生成。运行态只记录人工处理状态、闭环检查、继续观察和升级建议；不重新查数、不生成通知内容、不执行线上写入。",
         "",
         "## 闭环门禁",
         "",
@@ -353,7 +353,7 @@ python3 scripts/build_label_rate_manual_tracking.py --notification-draft <draft.
 python3 scripts/selfcheck.py
 ```
 
-源文件同步检查由仓库侧执行，命令记录在 `package_manifest.json` 的 `check_command` 字段。
+独立安装后的自检命令记录在 `package_manifest.json` 的 `check_command` 字段；仓库内构建同步检查只作为 `build_provenance` 记录。
 """
 
 
@@ -365,7 +365,7 @@ def scenario_bundle_common_md(scenario_key: str) -> str:
 ## 运行依据
 
 - 独立安装后以本发布包内的 `SKILL.md`、`references/`、`assets/` 和 `scripts/` 为运行依据。
-- `package_manifest.json` 记录文件生成来源和 sha256，用于工程同步校验，不是运行前置条件。
+- `package_manifest.json` 的 `build_provenance` / `build_source` 只记录仓库构建溯源和 sha256；独立安装运行不依赖这些路径。
 - 业务结论必须来自 QueryPlan 约束下的只读查询结果或用户提供的可复核证据；不能用草稿或 mock 输出替代真实数据结论。
 
 ## 安全边界
@@ -614,6 +614,7 @@ def copy_or_transform_file(
     records: list[PackageRecord],
     transform: TextTransform | None = None,
     record_kind: str = "copy",
+    side_effects: str | None = None,
 ) -> None:
     if not source.exists():
         raise FileNotFoundError(f"Missing source file: {source}")
@@ -629,15 +630,16 @@ def copy_or_transform_file(
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(target_bytes)
 
-    records.append(
-        {
-            "kind": record_kind,
-            "source": repo_rel(source),
-            "target": repo_rel(target),
-            "source_sha256": sha256_bytes(source_bytes),
-            "target_sha256": sha256_bytes(target_bytes),
-        }
-    )
+    record: PackageRecord = {
+        "kind": record_kind,
+        "build_source": repo_rel(source),
+        "target": repo_rel(target),
+        "build_source_sha256": sha256_bytes(source_bytes),
+        "target_sha256": sha256_bytes(target_bytes),
+    }
+    if side_effects:
+        record["side_effects"] = side_effects
+    records.append(record)
 
 
 def write_generated_file(
@@ -660,7 +662,7 @@ def write_generated_file(
         "target_sha256": sha256_bytes(target_bytes),
     }
     if sources:
-        record["sources"] = [
+        record["build_sources"] = [
             {
                 "path": repo_rel(source),
                 "sha256": file_sha256(source),
@@ -792,6 +794,11 @@ def build_scenario_bundle(scenario_key: str, dry_run: bool) -> None:
     for source_rel, target_rel in SCENARIO_BUNDLE_SCRIPT_SOURCES:
         source = ROOT / source_rel
         target = bundle_dir / target_rel
+        side_effects = None
+        if source_rel.endswith("sheet_importer.py"):
+            side_effects = "online_sheet_write_explicit_opt_in"
+        elif source_rel.endswith("label_rate_notification_artifacts.py"):
+            side_effects = "local_files_only; optional_online_sheet_write_explicit_opt_in"
         copy_or_transform_file(
             source=source,
             target=target,
@@ -802,6 +809,7 @@ def build_scenario_bundle(scenario_key: str, dry_run: bool) -> None:
                 text,
                 scenario_key,
             ),
+            side_effects=side_effects,
         )
 
     package_manifest = {
@@ -809,15 +817,22 @@ def build_scenario_bundle(scenario_key: str, dry_run: bool) -> None:
         "bundle_name": bundle_name,
         "scenario_key": scenario_key,
         "generated_at": datetime.now(timezone.utc).isoformat(),
-        "source_of_truth": repo_rel(scenario_dir),
-        "sync_command": (
-            "python3 human_review_ops/tools/packagers/build_skill_package.py "
-            f"{scenario_key} --target {SCENARIO_BUNDLE_TARGET} --write"
+        "source_of_truth": (
+            f"human_review_ops/skills/{bundle_name}/references/scenarios/{scenario_key}.md"
         ),
-        "check_command": (
-            "python3 human_review_ops/tools/packagers/build_skill_package.py "
-            f"{scenario_key} --target {SCENARIO_BUNDLE_TARGET} --check-sync"
-        ),
+        "check_command": "python3 scripts/selfcheck.py",
+        "build_provenance": {
+            "generated_from": repo_rel(scenario_dir),
+            "sync_command": (
+                "python3 human_review_ops/tools/packagers/build_skill_package.py "
+                f"{scenario_key} --target {SCENARIO_BUNDLE_TARGET} --write"
+            ),
+            "repo_check_sync_command": (
+                "python3 human_review_ops/tools/packagers/build_skill_package.py "
+                f"{scenario_key} --target {SCENARIO_BUNDLE_TARGET} --check-sync"
+            ),
+            "runtime_required": False,
+        },
         "files": records,
     }
     manifest_target = bundle_dir / "package_manifest.json"
@@ -849,19 +864,20 @@ def check_scenario_bundle_sync(scenario_key: str) -> None:
                 f"Target changed: {record['target']} "
                 f"expected={record.get('target_sha256')} actual={target_hash}"
             )
-        source = record.get("source")
+        source = record.get("build_source") or record.get("source")
         if source:
             source_path = REPO_ROOT / source
             if not source_path.exists():
                 issues.append(f"Missing source: {source}")
                 continue
             source_hash = file_sha256(source_path)
-            if source_hash != record.get("source_sha256"):
+            expected_source_hash = record.get("build_source_sha256") or record.get("source_sha256")
+            if source_hash != expected_source_hash:
                 issues.append(
                     f"Source changed: {source} "
-                    f"expected={record.get('source_sha256')} actual={source_hash}"
+                    f"expected={expected_source_hash} actual={source_hash}"
                 )
-        for source_entry in record.get("sources", []):
+        for source_entry in record.get("build_sources", record.get("sources", [])):
             source_path = REPO_ROOT / source_entry["path"]
             if not source_path.exists():
                 issues.append(f"Missing source: {source_entry['path']}")
@@ -899,7 +915,7 @@ def main() -> None:
     parser.add_argument(
         "--check-sync",
         action="store_true",
-        help="Check whether an existing scenario bundle matches its recorded sources.",
+        help="Check whether an existing scenario bundle matches its recorded build sources.",
     )
     args = parser.parse_args()
 

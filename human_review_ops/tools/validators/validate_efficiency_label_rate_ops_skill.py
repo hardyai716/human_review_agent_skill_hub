@@ -140,7 +140,7 @@ def validate_plus1_asset_tracking() -> None:
     package_record_found = any(
         isinstance(record, dict)
         and record.get("kind") == "copy"
-        and record.get("source") == PLUS1_LEGACY_PATH
+        and (record.get("build_source") or record.get("source")) == PLUS1_LEGACY_PATH
         and record.get("target") == PLUS1_CANONICAL_PATH
         for record in files
     )

@@ -113,4 +113,4 @@ python3 scripts/build_label_rate_manual_tracking.py --notification-draft <draft.
 python3 scripts/selfcheck.py
 ```
 
-源文件同步检查由仓库侧执行，命令记录在 `package_manifest.json` 的 `check_command` 字段。
+独立安装后的自检命令记录在 `package_manifest.json` 的 `check_command` 字段；仓库内构建同步检查只作为 `build_provenance` 记录。

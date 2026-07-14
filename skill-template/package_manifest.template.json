@@ -1,0 +1,42 @@
+{
+  "schema_version": "scenario_skill_package_manifest.v1",
+  "bundle_name": "scenario-key-ops",
+  "scenario_key": "scenario-key",
+  "description": "Minimal self-contained human review ops scenario Skill template.",
+  "reference_loading_order": [
+    "references/scenario_contract.md"
+  ],
+  "required_files": [
+    "SKILL.md",
+    "README.md",
+    "package_manifest.template.json",
+    "references/reference_map.md",
+    "references/scenario_contract.md",
+    "assets/test-prompts.template.json",
+    "assets/owner_mapping.template.json",
+    "assets/notification_card_template.json",
+    "scripts/selfcheck.py",
+    "scripts/scenario_flow.py"
+  ],
+  "script_entrypoints": [
+    {
+      "name": "selfcheck",
+      "path": "scripts/selfcheck.py",
+      "command": "python3 scripts/selfcheck.py",
+      "side_effects": "temp_files_only"
+    },
+    {
+      "name": "scenario_flow",
+      "path": "scripts/scenario_flow.py",
+      "command": "python3 scripts/scenario_flow.py <perception|analysis|notify|track> ...",
+      "side_effects": "none_or_local_files_only"
+    }
+  ],
+  "forbidden_references": [
+    "user_home_absolute_paths",
+    "ide_private_skill_paths",
+    "external_project_skill_paths",
+    "external_project_reference_paths"
+  ],
+  "check_command": "python3 scripts/selfcheck.py"
+}
