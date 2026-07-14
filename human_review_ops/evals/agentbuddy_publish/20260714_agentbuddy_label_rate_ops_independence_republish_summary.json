@@ -1,0 +1,89 @@
+{
+  "schema_version": "agentbuddy_label_rate_ops_independence_republish.v1",
+  "published_at": "2026-07-14T02:32:00+08:00",
+  "git_commit": "f09e985",
+  "group": "skills.byted.org/lizhongtao/hunman_review_ops",
+  "access": "restricted",
+  "region": "cn",
+  "status": "published",
+  "skills": [
+    {
+      "path": "human_review_ops/skills/efficiency-label-rate-ops",
+      "name": "efficiency-label-rate-ops",
+      "status": "published",
+      "skill_id": "skills:skills.byted.org/lizhongtao/hunman_review_ops/efficiency-label-rate-ops:1.0.4"
+    }
+  ],
+  "skill_ids": {
+    "efficiency-label-rate-ops": "skills:skills.byted.org/lizhongtao/hunman_review_ops/efficiency-label-rate-ops:1.0.4"
+  },
+  "commands": [
+    {
+      "name": "agentbuddy_publish_validator",
+      "command": "python3 human_review_ops/tools/validators/validate_agentbuddy_publish.py",
+      "status": "passed"
+    },
+    {
+      "name": "skill_productization_scenario_label_rate",
+      "command": "python3 human_review_ops/tools/validators/validate_skill_productization.py --strict --profile scenario_label_rate",
+      "status": "passed"
+    },
+    {
+      "name": "skill_standalone_smoke_scenario_label_rate",
+      "command": "python3 human_review_ops/tools/validators/validate_skill_standalone_smoke.py --profile scenario_label_rate",
+      "status": "passed"
+    },
+    {
+      "name": "scenario_bundle_check_sync",
+      "command": "python3 human_review_ops/tools/packagers/build_skill_package.py efficiency-label-rate --target scenario-bundle --check-sync",
+      "status": "passed"
+    },
+    {
+      "name": "efficiency_label_rate_ops_selfcheck",
+      "command": "python3 human_review_ops/skills/efficiency-label-rate-ops/scripts/selfcheck.py",
+      "status": "passed"
+    },
+    {
+      "name": "efficiency_label_rate_ops_skill_validator",
+      "command": "python3 human_review_ops/tools/validators/validate_efficiency_label_rate_ops_skill.py",
+      "status": "passed"
+    },
+    {
+      "name": "git_diff_check",
+      "command": "git diff --check",
+      "status": "passed"
+    },
+    {
+      "name": "git_push",
+      "command": "git push origin main",
+      "status": "passed",
+      "result": "d1eb7fb..f09e985 main -> main"
+    },
+    {
+      "name": "agentbuddy_publish_efficiency_label_rate_ops",
+      "command": "NPM_CONFIG_REGISTRY=http://bnpm.byted.org npx -y agentbuddy@latest skill publish ./human_review_ops/skills/efficiency-label-rate-ops --group skills.byted.org/lizhongtao/hunman_review_ops --access restricted --region cn -y",
+      "status": "published",
+      "skill_id": "skills:skills.byted.org/lizhongtao/hunman_review_ops/efficiency-label-rate-ops:1.0.4"
+    },
+    {
+      "name": "agentbuddy_find_efficiency_label_rate_ops",
+      "command": "NPM_CONFIG_REGISTRY=http://bnpm.byted.org npx -y agentbuddy@latest skill find efficiency-label-rate-ops",
+      "status": "passed",
+      "result": "skills.byted.org/lizhongtao/hunman_review_ops@efficiency-label-rate-ops"
+    },
+    {
+      "name": "agentbuddy_find_label_rate",
+      "command": "NPM_CONFIG_REGISTRY=http://bnpm.byted.org npx -y agentbuddy@latest skill find label-rate",
+      "status": "passed",
+      "result": "skills.byted.org/lizhongtao/hunman_review_ops@efficiency-label-rate-ops"
+    }
+  ],
+  "release_notes": [
+    "Manifest source_of_truth now points to the Skill-internal runtime reference.",
+    "Build provenance is explicitly separated from runtime requirements.",
+    "Sheet import side effects are explicitly marked as opt-in.",
+    "Scenario Skill template has been reduced to a minimal self-contained structure."
+  ],
+  "retries": [],
+  "blocking_reasons": []
+}
