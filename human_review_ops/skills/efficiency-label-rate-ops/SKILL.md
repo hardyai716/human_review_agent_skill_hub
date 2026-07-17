@@ -64,7 +64,7 @@ allowed-tools:
 
 1. 使用 `scripts/label_rate_perception.py` 识别场景、任务类型和运行模式。
 2. 使用 `references/scenario-index.md` 定位指标契约、数据集说明、分析规则、通知模板和状态机。
-3. 使用 `scripts/label_rate_analysis.py` 生成 QueryPlan、SQL、分级规则和 source_footer；真实只读查询由具备权限的受控执行器执行。
+3. 使用 `scripts/label_rate_analysis.py` 生成统一 AnalysisArtifact、QueryPlan、SQL、分级规则和 source_footer；真实只读查询由具备权限的受控执行器执行。
 4. 使用 `scripts/label_rate_notification_artifacts.py` 生成通知草稿、报表、Card 和 send_plan；只有显式授权 `--import-sheet` / `auto_import_sheet=true` 时才导入 XLSX 并回填 `sheet_url`。
 5. 使用 `scripts/build_label_rate_manual_tracking.py` 记录本地人工处理状态；不写线上状态。
 
@@ -76,16 +76,10 @@ allowed-tools:
 
 ## 参考资料加载
 
+运行时只加载以下唯一场景契约，拆分 reference 仅作为构建溯源，不进入运行时重复加载：
+
 - `references/scenario-index.md`
-- `references/scenarios/efficiency-label-rate.md`
-- `references/metric_contract.md`
-- `references/dataset_reference.md`
-- `references/analysis.md`
-- `references/notification_templates.md`
-- `references/owner_routing.md`
-- `references/state_machine.md`
-- `references/sla.md`
-- `references/examples.md`
+- `references/scenario_contract.md`
 
 ## 脚本
 
@@ -93,7 +87,7 @@ allowed-tools:
 python3 scripts/selfcheck.py
 python3 scripts/label_rate_perception.py --dry-run --request "帮我看近7天低打标率策略，按P0/P1/P2/notice分级。"
 python3 scripts/label_rate_analysis.py --dry-run --levels notice,P2,P1,P0
-python3 scripts/label_rate_notification_artifacts.py --source <analysis_result.jsonl> --output-dir <output>
+python3 scripts/label_rate_notification_artifacts.py --source <analysis_artifact.json_or_jsonl> --output-dir <output>
 python3 scripts/build_label_rate_manual_tracking.py --notification-draft <draft.json> --send-plan <send_plan.json> --output <tracking.json>
 ```
 

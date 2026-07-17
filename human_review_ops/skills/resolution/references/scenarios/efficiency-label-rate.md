@@ -2,7 +2,7 @@
 
 ## 运行态定位
 
-本文件是 resolution Skill 的运行态单场景文档，由根场景包合并生成。运行态只记录人工处理状态、闭环检查、继续观察和升级建议；不重新查数、不生成通知内容、不执行线上写入。
+本文件是 resolution Skill 的运行态单场景文档，由仓库构建流程合并生成。运行态只记录人工处理状态、闭环检查、继续观察和升级建议；不重新查数、不生成通知内容、不执行线上写入。
 
 ## 闭环门禁
 
@@ -18,7 +18,7 @@
 - `scenario_key`：`efficiency-label-rate`
 - 模块：效率模块
 - 指标对象：打标率
-- 运营对象：策略三维、风险域、送审原因 / reason、举报入池原因 / enpool_reason 在不同维度下的打标率表现
+- 运营对象：策略三维、风险域、可选 `reason` 拆解、举报入池原因 / enpool_reason 在不同维度下的打标率表现
 - 当前状态：阶段 1 主线样板场景
 
 ## 数据方向
@@ -32,12 +32,12 @@
 
 ## 参考来源
 
-本场景只吸收以下已验证 Skill 中与打标率流程直接相关的内容：
+本场景固化以下通用业务和安全原则：
 
-- `.trae/skills/warehouse-skill/`：数据治理、Semantic Layer first、provenance、字段映射和数据质量 gate。
-- `.trae/skills/low-efficiency-strategy-analysis/`：低打标率分级、维度拆解和输出结构。
+- 数据治理原则：优先使用语义层或已治理数据集，查询前确认字段映射、指标口径、数据新鲜度、Owner 和 provenance，查询失败不得解释成业务无异常。
+- 低效策略分级规则：按 `notice/P2/P1/P0` 对低打标率策略和风险域预警分级，输出必须包含可复核 evidence、命中规则、维度粒度和限制说明。
 
-不直接迁移旧 Skill 的完整实现、历史目录结构或在线工具权限。
+本场景不依赖外部 Skill 目录、历史实现目录或在线工具权限；单独安装后以本包内 `SKILL.md`、`references/`、`assets/` 和 `scripts/` 为运行依据。
 
 ## 触发意图
 
@@ -66,9 +66,10 @@
 
 ## 默认运行约束
 
-- 第一阶段默认 `debug_only`。
-- 默认只读。
-- 默认先生成 QueryPlan；QueryPlan 通过断言后，可执行符合权限策略的 mock / 只读查询链路。
+- 默认 `debug_only`：仅生成本地感知结果、QueryPlan、分析报表、通知草稿、POC 路由草稿和 manual tracking 记录；不真实发送消息、不创建群、不写线上状态、不关闭事件。
+- 默认只读：只允许 `SELECT` 或平台受控只读查询，不执行 DML / DDL，不修改业务表、工单状态、线上配置或消息发送状态；在线表格导入必须由用户显式授权后才可执行。
+- 默认先生成 QueryPlan：查询前必须列出字段、指标口径、维度、过滤条件、数据方向、来源优先级、权限要求和质量检查；QueryPlan 未通过断言或人工确认时不得进入查询。
+- `mock / 只读查询链路`：无外部查询权限时，只能生成 QueryPlan 或使用内置样例验证输出结构，mock 结果不伪造业务结论、不得替代真实数据结论；具备权限且 QueryPlan 通过后，才可由受控执行器发起只读查询。
 - 覆盖样本池、未治理字段、权限不足、真实飞书触达、状态写入或高风险动作必须人工确认。
 - 数据未就绪、权限不足、口径不清时停止，不输出“无异常”结论。
 
@@ -138,7 +139,6 @@ STOPPED_NO_CONCLUSION
 - 若原始机审一级标签为空，分析取数层会先按策略名称补齐为高热、政媒、商业化或指令舆情相关，再进入 POC 路由。
 - 当前 POC 映射资产尚未包含 `商业化`，命中商业化补映射的行会进入未映射 / 人工确认路径。
 - 举报流转方向（`data_direction=report_flow`）默认没有 `mach_root_label_name`，以 `enpool_reason` 作为证据字段，Owner 建议先路由到“举报”POC，占位 POC 为韩晶晶；真实触达前必须由人审运营确认是否需要按风险域或队列进一步拆分。
-- 路由脚本在输入只有 `enpool_reason` 且无机审一级标签时，必须把路由标签 fallback 为 `举报`，用于姓名级 POC 预览；manual tracking 需把该 fallback 标为待人工确认。
 - 映射来源：飞书表格 `https://bytedance.larkoffice.com/sheets/TpxwsA8zohUZkVtJ4J9cDcXUnbg?sheet=HKdm9w`。
 - 当前身份粒度：仅完成 POC 姓名映射，`poc_open_id` 尚未解析。
 - 默认收件人：当输入数据缺少 `mach_root_label_name` 或标签未映射时，开发验证阶段 fallback 到用户本人，即 `default_recipient=self`。
@@ -181,8 +181,6 @@ STOPPED_NO_CONCLUSION
 - 动作要求。
 - 命中依据。
 - POC 姓名、命中的机审一级标签、未映射标签和缺失路由维度计数。
-- 默认三维分级闭环证据必须保留 `是否+1同意`、`更新日期`、`+1同意日期是否在本次统计周期前`，并引用完整口径与剔除 `+1同意` 口径报表：`综合`、`综合_剔除+1同意`、`汇总统计`、`汇总统计_剔除+1同意`。
-- 举报流转 manual tracking 必须保留 `enpool_reason`、日均人审完结量、日均打标量、举报打标率、`data_direction=report_flow` 和 source_footer 作为 evidence；`举报` POC fallback 不等同于已完成真实负责人确认。
 - 置信度：`high` / `medium` / `low`。
 - 是否需要人工确认。
 
@@ -246,7 +244,7 @@ STOPPED_NO_CONCLUSION
 期望：
 
 - 命中 `efficiency-label-rate`。
-- `task_type` 为 `query_only` 或 `partial_workflow`。
+- `task_type=dimension_breakdown`；`run_mode=query_only` 或 `partial_workflow`。
 - 输出 QueryPlan 和 source_footer。
 - 若需要低效分级，默认包含 notice/P2/P1/P0。
 

@@ -3,7 +3,7 @@
   "scenario_key": "efficiency-label-rate",
   "source": {
     "type": "lark_sheet",
-    "spreadsheet_token": "GzpCwP516imDB8kQ3g1cLr5bnPc",
+    "spreadsheet_token_env": "HUMAN_REVIEW_OPS_PLUS1_SHEET_TOKEN",
     "sheet_id": "0301e2",
     "sheet_name": "Sheet1",
     "range": "A1:N1000",

@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import json
 import subprocess
+from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -18,7 +19,6 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[2]
 SCENARIO_KEY = "efficiency-label-rate"
 EVAL_DIR = ROOT / "evals" / SCENARIO_KEY
-OUTPUT_DATE = "20260708"
 DEFAULT_DAYS = 7
 DEFAULT_DIMENSIONS = "reason"
 DEFAULT_QUERY_MODE = "ranking"
@@ -96,15 +96,17 @@ def is_default_shape(dimensions: list[dict[str, str]], query_mode: str) -> bool:
 
 
 def default_output_path(
-    days: int,
     dimensions: list[dict[str, str]],
     query_mode: str,
+    time_range: dict[str, Any] | None = None,
 ) -> Path:
+    period_suffix = period_id(time_range)
+    output_date = date.today().strftime("%Y%m%d")
     if is_default_shape(dimensions, query_mode):
-        filename = f"{OUTPUT_DATE}_real_readonly_label_rate_{days}d_results.jsonl"
+        filename = f"{output_date}_real_readonly_label_rate_{period_suffix}_results.jsonl"
     else:
         filename = (
-            f"{OUTPUT_DATE}_real_readonly_label_rate_{days}d_"
+            f"{output_date}_real_readonly_label_rate_{period_suffix}_"
             f"{dimensions_slug(dimensions)}_{query_mode}_results.jsonl"
         )
     return EVAL_DIR / "stage_1_runs" / filename
@@ -128,6 +130,55 @@ def event_id(days: int, dimensions: list[dict[str, str]], query_mode: str) -> st
     return f"{base_id}-{dimension_suffix}-{query_mode_suffix}"
 
 
+def period_id(time_range: dict[str, Any] | None) -> str:
+    if time_range and time_range.get("start_date") and time_range.get("end_date"):
+        start = str(time_range["start_date"]).replace("-", "")
+        end = str(time_range["end_date"]).replace("-", "")
+        return f"{start}_{end}"
+    days = time_range.get("days", DEFAULT_DAYS) if time_range else DEFAULT_DAYS
+    return f"{days}d"
+
+
+def period_label(time_range: dict[str, Any]) -> str:
+    if time_range.get("start_date") and time_range.get("end_date"):
+        return f"{time_range['start_date']}~{time_range['end_date']}"
+    return f"近{time_range.get('days', DEFAULT_DAYS)}天"
+
+
+def duration_label(time_range: dict[str, Any]) -> str:
+    if time_range.get("start_date") and time_range.get("end_date"):
+        return f"{time_range['start_date']}_to_{time_range['end_date']}"
+    return f"trailing_{time_range.get('days', DEFAULT_DAYS)}_days"
+
+
+def query_plan_id_for_time_range(
+    days: int,
+    dimensions: list[dict[str, str]],
+    query_mode: str,
+    time_range: dict[str, Any],
+) -> str:
+    base_id = query_plan_id(days, dimensions, query_mode)
+    if time_range.get("start_date") and time_range.get("end_date"):
+        start = str(time_range["start_date"]).replace("-", "")
+        end = str(time_range["end_date"]).replace("-", "")
+        return base_id.replace(f"{days}D", f"{start}-{end}")
+    return base_id
+
+
+def event_id_for_time_range(
+    days: int,
+    dimensions: list[dict[str, str]],
+    query_mode: str,
+    time_range: dict[str, Any],
+) -> str:
+    base_id = event_id(days, dimensions, query_mode)
+    if time_range.get("start_date") and time_range.get("end_date"):
+        start = str(time_range["start_date"]).replace("-", "")
+        end = str(time_range["end_date"]).replace("-", "")
+        return base_id.replace(f"{days}D", f"{start}-{end}")
+    return base_id
+
+
 def analysis_mode_for(query_mode: str) -> str:
     if query_mode == "group_count":
         return "low_label_rate_group_count"
@@ -138,25 +189,36 @@ def build_sql(
     days: int,
     dimensions: list[dict[str, str]],
     query_mode: str,
+    time_range: dict[str, Any] | None = None,
 ) -> str:
     if query_mode == "group_count":
-        return build_group_count_sql(days, dimensions)
-    return build_ranking_sql(days, dimensions)
+        return build_group_count_sql(days, dimensions, time_range)
+    return build_ranking_sql(days, dimensions, time_range)
 
 
-def build_ranking_sql(days: int, dimensions: list[dict[str, str]]) -> str:
+def build_ranking_sql(
+    days: int,
+    dimensions: list[dict[str, str]],
+    time_range: dict[str, Any] | None = None,
+) -> str:
     return build_grouped_sql(
         days=days,
         dimensions=dimensions,
         include_order_and_limit=True,
+        time_range=time_range,
     )
 
 
-def build_group_count_sql(days: int, dimensions: list[dict[str, str]]) -> str:
+def build_group_count_sql(
+    days: int,
+    dimensions: list[dict[str, str]],
+    time_range: dict[str, Any] | None = None,
+) -> str:
     grouped_sql = build_grouped_sql(
         days=days,
         dimensions=dimensions,
         include_order_and_limit=False,
+        time_range=time_range,
     )
     indented_grouped_sql = "\n".join(
         f"  {line}" if line else line
@@ -175,6 +237,7 @@ def build_grouped_sql(
     days: int,
     dimensions: list[dict[str, str]],
     include_order_and_limit: bool,
+    time_range: dict[str, Any] | None = None,
 ) -> str:
     select_expressions = [
         f"{dimension['source_field']} AS {dimension['name']}"
@@ -191,12 +254,12 @@ def build_grouped_sql(
         if include_order_and_limit
         else ""
     )
+    p_date_filter = p_date_filter_sql(days, time_range)
     return f"""
 SELECT
   {select_clause}
 FROM {SOURCE_TABLE}
-WHERE `[p_date]` >= today() - {days}
-  AND `[p_date]` < today()
+WHERE {p_date_filter}
   AND `[project_title]` NOT LIKE '%虚假%'
   AND `[project_title]` NOT LIKE '%标注%'
   AND `[project_title]` NOT LIKE '%虚假不实%'
@@ -232,9 +295,53 @@ HAVING review_done_cnt > 0 AND label_rate < 0.1
 """.strip()
 
 
+def resolve_time_range(args: argparse.Namespace) -> dict[str, Any]:
+    if bool(args.start_date) != bool(args.end_date):
+        raise SystemExit("--start-date and --end-date must be provided together.")
+    if args.start_date:
+        start_date = parse_date(args.start_date)
+        end_date = parse_date(args.end_date)
+        if end_date < start_date:
+            raise SystemExit("--end-date must be >= --start-date.")
+        expected_days = (end_date - start_date).days + 1
+        if args.days != expected_days:
+            raise SystemExit(
+                f"--days ({args.days}) must match explicit period length ({expected_days})."
+            )
+        return {
+            "type": "explicit_date_range",
+            "days": expected_days,
+            "start_date": start_date.isoformat(),
+            "end_date": end_date.isoformat(),
+            "end_date_exclusive": (end_date + timedelta(days=1)).isoformat(),
+            "where": (
+                f"`[p_date]` >= '{start_date.isoformat()}' "
+                f"AND `[p_date]` < '{(end_date + timedelta(days=1)).isoformat()}'"
+            ),
+        }
+    return {
+        "type": "trailing_days",
+        "days": args.days,
+        "grain": "day",
+        "where": f"`[p_date]` >= today() - {args.days} AND `[p_date]` < today()",
+    }
+
+
+def parse_date(raw_value: str) -> date:
+    return date.fromisoformat(raw_value.strip().replace("/", "-"))
+
+
+def p_date_filter_sql(days: int, time_range: dict[str, Any] | None) -> str:
+    if time_range and time_range.get("where"):
+        return str(time_range["where"])
+    return f"`[p_date]` >= today() - {days} AND `[p_date]` < today()"
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--days", type=int, default=DEFAULT_DAYS)
+    parser.add_argument("--start-date")
+    parser.add_argument("--end-date")
     parser.add_argument("--dimensions", default=DEFAULT_DIMENSIONS)
     parser.add_argument("--query-mode", default=DEFAULT_QUERY_MODE, choices=QUERY_MODE_CHOICES)
     parser.add_argument("--output")
@@ -244,13 +351,14 @@ def main() -> None:
         raise SystemExit("--days must be a positive integer.")
 
     dimensions = parse_dimensions(args.dimensions)
-    sql = build_sql(args.days, dimensions, args.query_mode)
+    time_range = resolve_time_range(args)
+    sql = build_sql(args.days, dimensions, args.query_mode, time_range)
     payload = run_query(sql)
-    records = build_records(payload, args.days, dimensions, args.query_mode, sql)
+    records = build_records(payload, args.days, dimensions, args.query_mode, sql, time_range)
     output_path = (
         Path(args.output)
         if args.output
-        else default_output_path(args.days, dimensions, args.query_mode)
+        else default_output_path(dimensions, args.query_mode, time_range)
     )
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(
@@ -303,8 +411,9 @@ def build_records(
     dimensions: list[dict[str, str]],
     query_mode: str,
     sql: str,
+    time_range: dict[str, Any],
 ) -> list[dict[str, Any]]:
-    query_plan = build_query_plan(days, dimensions, query_mode, sql)
+    query_plan = build_query_plan(days, dimensions, query_mode, sql, time_range)
     rows = normalize_rows(payload)
     context = payload.get("context", {})
     query_data = payload["data"]
@@ -325,7 +434,8 @@ def build_records(
         "execution_mode": "real_readonly_query",
         "real_query_executed": True,
         "input_summary": (
-            f"Dataset {DATASET_ID}; recent {days} days; dimensions={dimension_label}; "
+            f"Dataset {DATASET_ID}; period={period_label(query_plan['time_range'])}; "
+            f"dimensions={dimension_label}; "
             f"query_mode={query_mode}; label_rate < 0.1; standard A/B/C/D filters applied."
         ),
         "output_summary": (
@@ -359,8 +469,8 @@ def build_records(
         },
         {
             "record_type": "sample",
-            "id": event_id(days, dimensions, query_mode),
-            "input": input_text(days, dimension_label, query_mode),
+            "id": event_id_for_time_range(days, dimensions, query_mode, time_range),
+            "input": input_text(days, dimension_label, query_mode, time_range),
             "run_mode": "debug_only",
             "scenario_key": SCENARIO_KEY,
             "task_type": "query_only",
@@ -391,7 +501,17 @@ def build_records(
     ]
 
 
-def input_text(days: int, dimension_label: str, query_mode: str) -> str:
+def input_text(
+    days: int,
+    dimension_label: str,
+    query_mode: str,
+    time_range: dict[str, Any],
+) -> str:
+    if time_range.get("start_date") and time_range.get("end_date"):
+        period = f"{time_range['start_date']}~{time_range['end_date']}"
+        if query_mode == "group_count":
+            return f"{period} 打标率<0.1的{dimension_label}分组有多少"
+        return f"{period} 打标率<0.1的{dimension_label}有哪些"
     if query_mode == "group_count":
         return f"近{days}天打标率<0.1的{dimension_label}分组有多少"
     return f"近{days}天打标率<0.1的{dimension_label}有哪些"
@@ -402,10 +522,16 @@ def build_query_plan(
     dimensions: list[dict[str, str]],
     query_mode: str,
     sql: str,
+    time_range: dict[str, Any],
 ) -> dict[str, Any]:
     dimension_names = [dimension["name"] for dimension in dimensions]
     return {
-        "query_plan_id": query_plan_id(days, dimensions, query_mode),
+        "query_plan_id": query_plan_id_for_time_range(
+            days,
+            dimensions,
+            query_mode,
+            time_range,
+        ),
         "scenario_key": SCENARIO_KEY,
         "task_type": "query_only",
         "analysis_mode": analysis_mode_for(query_mode),
@@ -420,12 +546,7 @@ def build_query_plan(
                 "aeolus_metric_id": "10000036292379",
             }
         ],
-        "time_range": {
-            "type": "trailing_days",
-            "days": days,
-            "grain": "day",
-            "where": f"`[p_date]` >= today() - {days} AND `[p_date]` < today()",
-        },
+        "time_range": time_range,
         "dimensions": dimension_names,
         "dimension_mappings": [
             {
@@ -485,14 +606,22 @@ def normalize_rows(payload: dict[str, Any]) -> list[dict[str, Any]]:
 
 def build_source_footer(payload: dict[str, Any], query_plan: dict[str, Any]) -> dict[str, Any]:
     checked_at = payload.get("context", {}).get("timestamp", "unknown")
-    days = query_plan["time_range"]["days"]
+    time_range = query_plan["time_range"]
+    if time_range.get("start_date") and time_range.get("end_date"):
+        data_freshness = (
+            f"p_date >= {time_range['start_date']} "
+            f"AND p_date <= {time_range['end_date']}; checked_at={checked_at}"
+        )
+    else:
+        days = time_range["days"]
+        data_freshness = (
+            f"p_date >= today() - {days} AND p_date < today(); "
+            f"checked_at={checked_at}"
+        )
     return {
         "source_tier": "governed_dataset",
         "metric_definition_version": "draft",
-        "data_freshness": (
-            f"p_date >= today() - {days} AND p_date < today(); "
-            f"checked_at={checked_at}"
-        ),
+        "data_freshness": data_freshness,
         "owner": "人审效率域数据 Owner",
         "confidence_tier": "high",
         "review_status": "real_readonly_query_executed",
@@ -517,6 +646,7 @@ def build_readonly_execution(
         "source_tier": "governed_dataset",
         "source_name": f"{DATASET_NAME} ({DATASET_ID})",
         "data_freshness": source_footer["data_freshness"],
+        "time_range": query_plan["time_range"],
         "row_count": payload["data"]["rowCount"],
         "truncated": payload["data"].get("truncated"),
         "columns": payload["data"]["columns"],
@@ -581,7 +711,7 @@ def build_analysis_result(
     days = query_plan["time_range"]["days"]
     dimensions = query_plan["dimensions"]
     query_mode = query_plan["query_mode"]
-    analysis_event_id = event_id(
+    analysis_event_id = event_id_for_time_range(
         days,
         [
             {
@@ -591,9 +721,9 @@ def build_analysis_result(
             for mapping in query_plan["dimension_mappings"]
         ],
         query_mode,
+        query_plan["time_range"],
     )
     impact_assessment = build_impact_assessment(
-        days=days,
         dimensions=dimensions,
         query_mode=query_mode,
         readonly_execution=readonly_execution,
@@ -636,24 +766,25 @@ def build_analysis_result(
 
 def build_impact_assessment(
     *,
-    days: int,
     dimensions: list[str],
     query_mode: str,
     readonly_execution: dict[str, Any],
 ) -> dict[str, Any]:
     dimension_label = " × ".join(dimensions)
     row_count = readonly_execution["row_count"]
+    time_range = readonly_execution.get("time_range", {})
+    period = period_label(time_range)
     if query_mode == "group_count":
         group_count = (
             readonly_execution["rows"][0]["low_label_rate_group_cnt"]
             if readonly_execution["rows"]
             else 0
         )
-        summary = f"近{days}天打标率低于0.1的 {dimension_label} 分组共 {group_count} 个。"
+        summary = f"{period} 打标率低于0.1的 {dimension_label} 分组共 {group_count} 个。"
         impact_scope = f"group_count={group_count}"
     else:
         top_group = describe_top_group(readonly_execution["rows"][0], dimensions) if row_count else "none"
-        summary = f"近{days}天打标率低于0.1的 {dimension_label} 明细共 {row_count} 行。"
+        summary = f"{period} 打标率低于0.1的 {dimension_label} 明细共 {row_count} 行。"
         impact_scope = f"top_group_by_review_done_cnt={top_group}"
 
     return {
@@ -661,7 +792,7 @@ def build_impact_assessment(
         "impact_scope": impact_scope,
         "risk_level": "P3",
         "business_risk": "本结果为查询结果，不自动触发治理分级。",
-        "duration": f"trailing_{days}_days",
+        "duration": duration_label(time_range),
         "evidence_refs": [readonly_execution["execution_id"]],
     }
 

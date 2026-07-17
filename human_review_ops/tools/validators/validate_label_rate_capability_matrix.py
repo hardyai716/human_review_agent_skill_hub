@@ -22,11 +22,13 @@ SKILL_PATHS = {
     "efficiency-label-rate-ops": SKILLS_ROOT / "efficiency-label-rate-ops",
 }
 
-MATRIX_FILES = (
-    "SKILL.md",
-    "references/scenarios/efficiency-label-rate.md",
-    "assets/test-prompts.json",
-)
+def matrix_files(skill_name: str) -> tuple[str, ...]:
+    scenario_ref = (
+        "references/scenario_contract.md"
+        if skill_name == "efficiency-label-rate-ops"
+        else "references/scenarios/efficiency-label-rate.md"
+    )
+    return ("SKILL.md", scenario_ref, "assets/test-prompts.json")
 
 CAPABILITIES: dict[str, tuple[str, ...]] = {
     "manual_review_detail": (
@@ -105,7 +107,7 @@ def main() -> None:
 def validate_skill_matrix() -> list[str]:
     failures: list[str] = []
     for skill_name, skill_root in SKILL_PATHS.items():
-        text = collect_skill_text(skill_root)
+        text = collect_skill_text(skill_name, skill_root)
         for capability, required_terms in CAPABILITIES.items():
             missing = [term for term in required_terms if term not in text]
             if missing:
@@ -120,9 +122,9 @@ def validate_skill_matrix() -> list[str]:
     return failures
 
 
-def collect_skill_text(skill_root: Path) -> str:
+def collect_skill_text(skill_name: str, skill_root: Path) -> str:
     parts: list[str] = []
-    for relative in MATRIX_FILES:
+    for relative in matrix_files(skill_name):
         path = skill_root / relative
         if path.exists():
             parts.append(path.read_text(encoding="utf-8"))
@@ -216,7 +218,13 @@ def validate_poc_routing_fallback() -> list[str]:
             module = import_module_from_path(f"{name}_poc_routing", script_path)
             mapping = module.load_poc_mapping()
             index = module.poc_mapping_index(mapping)
-            result = module.resolve_row_poc({"enpool_reason": "举报专项低打标"}, index)
+            result = module.resolve_row_poc(
+                {
+                    "data_direction": "report_flow",
+                    "enpool_reason": "举报专项低打标",
+                },
+                index,
+            )
         except Exception as exc:  # noqa: BLE001
             failures.append(f"{name} report_flow fallback raised {exc!r}")
             continue

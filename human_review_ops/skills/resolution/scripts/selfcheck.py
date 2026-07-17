@@ -30,6 +30,7 @@ def build_notification_draft() -> dict[str, Any]:
         for level in LEVEL_ORDER
     }
     return {
+        "scenario_key": "efficiency-label-rate",
         "level_counts": {"notice": 1, "P2": 1, "P1": 1, "P0": 1},
         "data_link": {"sheet_url": "https://example.com/sheets/smoke"},
         "poc_routing": {
@@ -41,10 +42,12 @@ def build_notification_draft() -> dict[str, Any]:
 
 def build_send_plan() -> dict[str, Any]:
     return {
+        "scenario_key": "efficiency-label-rate",
         "requires_confirmation": True,
         "group_send_blocked": True,
         "sent": False,
         "real_group_send_executed": False,
+        "online_write_executed": False,
         "content_source": {
             "card_json": "publish/low_efficiency_grading.card.json",
             "notification_draft": "notification_draft.json",
@@ -69,8 +72,23 @@ def run_checks() -> None:
     assert result["safety"]["online_state_write_allowed"] is False, (
         "online_state_write_allowed must be False"
     )
+    assert result["closure_check"]["can_close"] is False
+    assert result["state_machine"]["next_state"] == "MANUAL_TRACKING_RECORDED"
     severities = [record["severity_level"] for record in result["tracking_records"]]
     assert severities == LEVEL_ORDER, f"tracking severities mismatch: {severities}"
+
+    closed = tracking.build_manual_tracking(
+        notification_draft=build_notification_draft(),
+        send_plan=build_send_plan(),
+        state_machine_ref="references/scenarios/efficiency-label-rate.md#状态机",
+        manual_action="已确认 POC 并完成策略复核",
+        resolution_note="治理动作已完成，进入本地调试关闭",
+        evidence_refs=["report://smoke"],
+        operator="smoke-operator",
+        operator_confirmation=True,
+    )
+    assert closed["closure_check"]["can_close"] is True
+    assert closed["state_machine"]["next_state"] == "DEBUG_CLOSED"
 
 
 def main() -> None:

@@ -1,6 +1,6 @@
 ---
 name: routing-ops-notifications
-description: "当用户需要基于人审运营分析结果生成通知草稿、负责人 (POC) 路由、飞书卡片 (Card)、分级报表或发送计划 (send_plan) 时使用；用于 efficiency-label-rate 等场景的触达前预览与人工确认门禁，默认阻断真实群发和拉群。"
+description: "内部通用通知能力：仅消费已验证的 AnalysisArtifact，生成通知草稿、POC 路由、Card、报表和 send_plan；场景级 Skill 已命中时由其显式委派，不直接竞争原始请求，默认阻断真实群发和拉群。"
 allowed-tools:
   - Read
   - Bash
@@ -39,7 +39,7 @@ allowed-tools:
 
 必需输入：
 
-- `analysis_result`：分析结果或 `analysis_result` JSONL，必须包含 `analysis_mode`、`readonly_execution`、`level_counts`、分级明细和 `source_footer`。
+- `analysis_artifact`：Analysis 输出的统一 JSON/JSONL `record_type=sample` 对象，必须包含一致的 `scenario_key`、QueryPlan、`analysis_mode`、`readonly_execution`、`source_footer` 和 `provenance`。
 - `scenario_key`：例如 `efficiency-label-rate`。
 - `risk_levels`：至少说明涉及 `notice`、`P2`、`P1`、`P0` 中哪些等级。
 - `evidence_rows`：每条命中的策略三维、风险域、打标率、日均量、命中条件、`是否+1同意`、`更新日期` 和剔除口径标记；举报流转方向使用 `enpool_reason`、日均人审完结量、日均打标量和举报打标率作为证据。
@@ -78,7 +78,7 @@ allowed-tools:
 
 ## 工作流
 
-1. 校验输入来自分析阶段：`scenario_key=efficiency-label-rate`，且分级任务应为 `low_label_rate_grading`。
+1. 校验输入来自分析阶段：`scenario_key=efficiency-label-rate`，`analysis_mode` 为 `low_label_rate_grading` 或 `report_flow_low_label_rate`，执行状态未失败或截断。
 2. 校验分析结果包含 `readonly_execution`、分级明细、`level_counts`、查询计划 (QueryPlan) 和来源页脚 (source_footer)。
 3. 加载通知通用规则、场景索引、单场景运行态文档、卡片模板和映射资产。
 4. 生成或复用负责人 (POC) 路由计划：优先按 `mach_root_label_name` 映射，`reason`、`strategy_id`、`strategy_name` 只作为证据字段；举报流转方向若只有 `enpool_reason` 且无机审标签，先 fallback 到 `举报` POC 低置信度预览。
@@ -108,7 +108,7 @@ allowed-tools:
 - 展示四个等级指标卡：`P0`、`P1`、`P2`、`notice`。
 - 综合表按 `P0 > P1 > P2 > notice` 展示最高等级。
 - 保留方法说明、报表按钮和来源页脚摘要。
-- 通过 `scripts/card_hash.py` 嵌入 `_meta._data_hash`，发送前如数据变化必须重新生成卡片。
+- 通过 `scripts/card_hash.py` 对完整证据 manifest 计算 `_meta._data_hash`；manifest 覆盖完整明细、QueryPlan ID、source footer、周期和 `sheet_url`，发送前任一数据变化都必须重新生成卡片。
 
 通知草稿要求：
 
@@ -186,7 +186,7 @@ python3 human_review_ops/skills/notification/scripts/resolve_label_rate_poc_rout
 ## 失败处理
 
 - 分析产物缺少 `record_type=sample`：停止，要求补齐分析结果。
-- `analysis_mode` 不是 `low_label_rate_grading`：只允许生成通用摘要草稿，不生成分级预警发送计划。
+- `analysis_mode` 不在 `low_label_rate_grading`、`report_flow_low_label_rate` 中：停止，不生成分级预警发送计划。
 - 缺少 `readonly_execution`、`level_counts` 或 `source_footer`：停止，交回分析技能补齐。
 - 缺少 `mach_root_label_name`：生成低置信度路由，fallback 到 `self` 预览。
 - 标签未映射负责人 (POC)：列入 `unmapped_labels`，不得真实发送。

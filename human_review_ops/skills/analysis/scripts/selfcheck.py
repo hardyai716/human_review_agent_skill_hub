@@ -45,6 +45,16 @@ def run_checks() -> None:
     assert "`[队列分类汇总]`" in quality_sql
     assert "FORMAT JSONCompact" not in quality_sql
 
+    truncated = analysis.build_smoke_payload("notice")
+    truncated["data"]["truncated"] = True
+    stopped = analysis.build_records(
+        {"notice": truncated},
+        ["notice"],
+        {"notice": analysis.build_notice_sql()},
+    )[1]
+    assert stopped["stop_reason"] == "query_result_truncated:notice"
+    assert "analysis_result" not in stopped
+
 
 def main() -> None:
     try:

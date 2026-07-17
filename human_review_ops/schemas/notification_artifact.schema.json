@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.bytedance.local/human-review-ops/notification-artifact.schema.json",
+  "title": "HumanReviewOpsNotificationArtifact",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schema_version",
+    "scenario_key",
+    "report_type",
+    "level_counts",
+    "data_link",
+    "card_draft",
+    "poc_routing",
+    "methodology",
+    "send_safety",
+    "escalation_draft",
+    "evidence_refs",
+    "failure_branches",
+    "provenance"
+  ],
+  "properties": {
+    "schema_version": {"const": "stage_2_notification_draft_detail.v1"},
+    "scenario_key": {"type": "string"},
+    "report_type": {"type": "string"},
+    "level_counts": {"type": "object"},
+    "data_link": {"type": "object"},
+    "card_draft": {"type": "object"},
+    "poc_routing": {"type": "object"},
+    "methodology": {"type": "object"},
+    "send_safety": {
+      "type": "object",
+      "required": [
+        "group_send_blocked",
+        "group_send_allowed",
+        "sent",
+        "real_group_send_executed",
+        "online_write_executed"
+      ]
+    },
+    "escalation_draft": {"type": "object"},
+    "evidence_refs": {"type": "object"},
+    "failure_branches": {"type": "object"},
+    "provenance": {"type": "object"}
+  }
+}

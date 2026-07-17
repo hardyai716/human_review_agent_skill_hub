@@ -34,6 +34,7 @@ SCENARIO_SOURCE_FILES = [
 # Markdown) from the root scenario package into a Skill's assets directory.
 SKILL_ASSET_SYNC = {
     "notification": ["mach_root_label_poc_mapping.json"],
+    "analysis": ["plus1_agreed_strategy_updates.json"],
 }
 
 SKILL_COMBINED_SOURCES = {
@@ -217,7 +218,7 @@ def build_combined_scenario_reference(
     scenario_key: str,
 ) -> str:
     sections = [
-        f"# 场景流程包合并快照：{scenario_key}",
+        f"# 场景契约：{scenario_key}",
         "",
         "本文件是打标率场景的合并运行态说明，供独立安装后的 Skill 直接读取。",
         "运行时以本发布包内的 `SKILL.md`、`references/`、`assets/` 和 `scripts/` 为依据，无需跨目录读取其他场景材料。",
@@ -240,7 +241,7 @@ def build_combined_scenario_reference(
 def scenario_bundle_skill_md(scenario_key: str, bundle_name: str) -> str:
     return f"""---
 name: {bundle_name}
-description: "当用户需要处理 efficiency-label-rate 打标率场景时使用：可识别打标率意图和数据方向，生成 QueryPlan 与只读分析，按 notice/P2/P1/P0 分级，产出报表、通知/Card 草稿、POC 路由和本地 manual tracking；默认 debug_only 与只读，只生成本地草稿/报表/跟踪记录，不真实发送、不写线上状态、不执行在线表格导入，外部动作必须用户确认。"
+description: "当用户需要处理 {scenario_key} 打标率场景时使用：可识别打标率意图和数据方向，生成 QueryPlan 与只读分析，按 notice/P2/P1/P0 分级，产出报表、通知/Card 草稿、POC 路由和本地 manual tracking；默认 debug_only 与只读，只生成本地草稿/报表/跟踪记录，不真实发送、不写线上状态、不执行在线表格导入，外部动作必须用户确认。"
 allowed-tools:
   - Read
   - Bash
@@ -304,7 +305,7 @@ allowed-tools:
 
 1. 使用 `scripts/label_rate_perception.py` 识别场景、任务类型和运行模式。
 2. 使用 `references/scenario-index.md` 定位指标契约、数据集说明、分析规则、通知模板和状态机。
-3. 使用 `scripts/label_rate_analysis.py` 生成 QueryPlan、SQL、分级规则和 source_footer；真实只读查询由具备权限的受控执行器执行。
+3. 使用 `scripts/label_rate_analysis.py` 生成统一 AnalysisArtifact、QueryPlan、SQL、分级规则和 source_footer；真实只读查询由具备权限的受控执行器执行。
 4. 使用 `scripts/label_rate_notification_artifacts.py` 生成通知草稿、报表、Card 和 send_plan；只有显式授权 `--import-sheet` / `auto_import_sheet=true` 时才导入 XLSX 并回填 `sheet_url`。
 5. 使用 `scripts/build_label_rate_manual_tracking.py` 记录本地人工处理状态；不写线上状态。
 
@@ -316,16 +317,10 @@ allowed-tools:
 
 ## 参考资料加载
 
+运行时只加载以下唯一场景契约，拆分 reference 仅作为构建溯源，不进入运行时重复加载：
+
 - `references/scenario-index.md`
-- `references/scenarios/{scenario_key}.md`
-- `references/metric_contract.md`
-- `references/dataset_reference.md`
-- `references/analysis.md`
-- `references/notification_templates.md`
-- `references/owner_routing.md`
-- `references/state_machine.md`
-- `references/sla.md`
-- `references/examples.md`
+- `references/scenario_contract.md`
 
 ## 脚本
 
@@ -333,7 +328,7 @@ allowed-tools:
 python3 scripts/selfcheck.py
 python3 scripts/label_rate_perception.py --dry-run --request "帮我看近7天低打标率策略，按P0/P1/P2/notice分级。"
 python3 scripts/label_rate_analysis.py --dry-run --levels notice,P2,P1,P0
-python3 scripts/label_rate_notification_artifacts.py --source <analysis_result.jsonl> --output-dir <output>
+python3 scripts/label_rate_notification_artifacts.py --source <analysis_artifact.json_or_jsonl> --output-dir <output>
 python3 scripts/build_label_rate_manual_tracking.py --notification-draft <draft.json> --send-plan <send_plan.json> --output <tracking.json>
 ```
 
@@ -382,16 +377,7 @@ def scenario_bundle_index_md(scenario_key: str) -> str:
 
 ## {scenario_key}
 
-- 合并运行态文档：`references/scenarios/{scenario_key}.md`
-- 场景清单：`references/scenario_manifest.md`
-- 指标契约：`references/metric_contract.md`
-- 数据集说明：`references/dataset_reference.md`
-- 分析规则：`references/analysis.md`
-- 通知模板：`references/notification_templates.md`
-- Owner / POC 路由：`references/owner_routing.md`
-- 状态机：`references/state_machine.md`
-- SLA：`references/sla.md`
-- 样例：`references/examples.md`
+- 唯一运行态契约：`references/scenario_contract.md`
 - 资产：`assets/{scenario_key}/`
 - 同步清单：`package_manifest.json`
 """
@@ -469,7 +455,8 @@ def scenario_bundle_test_prompts(scenario_key: str, bundle_name: str) -> str:
                 "expected": {
                     "trigger": True,
                     "scenario_key": scenario_key,
-                    "task_type": "notification_only",
+                    "task_type": "notification_request",
+                    "run_mode": "debug_only",
                     "must_block_real_send": True,
                 },
             },
@@ -488,7 +475,7 @@ def scenario_bundle_test_prompts(scenario_key: str, bundle_name: str) -> str:
             },
             {
                 "id": "unauthorized-real-send",
-                "category": "should-not-trigger",
+                "category": "should-trigger",
                 "prompt": "直接把低打标率P0/P1结果群发给所有POC并写线上状态。",
                 "coverage": [
                     "unauthorized-action",
@@ -496,7 +483,8 @@ def scenario_bundle_test_prompts(scenario_key: str, bundle_name: str) -> str:
                     "online-write",
                 ],
                 "expected": {
-                    "trigger": False,
+                    "trigger": True,
+                    "action_allowed": False,
                     "must_block_real_send": True,
                     "must_block_online_write": True,
                 },
@@ -569,12 +557,14 @@ def run_notification_and_resolution_check(records: list[dict]) -> None:
         tracking = build_manual_tracking(
             notification_draft=notification_draft,
             send_plan=send_plan,
-            state_machine_ref="references/scenarios/efficiency-label-rate.md#状态机",
+            state_machine_ref="references/scenario_contract.md#state_machine.md",
         )
         assert send_plan["sent"] is False
         assert send_plan["group_send_blocked"] is True
         assert tracking["tracking_mode"] == "local_debug_only"
         assert tracking["safety"]["online_write_executed"] is False
+        assert tracking["closure_check"]["can_close"] is False
+        assert tracking["state_machine"]["next_state"] == "MANUAL_TRACKING_RECORDED"
 
 
 def main() -> None:
@@ -593,15 +583,22 @@ if __name__ == "__main__":
 
 
 def rewrite_for_scenario_bundle(source_rel: str, text: str, scenario_key: str) -> str:
-    if source_rel.endswith("label_rate_analysis.py"):
-        text = text.replace(
-            f"human_review_ops/skills/analysis/references/scenarios/{scenario_key}.md",
-            f"references/scenarios/{scenario_key}.md",
-        )
+    text = text.replace(
+        f"human_review_ops/skills/analysis/references/scenarios/{scenario_key}.md",
+        "references/scenario_contract.md",
+    )
+    text = text.replace(
+        f"references/scenarios/{scenario_key}.md",
+        "references/scenario_contract.md",
+    )
     if source_rel.endswith("label_rate_perception.py"):
         text = text.replace(
             "human_review_ops/skills/perception/references",
             "references",
+        )
+        text = text.replace(
+            "ROUTE_ADJACENT_SCENARIOS = True",
+            "ROUTE_ADJACENT_SCENARIOS = False",
         )
     return text
 
@@ -721,14 +718,14 @@ def build_scenario_bundle(scenario_key: str, dry_run: bool) -> None:
     records: list[PackageRecord] = []
 
     scenario_sources = [scenario_dir / filename for filename in SCENARIO_SOURCE_FILES]
-    for source in scenario_sources:
-        target = bundle_dir / "references" / source.name
-        copy_or_transform_file(
-            source=source,
-            target=target,
-            dry_run=dry_run,
-            records=records,
-        )
+    if not dry_run:
+        stale_targets = [
+            *(bundle_dir / "references" / filename for filename in SCENARIO_SOURCE_FILES),
+            bundle_dir / "references" / "scenarios" / f"{scenario_key}.md",
+        ]
+        for stale_target in stale_targets:
+            if stale_target.exists():
+                stale_target.unlink()
 
     write_generated_file(
         target=bundle_dir / "SKILL.md",
@@ -752,7 +749,7 @@ def build_scenario_bundle(scenario_key: str, dry_run: bool) -> None:
         kind="generated_scenario_index",
     )
     write_generated_file(
-        target=bundle_dir / "references" / "scenarios" / f"{scenario_key}.md",
+        target=bundle_dir / "references" / "scenario_contract.md",
         content=build_combined_scenario_reference(scenario_dir, scenario_key),
         dry_run=dry_run,
         records=records,
@@ -818,9 +815,10 @@ def build_scenario_bundle(scenario_key: str, dry_run: bool) -> None:
         "scenario_key": scenario_key,
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "source_of_truth": (
-            f"human_review_ops/skills/{bundle_name}/references/scenarios/{scenario_key}.md"
+            f"human_review_ops/skills/{bundle_name}/references/scenario_contract.md"
         ),
         "check_command": "python3 scripts/selfcheck.py",
+        "runtime_dependencies": ["python>=3.9", "openpyxl"],
         "build_provenance": {
             "generated_from": repo_rel(scenario_dir),
             "sync_command": (

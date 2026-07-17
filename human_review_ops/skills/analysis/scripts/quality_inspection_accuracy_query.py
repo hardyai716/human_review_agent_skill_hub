@@ -68,8 +68,8 @@ def build_sql(current_date: str, previous_date_value: str) -> str:
         WITH agg AS (
           SELECT
             if({FIELD_DATE} = {current_lit}, 'cur', 'prev') AS period,
-            {DIM_QUEUE_SUMMARY} AS queue_category_summary,
-            {DIM_QUEUE_GROUP} AS queue_category_group,
+            ifNull({DIM_QUEUE_SUMMARY}, '（空/队列分类汇总）') AS queue_category_summary_key,
+            ifNull({DIM_QUEUE_GROUP}, '（空/队列分类）') AS queue_category_group_key,
             {METRIC_AUDIT_ACCURACY} AS audit_accuracy,
             {METRIC_SAMPLE_CNT} / count(DISTINCT {FIELD_DATE}) AS avg_daily_sample_cnt,
             {METRIC_ERROR_CNT} / count(DISTINCT {FIELD_DATE}) AS avg_daily_error_cnt,
@@ -82,11 +82,11 @@ def build_sql(current_date: str, previous_date_value: str) -> str:
             AND {FILTER_QUALITY_MODE} = '抽检模式'
             AND {FILTER_VIDEO_SCOPE} IN ('【大盘】安全', '【大盘】画风')
             AND {FILTER_EXCLUDE_FLAG} NOT LIKE '%剔除%'
-          GROUP BY period, queue_category_summary, queue_category_group
+          GROUP BY period, queue_category_summary_key, queue_category_group_key
         )
         SELECT
-          cur.queue_category_summary,
-          cur.queue_category_group,
+          cur.queue_category_summary_key AS queue_category_summary,
+          cur.queue_category_group_key AS queue_category_group,
           cur.audit_accuracy,
           cur.audit_accuracy - prev.audit_accuracy AS audit_accuracy_diff_1d,
           cur.avg_daily_sample_cnt,
@@ -97,11 +97,11 @@ def build_sql(current_date: str, previous_date_value: str) -> str:
           cur.avg_daily_label_sample_cnt
         FROM agg AS cur
         ANY LEFT JOIN agg AS prev
-          ON cur.queue_category_summary = prev.queue_category_summary
-         AND cur.queue_category_group = prev.queue_category_group
+          ON cur.queue_category_summary_key = prev.queue_category_summary_key
+         AND cur.queue_category_group_key = prev.queue_category_group_key
          AND prev.period = 'prev'
         WHERE cur.period = 'cur'
-        ORDER BY cur.queue_category_summary, cur.queue_category_group
+        ORDER BY cur.queue_category_summary_key, cur.queue_category_group_key
         LIMIT 100
         SETTINGS
           enable_case_when_prop = 1,

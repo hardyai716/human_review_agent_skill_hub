@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 from datetime import date
@@ -46,22 +47,28 @@ def build_poc_row_enrichment(
 
 SCENARIO_KEY = label_rate_analysis.SCENARIO_KEY
 EVAL_DIR = ROOT / "evals" / SCENARIO_KEY
-OUTPUT_DATE = label_rate_analysis.OUTPUT_DATE
 DATASET_ID = label_rate_analysis.DATASET_ID
 REGION = label_rate_analysis.REGION
 QUERY_LIMIT = label_rate_analysis.QUERY_LIMIT
-PLUS1_SHEET_TOKEN = "GzpCwP516imDB8kQ3g1cLr5bnPc"
+PLUS1_SHEET_TOKEN_ENV = "HUMAN_REVIEW_OPS_PLUS1_SHEET_TOKEN"
 PLUS1_SHEET_ID = "0301e2"
 PLUS1_SHEET_NAME = "Sheet1"
 PLUS1_READ_RANGE = "A1:N1000"
 PLUS1_REFRESH_POLICY = "current_sheet_authoritative"
 
 
-def default_output_path() -> Path:
+def default_output_path(time_range: dict[str, Any] | None = None) -> Path:
+    output_date = date.today().strftime("%Y%m%d")
+    if time_range and time_range.get("current_start") and time_range.get("current_end"):
+        start = str(time_range["current_start"]).replace("-", "")
+        end = str(time_range["current_end"]).replace("-", "")
+        filename = f"{output_date}_real_readonly_label_rate_grading_{start}_{end}_results.jsonl"
+    else:
+        filename = f"{output_date}_real_readonly_label_rate_grading_results.jsonl"
     return (
         EVAL_DIR
         / "stage_1_runs"
-        / f"{OUTPUT_DATE}_real_readonly_label_rate_grading_results.jsonl"
+        / filename
     )
 
 
@@ -77,15 +84,19 @@ def parse_levels(raw_levels: str) -> list[str]:
     levels = [level.strip() for level in raw_levels.split(",") if level.strip()]
     if not levels:
         raise SystemExit("--levels must include at least one level.")
-    invalid = [level for level in levels if level not in DEFAULT_LEVELS]
+    invalid = [level for level in levels if level not in label_rate_analysis.DEFAULT_LEVELS]
     if invalid:
-        raise SystemExit(f"Unsupported levels: {invalid}. Supported: {DEFAULT_LEVELS}.")
+        raise SystemExit(
+            f"Unsupported levels: {invalid}. Supported: {label_rate_analysis.DEFAULT_LEVELS}."
+        )
     return levels
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--levels", default=",".join(label_rate_analysis.DEFAULT_LEVELS))
+    parser.add_argument("--start-date")
+    parser.add_argument("--end-date")
     parser.add_argument("--output")
     args = parser.parse_args()
 
@@ -93,8 +104,9 @@ def main() -> None:
         levels = label_rate_analysis.parse_levels(args.levels)
     except ValueError as exc:
         raise SystemExit(str(exc)) from exc
+    time_range = resolve_time_range(args)
     refresh_plus1_agreed_asset_if_needed()
-    sql_map = label_rate_analysis.sql_by_level()
+    sql_map = label_rate_analysis.sql_by_level(time_range)
     mapping_index = poc_mapping_index(load_poc_mapping())
     payloads = {level: run_query(sql_map[level]) for level in levels}
     records = label_rate_analysis.build_records(
@@ -102,8 +114,9 @@ def main() -> None:
         levels,
         sql_map,
         row_enricher=lambda row: build_poc_row_enrichment(row, mapping_index),
+        time_range=time_range,
     )
-    output_path = Path(args.output) if args.output else default_output_path()
+    output_path = Path(args.output) if args.output else default_output_path(time_range)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(
         "\n".join(
@@ -118,8 +131,28 @@ def main() -> None:
     print(f"Stage 1 real readonly label-rate grading wrote {counts}: {output_path}")
 
 
+def resolve_time_range(args: argparse.Namespace) -> dict[str, Any] | None:
+    if bool(args.start_date) != bool(args.end_date):
+        raise SystemExit("--start-date and --end-date must be provided together.")
+    if not args.start_date:
+        return None
+    try:
+        return label_rate_analysis.build_grading_time_range(
+            start_date=args.start_date,
+            end_date=args.end_date,
+        )
+    except ValueError as exc:
+        raise SystemExit(str(exc)) from exc
+
+
 def plus1_asset_paths() -> list[Path]:
     return [
+        ROOT
+        / "skills"
+        / "analysis"
+        / "assets"
+        / SCENARIO_KEY
+        / label_rate_analysis.PLUS1_AGREED_ASSET,
         ROOT
         / "references"
         / "scenarios"
@@ -161,12 +194,17 @@ def refresh_plus1_agreed_asset_if_needed() -> None:
 
 
 def read_plus1_sheet_values() -> dict[str, Any]:
+    sheet_token = os.environ.get(PLUS1_SHEET_TOKEN_ENV, "").strip()
+    if not sheet_token:
+        raise RuntimeError(
+            f"Missing required environment variable: {PLUS1_SHEET_TOKEN_ENV}"
+        )
     command = [
         "lark-cli",
         "sheets",
         "+cells-get",
         "--spreadsheet-token",
-        PLUS1_SHEET_TOKEN,
+        sheet_token,
         "--sheet-id",
         PLUS1_SHEET_ID,
         "--range",
@@ -234,7 +272,7 @@ def build_plus1_asset_from_sheet(payload: dict[str, Any], *, read_at: str) -> di
         "scenario_key": SCENARIO_KEY,
         "source": {
             "type": "lark_sheet",
-            "spreadsheet_token": PLUS1_SHEET_TOKEN,
+            "spreadsheet_token_env": PLUS1_SHEET_TOKEN_ENV,
             "sheet_id": PLUS1_SHEET_ID,
             "sheet_name": PLUS1_SHEET_NAME,
             "range": PLUS1_READ_RANGE,

@@ -10,7 +10,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from collections.abc import Callable
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -37,16 +39,16 @@ METRIC_FORMULA = (
     "`label_rate` = SUM(`[打标量__reviewid]`) / SUM(`[完审量_reviewid]`)"
 )
 RULE_SOURCE = (
-    "references/scenarios/efficiency-label-rate.md#模式-b低打标率分级"
+    "references/scenario_contract.md#模式-b低打标率分级"
 )
 METRIC_CONTRACT_PATH = (
-    "references/scenarios/efficiency-label-rate.md#指标口径"
+    "references/scenario_contract.md#指标口径"
 )
 DATASET_REFERENCE_PATH = (
-    "references/scenarios/efficiency-label-rate.md#数据源与字段"
+    "references/scenario_contract.md#数据源与字段"
 )
 ANALYSIS_RULE_PATH = (
-    "references/scenarios/efficiency-label-rate.md#分析模式"
+    "references/scenario_contract.md#分析模式"
 )
 PLUS1_AGREED_ASSET = "plus1_agreed_strategy_updates.json"
 LEVEL_ORDER = ["P0", "P1", "P2", "notice"]
@@ -94,6 +96,7 @@ GRADING_COLUMNS = [
     "hit_condition",
     "is_plus1_agreed",
     "plus1_update_date",
+    "plus1_agreed_before_current_period",
 ]
 RowEnricher = Callable[[dict[str, Any]], dict[str, Any]]
 
@@ -146,31 +149,36 @@ def main() -> None:
         action="store_true",
         help="Emit deterministic smoke output. This script never executes SQL.",
     )
+    parser.add_argument("--start-date")
+    parser.add_argument("--end-date")
     args = parser.parse_args()
 
+    time_range = build_cli_time_range(args)
     if args.data_direction == "report_flow":
-        payload = build_report_flow_dry_run_payload(dry_run=bool(args.dry_run))
+        payload = build_report_flow_dry_run_payload(
+            dry_run=True,
+            time_range=time_range,
+        )
         print(json.dumps(payload, ensure_ascii=False, indent=2))
         return
 
     levels = parse_levels(args.levels)
-    sql_map = sql_by_level()
+    sql_map = sql_by_level(time_range)
     payloads = build_smoke_payloads(levels)
-    records = build_records(payloads, levels, sql_map)
+    records = build_records(payloads, levels, sql_map, time_range=time_range)
     sample = records[1]
-    source_footer = dict(sample["source_footer"])
-    readonly_execution = dict(sample["readonly_execution"])
-    if args.dry_run:
-        # This CLI path only emits deterministic smoke fixtures; relabel the
-        # real-run markers so the output never claims a real query happened.
-        source_footer["review_status"] = "dry_run_smoke_fixture_not_executed"
-        readonly_execution["execution_mode"] = "dry_run_smoke_fixture"
+    mark_sample_as_dry_run(sample)
     payload = {
         "schema_version": SCHEMA_VERSION,
-        "dry_run": bool(args.dry_run),
+        "record_type": "sample",
+        "dry_run": True,
+        "scenario_key": sample["scenario_key"],
+        "task_type": sample["task_type"],
+        "analysis_mode": sample["analysis_mode"],
+        "run_mode": sample["run_mode"],
         "QueryPlan": sample["QueryPlan"],
-        "source_footer": source_footer,
-        "readonly_execution": readonly_execution,
+        "source_footer": sample["source_footer"],
+        "readonly_execution": sample["readonly_execution"],
         "analysis_result": sample["analysis_result"],
         "provenance": sample["provenance"],
         "safety": {
@@ -181,6 +189,93 @@ def main() -> None:
         },
     }
     print(json.dumps(payload, ensure_ascii=False, indent=2))
+
+
+def mark_sample_as_dry_run(sample: dict[str, Any]) -> None:
+    """Relabel every nested execution object as a non-authoritative fixture."""
+
+    execution = sample["readonly_execution"]
+    execution["execution_mode"] = "mock_readonly_no_real_query"
+    execution["status"] = "not_executed"
+    execution["level_counts"] = {
+        level: 0 for level in execution.get("level_counts", {})
+    }
+    for result in execution.get("level_results", {}).values():
+        result["row_count"] = 0
+        result["source_row_count"] = 0
+        result["rows"] = []
+        result["truncated"] = None
+    execution["row_count"] = 0
+    execution["comprehensive_results"] = []
+    execution["truncated"] = None
+    execution["quality_checks"]["freshness_gate"] = "not_executed"
+    execution["quality_checks"]["truncation_check"] = "not_executed"
+
+    source_footer = sample["source_footer"]
+    source_footer["source_tier"] = "mock_fixture"
+    source_footer["review_status"] = "debug_only_mock_readonly_execution"
+    source_footer["confidence_tier"] = "low"
+
+    provenance = sample["provenance"]
+    provenance["execution_mode"] = "mock_readonly_no_real_query"
+    provenance["source_tier"] = "mock_fixture"
+    provenance["limitations"] = list(execution["limitations"]) + [
+        "CLI output contains deterministic smoke rows and is not business evidence."
+    ]
+
+    analysis_result = sample["analysis_result"]
+    analysis_result["impact_assessment"]["summary"] = (
+        "Dry-run 仅验证 QueryPlan、SQL 和输出结构，未产生业务命中结果。"
+    )
+    analysis_result["impact_assessment"]["impact_scope"] = (
+        "unknown_until_external_readonly_execution"
+    )
+    analysis_result["impact_assessment"]["risk_level"] = "unknown"
+    analysis_result["impact_assessment"]["business_risk"] = (
+        "Dry-run fixture only; no business conclusion is available."
+    )
+    analysis_result["sop_decision"].update(
+        {
+            "severity_level": "unknown",
+            "next_action": "ask_more",
+            "required_confirmation": True,
+            "matched_rules": [],
+            "reason": "必须由外部只读执行器回填真实查询结果后再下业务结论。",
+        }
+    )
+    analysis_result["quality_checks"].update(
+        {
+            "evidence_complete": False,
+            "data_fresh": False,
+            "owner_resolved": False,
+            "confidence": 0.0,
+        }
+    )
+
+    sample["permission_checks"]["real_query_executed"] = False
+    for tool_call in sample["tool_call_records"]:
+        tool_call.update(
+            {
+                "execution_mode": "mock_readonly_no_real_query",
+                "real_query_executed": False,
+                "status": "blocked",
+                "output_summary": "Deterministic smoke fixture; no query executed.",
+            }
+        )
+
+
+def build_cli_time_range(args: argparse.Namespace) -> dict[str, Any] | None:
+    if bool(args.start_date) != bool(args.end_date):
+        raise SystemExit("--start-date and --end-date must be provided together.")
+    if not args.start_date:
+        return None
+    try:
+        return build_grading_time_range(
+            start_date=args.start_date,
+            end_date=args.end_date,
+        )
+    except ValueError as exc:
+        raise SystemExit(str(exc)) from exc
 
 
 def query_plan_id() -> str:
@@ -270,6 +365,133 @@ def quote_sql_string(value: str) -> str:
     return "'" + value.replace("'", "''") + "'"
 
 
+def parse_date_value(raw_value: str) -> date:
+    return date.fromisoformat(raw_value.strip().replace("/", "-"))
+
+
+def parse_user_period(raw_text: str | None) -> dict[str, Any] | None:
+    """Extract an explicit inclusive date range from user text."""
+
+    if not raw_text:
+        return None
+    match = re.search(
+        r"(?P<start>\d{4}[-/]\d{1,2}[-/]\d{1,2})\s*"
+        r"(?:至|到|~|～|—|–|-)\s*"
+        r"(?P<end>\d{4}[-/]\d{1,2}[-/]\d{1,2})",
+        raw_text,
+    )
+    if not match:
+        return None
+    return build_grading_time_range(
+        start_date=parse_date_value(match.group("start")),
+        end_date=parse_date_value(match.group("end")),
+    )
+
+
+def build_grading_time_range(
+    *,
+    start_date: date | str,
+    end_date: date | str,
+    checked_at: str | None = None,
+) -> dict[str, Any]:
+    """Build the explicit weekly grading window used by low-label-rate rules."""
+
+    current_start = (
+        parse_date_value(start_date) if isinstance(start_date, str) else start_date
+    )
+    current_end = parse_date_value(end_date) if isinstance(end_date, str) else end_date
+    if current_end < current_start:
+        raise ValueError("end_date must be >= start_date.")
+    current_days = (current_end - current_start).days + 1
+    if current_days != CURRENT_DAYS:
+        raise ValueError(
+            "low_label_rate_grading requires a 7-day current window; "
+            f"got {current_days} days."
+        )
+
+    current_end_exclusive = current_end + timedelta(days=1)
+    history_start = current_start - timedelta(days=HISTORY_DAYS - CURRENT_DAYS)
+    previous_windows = []
+    for index in range(1, 4):
+        window_start = current_start - timedelta(days=CURRENT_DAYS * index)
+        window_end_exclusive = current_start - timedelta(
+            days=CURRENT_DAYS * (index - 1)
+        )
+        previous_windows.append(
+            {
+                "start": window_start.isoformat(),
+                "end": (window_end_exclusive - timedelta(days=1)).isoformat(),
+                "end_exclusive": window_end_exclusive.isoformat(),
+            }
+        )
+
+    checked_at_value = checked_at or (
+        datetime.combine(current_end_exclusive, datetime.min.time()).isoformat()
+        + "+08:00"
+    )
+    return {
+        "type": "explicit_weekly_grading_window",
+        "current_start": current_start.isoformat(),
+        "current_end": current_end.isoformat(),
+        "current_end_exclusive": current_end_exclusive.isoformat(),
+        "current_days": current_days,
+        "history_start": history_start.isoformat(),
+        "history_end": current_end.isoformat(),
+        "history_days": HISTORY_DAYS,
+        "previous_windows": previous_windows,
+        "current_where": (
+            f"`[p_date]` >= '{current_start.isoformat()}' "
+            f"AND `[p_date]` < '{current_end_exclusive.isoformat()}'"
+        ),
+        "history_where": (
+            f"`[p_date]` >= '{history_start.isoformat()}' "
+            f"AND `[p_date]` < '{current_end_exclusive.isoformat()}'"
+        ),
+        "checked_at": checked_at_value,
+    }
+
+
+def explicit_p_date_filter(
+    start_days_ago: int,
+    end_days_ago: int,
+    time_range: dict[str, Any],
+) -> str:
+    current_end_exclusive = parse_date_value(time_range["current_end_exclusive"])
+    start = current_end_exclusive - timedelta(days=start_days_ago)
+    end_exclusive = current_end_exclusive - timedelta(days=end_days_ago)
+    return (
+        f"`[p_date]` >= '{start.isoformat()}' "
+        f"AND `[p_date]` < '{end_exclusive.isoformat()}'"
+    )
+
+
+def p_date_filter_sql(
+    start_days_ago: int,
+    end_days_ago: int,
+    time_range: dict[str, Any] | None,
+) -> str:
+    if time_range and time_range.get("type") == "explicit_weekly_grading_window":
+        return explicit_p_date_filter(start_days_ago, end_days_ago, time_range)
+    end_expr = "today()" if end_days_ago == 0 else f"today() - {end_days_ago}"
+    return f"`[p_date]` >= today() - {start_days_ago} AND `[p_date]` < {end_expr}"
+
+
+def query_plan_id_for_time_range(time_range: dict[str, Any] | None) -> str:
+    if time_range and time_range.get("current_start") and time_range.get("current_end"):
+        start = str(time_range["current_start"]).replace("-", "")
+        end = str(time_range["current_end"]).replace("-", "")
+        return f"QP-ELR-REAL-LOW-LABEL-RATE-GRADING-{start}-{end}"
+    return query_plan_id()
+
+
+def event_id_for_time_range(time_range: dict[str, Any] | None) -> str:
+    if time_range and time_range.get("current_start") and time_range.get("current_end"):
+        start = str(time_range["current_start"]).replace("-", "")
+        end = str(time_range["current_end"]).replace("-", "")
+        return f"ELR-REAL-LOW-LABEL-RATE-GRADING-{start}-{end}"
+    return event_id()
+
+
 def sql_in_list(values: list[str], indent: str = "    ") -> str:
     return (",\n" + indent).join(quote_sql_string(value) for value in values)
 
@@ -291,30 +513,85 @@ def report_flow_filter_sql(indent: str = "  ") -> str:
     )
 
 
-def build_report_flow_low_label_rate_sql(days: int = CURRENT_DAYS) -> str:
+def build_report_flow_time_range(
+    time_range: dict[str, Any] | None,
+) -> dict[str, Any]:
+    if time_range and time_range.get("current_start") and time_range.get("current_end"):
+        start = str(time_range["current_start"])
+        end_exclusive = str(
+            time_range.get("current_end_exclusive")
+            or (
+                parse_date_value(str(time_range["current_end"])) + timedelta(days=1)
+            ).isoformat()
+        )
+        return {
+            "type": "explicit_date_range",
+            "current_start": start,
+            "current_end": str(time_range["current_end"]),
+            "current_end_exclusive": end_exclusive,
+            "days": CURRENT_DAYS,
+            "date_field": "进审日期",
+            "where": (
+                f"`[进审日期]` >= '{start}' "
+                f"AND `[进审日期]` < '{end_exclusive}'"
+            ),
+        }
+    return {
+        "type": "trailing_days",
+        "days": CURRENT_DAYS,
+        "date_field": "进审日期",
+        "where": "`[进审日期]` >= today() - 7 AND `[进审日期]` < today()",
+    }
+
+
+def build_report_flow_low_label_rate_sql(
+    time_range: dict[str, Any] | None = None,
+) -> str:
+    resolved_time_range = build_report_flow_time_range(time_range)
+    date_filter = resolved_time_range["where"]
     return f"""
+WITH daily AS (
+  SELECT
+    ifNull(`[enpool_reason]`, '（空/enpool_reason）') AS enpool_reason_key,
+    `[进审日期]` AS review_date_key,
+    `[人审完结量_report_id]` AS report_review_done_cnt,
+    `[打标量_report_id]` AS report_label_cnt
+  FROM {REPORT_FLOW_PHYSICAL_TABLE}
+  WHERE {date_filter}
+{report_flow_filter_sql("    ")}
+  GROUP BY enpool_reason_key, review_date_key
+)
 SELECT
-  ifNull(`[enpool_reason]`, '（空/enpool_reason）') AS enpool_reason,
-  `[人审完结量_report_id]` / count(distinct `[进审日期]`) AS avg_report_review_done_cnt,
-  `[打标量_report_id]` / count(distinct `[进审日期]`) AS avg_report_label_cnt,
-  `[打标率_report_id]` AS report_label_rate
-FROM {REPORT_FLOW_PHYSICAL_TABLE}
-WHERE `[进审日期]` >= today() - {days}
-  AND `[进审日期]` < today()
-{report_flow_filter_sql("  ")}
-GROUP BY enpool_reason
-HAVING `[人审完结量_report_id]` > 0
-   AND `[打标率_report_id]` < 0.1
+  enpool_reason_key AS enpool_reason,
+  SUM(report_review_done_cnt) / count(distinct review_date_key) AS avg_report_review_done_cnt,
+  SUM(report_label_cnt) / count(distinct review_date_key) AS avg_report_label_cnt,
+  SUM(report_label_cnt) / nullIf(SUM(report_review_done_cnt), 0) AS report_label_rate
+FROM daily
+GROUP BY enpool_reason_key
+HAVING SUM(report_review_done_cnt) > 0
+   AND SUM(report_label_cnt) / nullIf(SUM(report_review_done_cnt), 0) < 0.1
 ORDER BY avg_report_review_done_cnt DESC
 LIMIT {QUERY_LIMIT}
 """.strip()
 
 
-def build_report_flow_query_plan(sql: str) -> dict[str, Any]:
+def build_report_flow_query_plan(
+    sql: str,
+    time_range: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    resolved_time_range = build_report_flow_time_range(time_range)
+    period_suffix = ""
+    if resolved_time_range.get("current_start"):
+        period_suffix = (
+            "-"
+            + str(resolved_time_range["current_start"]).replace("-", "")
+            + "-"
+            + str(resolved_time_range["current_end"]).replace("-", "")
+        )
     return {
-        "query_plan_id": "QP-ELR-REPORT-FLOW-LOW-LABEL-RATE-7D",
+        "query_plan_id": f"QP-ELR-REPORT-FLOW-LOW-LABEL-RATE{period_suffix or '-7D'}",
         "scenario_key": SCENARIO_KEY,
-        "task_type": "query_only",
+        "task_type": "report_flow_low_label_rate",
         "analysis_mode": "report_flow_low_label_rate",
         "metric_id": "report_label_rate",
         "data_direction": "report_flow",
@@ -328,12 +605,7 @@ def build_report_flow_query_plan(sql: str) -> dict[str, Any]:
                 "aeolus_metric_id": "10000001274387",
             }
         ],
-        "time_range": {
-            "type": "trailing_days",
-            "days": CURRENT_DAYS,
-            "date_field": "进审日期",
-            "where": "`[进审日期]` >= today() - 7 AND `[进审日期]` < today()",
-        },
+        "time_range": resolved_time_range,
         "dimensions": ["enpool_reason"],
         "filters": [
             "report_flow_queue_scope",
@@ -380,7 +652,7 @@ def build_report_flow_source_footer(query_plan: dict[str, Any]) -> dict[str, Any
         "data_freshness": "uses `[进审日期]` trailing 7 complete days; checked_at=dry_run",
         "owner": "人审效率域数据 Owner",
         "confidence_tier": "high",
-        "review_status": "dry_run_sql_template_not_executed",
+        "review_status": "debug_only_no_real_query",
         "scenario_key": SCENARIO_KEY,
         "metric_id": "report_label_rate",
         "data_direction": "report_flow",
@@ -404,9 +676,13 @@ def build_report_flow_source_footer(query_plan: dict[str, Any]) -> dict[str, Any
     }
 
 
-def build_report_flow_dry_run_payload(*, dry_run: bool) -> dict[str, Any]:
-    sql = build_report_flow_low_label_rate_sql()
-    query_plan = build_report_flow_query_plan(sql)
+def build_report_flow_dry_run_payload(
+    *,
+    dry_run: bool,
+    time_range: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    sql = build_report_flow_low_label_rate_sql(time_range=time_range)
+    query_plan = build_report_flow_query_plan(sql, time_range)
     source_footer = build_report_flow_source_footer(query_plan)
     readonly_execution = {
         "execution_id": f"ROE-{query_plan['query_plan_id']}",
@@ -447,6 +723,7 @@ def build_report_flow_dry_run_payload(*, dry_run: bool) -> dict[str, Any]:
         "app_id": REPORT_FLOW_APP_ID,
         "dataset_id": REPORT_FLOW_DATASET_ID,
         "metric_id": "report_label_rate",
+        "metric_formula": readonly_execution["metric_formula"],
         "time_range": query_plan["time_range"],
         "dimensions": query_plan["dimensions"],
         "filters": query_plan["filters"],
@@ -456,6 +733,8 @@ def build_report_flow_dry_run_payload(*, dry_run: bool) -> dict[str, Any]:
             "dataset_reference": DATASET_REFERENCE_PATH,
             "analysis_rule": ANALYSIS_RULE_PATH,
         },
+        "tool_call_ids": [],
+        "limitations": source_footer["limitations"],
         "source_footer": source_footer,
     }
     analysis_result = {
@@ -464,18 +743,50 @@ def build_report_flow_dry_run_payload(*, dry_run: bool) -> dict[str, Any]:
         "templates_used": ["report_flow_low_label_rate", "source_footer"],
         "query_plan": query_plan,
         "readonly_execution": readonly_execution,
+        "impact_assessment": {
+            "summary": "仅生成举报方向 QueryPlan 和 SQL，尚未执行真实查询。",
+            "impact_scope": "unknown_until_external_readonly_execution",
+            "risk_level": "unknown",
+            "business_risk": "无真实查询结果，不下业务结论。",
+            "duration": "not_executed",
+            "evidence_refs": [readonly_execution["execution_id"]],
+        },
+        "root_cause_hypotheses": [
+            {
+                "hypothesis": "not_analyzed_without_query_result",
+                "confidence": 0.0,
+                "supporting_evidence": [],
+                "contradicting_evidence": [],
+                "next_check": "由外部只读执行器执行 QueryPlan。",
+            }
+        ],
         "sop_decision": {
             "severity_level": "none",
             "next_action": "external_readonly_execute",
             "required_confirmation": False,
             "reason": "Dry-run generated QueryPlan and SQL only.",
         },
+        "quality_checks": {
+            "evidence_complete": False,
+            "data_fresh": False,
+            "metric_definition_consistent": True,
+            "owner_resolved": False,
+            "confidence": 0.0,
+            "warnings": source_footer["limitations"],
+        },
         "source_footer": source_footer,
         "provenance": provenance,
     }
     return {
         "schema_version": SCHEMA_VERSION,
+        "record_type": "sample",
         "dry_run": dry_run,
+        "scenario_key": SCENARIO_KEY,
+        "task_type": "report_flow_low_label_rate",
+        "analysis_mode": "report_flow_low_label_rate",
+        "run_mode": "debug_only",
+        "data_direction": "report_flow",
+        "source_profile": "report_flow_review",
         "QueryPlan": query_plan,
         "source_footer": source_footer,
         "readonly_execution": readonly_execution,
@@ -490,8 +801,12 @@ def build_report_flow_dry_run_payload(*, dry_run: bool) -> dict[str, Any]:
     }
 
 
-def period_aggregate_sql(start_days_ago: int, end_days_ago: int) -> str:
-    end_expr = "today()" if end_days_ago == 0 else f"today() - {end_days_ago}"
+def period_aggregate_sql(
+    start_days_ago: int,
+    end_days_ago: int,
+    time_range: dict[str, Any] | None = None,
+) -> str:
+    p_date_filter = p_date_filter_sql(start_days_ago, end_days_ago, time_range)
     return f"""
 SELECT
   mach_root_label_key AS mach_root_label_name,
@@ -516,8 +831,7 @@ FROM (
     `[完审量_reviewid]` AS wan_shen,
     `[打标量__reviewid]` AS da_biao
   FROM {SOURCE_TABLE}
-  WHERE `[p_date]` >= today() - {start_days_ago}
-    AND `[p_date]` < {end_expr}
+  WHERE {p_date_filter}
 {base_filter_sql("    ")}
   GROUP BY mach_root_label_key, strategy_id_key, strategy_name_key, dt
 ) daily
@@ -530,8 +844,12 @@ def dimension_join(left: str, right: str) -> str:
     return " AND ".join(f"{left}.{field} = {right}.{field}" for field in DIMENSIONS)
 
 
-def daily_strategy_sql(start_days_ago: int, end_days_ago: int) -> str:
-    end_expr = "today()" if end_days_ago == 0 else f"today() - {end_days_ago}"
+def daily_strategy_sql(
+    start_days_ago: int,
+    end_days_ago: int,
+    time_range: dict[str, Any] | None = None,
+) -> str:
+    p_date_filter = p_date_filter_sql(start_days_ago, end_days_ago, time_range)
     return f"""
 SELECT
 {mach_root_label_key_sql("  ")},
@@ -542,18 +860,17 @@ SELECT
   `[完审量_reviewid]` AS wan_shen,
   `[打标量__reviewid]` AS da_biao
 FROM {SOURCE_TABLE}
-WHERE `[p_date]` >= today() - {start_days_ago}
-  AND `[p_date]` < {end_expr}
+WHERE {p_date_filter}
 {base_filter_sql("  ")}
 GROUP BY mach_root_label_key, strategy_id_key, strategy_name_key, dt
 """.strip()
 
 
-def risk_domain_spike_source_sql() -> str:
-    cur = f"({period_aggregate_sql(7, 0)}) cur_strategy"
-    prev = f"({period_aggregate_sql(14, 7)}) prev_strategy"
-    cur_daily = f"({daily_strategy_sql(7, 0)}) cur_daily"
-    prev_daily = f"({daily_strategy_sql(14, 7)}) prev_daily"
+def risk_domain_spike_source_sql(time_range: dict[str, Any] | None = None) -> str:
+    cur = f"({period_aggregate_sql(7, 0, time_range)}) cur_strategy"
+    prev = f"({period_aggregate_sql(14, 7, time_range)}) prev_strategy"
+    cur_daily = f"({daily_strategy_sql(7, 0, time_range)}) cur_daily"
+    prev_daily = f"({daily_strategy_sql(14, 7, time_range)}) prev_daily"
     return f"""
 (
   WITH
@@ -655,8 +972,8 @@ WHERE ({where_sql})
 """.strip()
 
 
-def build_notice_sql() -> str:
-    cur = f"({period_aggregate_sql(7, 0)}) cur"
+def build_notice_sql(time_range: dict[str, Any] | None = None) -> str:
+    cur = f"({period_aggregate_sql(7, 0, time_range)}) cur"
     return f"""
 {level_select_sql(
     level="notice",
@@ -670,8 +987,8 @@ LIMIT {QUERY_LIMIT}
 """.strip()
 
 
-def build_p2_sql() -> str:
-    cur = f"({period_aggregate_sql(7, 0)}) cur"
+def build_p2_sql(time_range: dict[str, Any] | None = None) -> str:
+    cur = f"({period_aggregate_sql(7, 0, time_range)}) cur"
     growth_fields = """
   cur.prev_avg_review_in_cnt AS prev_avg_review_in_cnt,
   cur.prev_label_rate AS prev_label_rate,
@@ -688,7 +1005,7 @@ def build_p2_sql() -> str:
         level="P2",
         hit_rule_id="p2_risk_domain_low_efficiency_growth",
         hit_condition="风险域下低效策略汇总日均进审量环比上涨>20%，日均增量>2000，上期进审量>0",
-        from_sql=risk_domain_spike_source_sql(),
+        from_sql=risk_domain_spike_source_sql(time_range),
         where_sql=(
             "cur.prev_avg_review_in_cnt > 0 "
             "AND cur.growth_rate > 0.2 "
@@ -709,9 +1026,9 @@ LIMIT {QUERY_LIMIT}
 """.strip()
 
 
-def build_p1_sql() -> str:
-    cur = f"({period_aggregate_sql(7, 0)}) cur"
-    prev = f"({period_aggregate_sql(14, 7)}) prev"
+def build_p1_sql(time_range: dict[str, Any] | None = None) -> str:
+    cur = f"({period_aggregate_sql(7, 0, time_range)}) cur"
+    prev = f"({period_aggregate_sql(14, 7, time_range)}) prev"
     prev_fields = """
   prev.avg_review_in_cnt AS prev_avg_review_in_cnt,
   prev.label_rate AS prev_label_rate,
@@ -744,7 +1061,7 @@ def build_p1_sql() -> str:
         level="P1",
         hit_rule_id="p1_risk_domain_low_efficiency_volume_spike",
         hit_condition="风险域下低效策略汇总日均进审量环比上涨>30%，日均增量>5000，上期进审量>0",
-        from_sql=risk_domain_spike_source_sql(),
+        from_sql=risk_domain_spike_source_sql(time_range),
         where_sql=(
             "cur.prev_avg_review_in_cnt > 0 "
             "AND cur.growth_rate > 0.3 "
@@ -767,11 +1084,11 @@ LIMIT {QUERY_LIMIT}
 """.strip()
 
 
-def build_p0_sql() -> str:
-    cur = f"({period_aggregate_sql(7, 0)}) cur"
-    w2 = f"({period_aggregate_sql(14, 7)}) w2"
-    w3 = f"({period_aggregate_sql(21, 14)}) w3"
-    w4 = f"({period_aggregate_sql(28, 21)}) w4"
+def build_p0_sql(time_range: dict[str, Any] | None = None) -> str:
+    cur = f"({period_aggregate_sql(7, 0, time_range)}) cur"
+    w2 = f"({period_aggregate_sql(14, 7, time_range)}) w2"
+    w3 = f"({period_aggregate_sql(21, 14, time_range)}) w3"
+    w4 = f"({period_aggregate_sql(28, 21, time_range)}) w4"
     prev_fields = """
   w2.avg_review_in_cnt AS prev_avg_review_in_cnt,
   w2.label_rate AS prev_label_rate,
@@ -820,7 +1137,7 @@ def build_p0_sql() -> str:
         level="P0",
         hit_rule_id="p0_risk_domain_review_in_volume_spike",
         hit_condition="风险域下低效策略汇总日均进审量环比上涨>50%，日均增量>10000，上期进审量>0",
-        from_sql=risk_domain_spike_source_sql(),
+        from_sql=risk_domain_spike_source_sql(time_range),
         where_sql=(
             "cur.prev_avg_review_in_cnt > 0 "
             "AND cur.growth_rate > 0.5 "
@@ -849,12 +1166,12 @@ def indent_sql(sql: str) -> str:
     return "\n".join(f"  {line}" if line else line for line in sql.splitlines())
 
 
-def sql_by_level() -> dict[str, str]:
+def sql_by_level(time_range: dict[str, Any] | None = None) -> dict[str, str]:
     return {
-        "notice": build_notice_sql(),
-        "P2": build_p2_sql(),
-        "P1": build_p1_sql(),
-        "P0": build_p0_sql(),
+        "notice": build_notice_sql(time_range),
+        "P2": build_p2_sql(time_range),
+        "P1": build_p1_sql(time_range),
+        "P0": build_p0_sql(time_range),
     }
 
 
@@ -864,10 +1181,26 @@ def build_records(
     sql_map: dict[str, str],
     *,
     row_enricher: RowEnricher | None = None,
+    time_range: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
-    query_plan = build_query_plan(levels, sql_map)
+    query_plan = build_query_plan(levels, sql_map, time_range=time_range)
+    stop = detect_execution_stop(payloads, levels)
+    if stop:
+        return build_stopped_records(
+            payloads=payloads,
+            query_plan=query_plan,
+            time_range=time_range,
+            status=stop["status"],
+            stop_reason=stop["stop_reason"],
+        )
+    plus1_cutoff_date = query_plan["time_range"].get("current_start")
     level_results = {
-        level: build_level_result(level, payloads[level], row_enricher=row_enricher)
+        level: build_level_result(
+            level,
+            payloads[level],
+            row_enricher=row_enricher,
+            plus1_cutoff_date=plus1_cutoff_date,
+        )
         for level in levels
     }
     tool_call_records = [
@@ -891,6 +1224,8 @@ def build_records(
         {
             "record_type": "environment",
             "scenario_key": SCENARIO_KEY,
+            "id": event_id_for_time_range(time_range),
+            "period": query_plan["time_range"],
             "run_mode": "debug_only",
             "execution_mode": "real_readonly_query",
             "analysis_mode": "low_label_rate_grading",
@@ -901,11 +1236,11 @@ def build_records(
         },
         {
             "record_type": "sample",
-            "id": event_id(),
-            "input": "近7天低打标率策略按单策略维度和风险域维度分P0/P1/P2/notice的情况",
+            "id": event_id_for_time_range(time_range),
+            "input": build_input_summary(query_plan["time_range"]),
             "run_mode": "debug_only",
             "scenario_key": SCENARIO_KEY,
-            "task_type": "query_only",
+            "task_type": "low_label_rate_grading",
             "analysis_mode": "low_label_rate_grading",
             "QueryPlan": query_plan,
             "tool_call_records": tool_call_records,
@@ -933,11 +1268,165 @@ def build_records(
     ]
 
 
-def build_query_plan(levels: list[str], sql_map: dict[str, str]) -> dict[str, Any]:
-    return {
-        "query_plan_id": query_plan_id(),
+def detect_execution_stop(
+    payloads: dict[str, dict[str, Any]],
+    levels: list[str],
+) -> dict[str, str] | None:
+    for level in levels:
+        payload = payloads.get(level)
+        if not isinstance(payload, dict):
+            return {
+                "status": "failed",
+                "stop_reason": f"missing_query_payload:{level}",
+            }
+        if payload.get("status") != "success":
+            return {
+                "status": "failed",
+                "stop_reason": f"query_failed:{level}:{payload.get('status', 'unknown')}",
+            }
+        data = payload.get("data")
+        if not isinstance(data, dict):
+            return {
+                "status": "failed",
+                "stop_reason": f"missing_query_data:{level}",
+            }
+        if data.get("truncated") is not False:
+            return {
+                "status": "degraded",
+                "stop_reason": f"query_result_truncated:{level}",
+            }
+    return None
+
+
+def build_stopped_records(
+    *,
+    payloads: dict[str, dict[str, Any]],
+    query_plan: dict[str, Any],
+    time_range: dict[str, Any] | None,
+    status: str,
+    stop_reason: str,
+) -> list[dict[str, Any]]:
+    query_plan["tool_calls"] = []
+    source_footer = build_source_footer(payloads, query_plan)
+    source_footer.update(
+        {
+            "confidence_tier": "low",
+            "review_status": "debug_only_execution_blocked",
+            "limitations": list(source_footer["limitations"]) + [stop_reason],
+        }
+    )
+    readonly_execution = {
+        "execution_id": f"ROE-{query_plan['query_plan_id']}",
+        "execution_mode": "real_readonly_query",
+        "analysis_mode": "low_label_rate_grading",
+        "status": status,
+        "source_tier": "governed_dataset",
+        "source_name": f"{DATASET_NAME} ({DATASET_ID})",
+        "data_freshness": source_footer["data_freshness"],
+        "level_counts": {},
+        "row_count": 0,
+        "truncated": status == "degraded",
+        "level_results": {},
+        "comprehensive_results": [],
+        "evidence_fields": [],
+        "metric_formula": METRIC_FORMULA,
+        "quality_checks": {
+            "freshness_gate": "not_verified",
+            "denominator_not_zero": "not_verified",
+            "field_mapping_check": "not_verified",
+            "forbidden_source_check": "not_verified",
+            "truncation_check": "failed" if status == "degraded" else "not_verified",
+            "grading_rule_check": "not_executed",
+        },
+        "limitations": [stop_reason],
+    }
+    sample = {
+        "record_type": "sample",
+        "id": event_id_for_time_range(time_range),
+        "input": build_input_summary(query_plan["time_range"]),
+        "run_mode": "debug_only",
         "scenario_key": SCENARIO_KEY,
-        "task_type": "query_only",
+        "task_type": "low_label_rate_grading",
+        "analysis_mode": "low_label_rate_grading",
+        "QueryPlan": query_plan,
+        "tool_call_records": [],
+        "readonly_execution": readonly_execution,
+        "source_footer": source_footer,
+        "stop_reason": stop_reason,
+        "outputs": ["QueryPlan", "readonly_execution", "source_footer", "stop_reason"],
+        "permission_checks": {
+            "tool_calls": [],
+            "read_only": True,
+            "real_query_executed": False,
+            "real_notification_blocked": True,
+            "online_write_blocked": True,
+        },
+        "result": status,
+    }
+    return [
+        {
+            "record_type": "environment",
+            "scenario_key": SCENARIO_KEY,
+            "id": event_id_for_time_range(time_range),
+            "period": query_plan["time_range"],
+            "run_mode": "debug_only",
+            "execution_mode": "real_readonly_query",
+            "analysis_mode": "low_label_rate_grading",
+            "real_query_executed": False,
+            "real_notification_blocked": True,
+            "online_write_blocked": True,
+            "result": status,
+            "stop_reason": stop_reason,
+        },
+        sample,
+    ]
+
+
+def build_input_summary(time_range: dict[str, Any]) -> str:
+    if time_range.get("current_start") and time_range.get("current_end"):
+        return (
+            f"{time_range['current_start']}~{time_range['current_end']} "
+            "低打标率策略按单策略维度和风险域维度分P0/P1/P2/notice的情况"
+        )
+    return "近7天低打标率策略按单策略维度和风险域维度分P0/P1/P2/notice的情况"
+
+
+def period_label(time_range: dict[str, Any]) -> str:
+    if time_range.get("current_start") and time_range.get("current_end"):
+        return f"{time_range['current_start']}~{time_range['current_end']}"
+    return "近7天"
+
+
+def duration_label(time_range: dict[str, Any]) -> str:
+    if time_range.get("current_start") and time_range.get("current_end"):
+        return (
+            f"{time_range['current_start']}_to_{time_range['current_end']}"
+            f"_with_{time_range.get('history_days', HISTORY_DAYS)}_day_history"
+        )
+    return "trailing_7_days_with_28_day_history"
+
+
+def default_grading_time_range() -> dict[str, Any]:
+    return {
+        "type": "weekly_grading_window",
+        "current_days": CURRENT_DAYS,
+        "history_days": HISTORY_DAYS,
+        "current_where": "`[p_date]` >= today() - 7 AND `[p_date]` < today()",
+        "history_where": "`[p_date]` >= today() - 28 AND `[p_date]` < today()",
+    }
+
+
+def build_query_plan(
+    levels: list[str],
+    sql_map: dict[str, str],
+    *,
+    time_range: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    resolved_time_range = time_range or default_grading_time_range()
+    return {
+        "query_plan_id": query_plan_id_for_time_range(time_range),
+        "scenario_key": SCENARIO_KEY,
+        "task_type": "low_label_rate_grading",
         "analysis_mode": "low_label_rate_grading",
         "metric_id": "label_rate",
         "metric_entities": [
@@ -949,13 +1438,7 @@ def build_query_plan(levels: list[str], sql_map: dict[str, str]) -> dict[str, An
                 "aeolus_metric_id": "10000036292379",
             }
         ],
-        "time_range": {
-            "type": "weekly_grading_window",
-            "current_days": CURRENT_DAYS,
-            "history_days": HISTORY_DAYS,
-            "current_where": "`[p_date]` >= today() - 7 AND `[p_date]` < today()",
-            "history_where": "`[p_date]` >= today() - 28 AND `[p_date]` < today()",
-        },
+        "time_range": resolved_time_range,
         "dimensions": list(DIMENSIONS),
         "filters": [
             "standard_review_scope",
@@ -1021,7 +1504,11 @@ def build_tool_call_record(
         "fallback_reason": query_plan["fallback_reason"],
         "execution_mode": "real_readonly_query",
         "real_query_executed": True,
-        "input_summary": f"Dataset {DATASET_ID}; level={level}; low-label-rate grading.",
+        "input_summary": (
+            f"Dataset {DATASET_ID}; level={level}; "
+            f"period={period_label(query_plan['time_range'])}; "
+            "low-label-rate grading."
+        ),
         "output_summary": f"Returned {data['rowCount']} rows; truncated={data.get('truncated')}.",
         "status": "success",
         "latency_ms": context.get("execution_time_ms", 0),
@@ -1033,8 +1520,16 @@ def build_level_result(
     payload: dict[str, Any],
     *,
     row_enricher: RowEnricher | None = None,
+    plus1_cutoff_date: str | None = None,
 ) -> dict[str, Any]:
-    rows = dedupe_level_rows(normalize_rows(payload, row_enricher=row_enricher), level)
+    rows = dedupe_level_rows(
+        normalize_rows(
+            payload,
+            row_enricher=row_enricher,
+            plus1_cutoff_date=plus1_cutoff_date,
+        ),
+        level,
+    )
     return {
         "severity_level": level,
         "severity_priority": LEVEL_PRIORITY[level],
@@ -1050,6 +1545,7 @@ def normalize_rows(
     payload: dict[str, Any],
     *,
     row_enricher: RowEnricher | None = None,
+    plus1_cutoff_date: str | None = None,
 ) -> list[dict[str, Any]]:
     columns = payload["data"]["columns"]
     plus1_index = load_plus1_agreed_index()
@@ -1067,7 +1563,7 @@ def normalize_rows(
         if row_enricher:
             normalized.update(row_enricher(dict(normalized)))
         ensure_poc_fields(normalized)
-        ensure_plus1_fields(normalized, plus1_index)
+        ensure_plus1_fields(normalized, plus1_index, plus1_cutoff_date)
         rows.append(normalized)
     return rows
 
@@ -1087,17 +1583,6 @@ def plus1_asset_candidate_paths() -> list[Path]:
         / "assets"
         / "efficiency-label-rate"
         / PLUS1_AGREED_ASSET,
-        script_path.parents[3]
-        / "references"
-        / "scenarios"
-        / SCENARIO_KEY
-        / PLUS1_AGREED_ASSET,
-        script_path.parents[3]
-        / "skills"
-        / "efficiency-label-rate-ops"
-        / "assets"
-        / "efficiency-label-rate"
-        / PLUS1_AGREED_ASSET,
     ]
 
 
@@ -1111,12 +1596,14 @@ def load_plus1_agreed_index() -> dict[str, dict[str, Any]]:
             for entry in payload.get("entries", [])
             if str(entry.get("strategy_id", "")).strip()
         }
-    return {}
+    expected = plus1_asset_candidate_paths()[0]
+    raise FileNotFoundError(f"Missing required +1 governance asset: {expected}")
 
 
 def ensure_plus1_fields(
     row: dict[str, Any],
     plus1_index: dict[str, dict[str, Any]],
+    cutoff_date: str | None,
 ) -> None:
     strategy_id = str(row.get("strategy_id") or "").strip()
     entry = plus1_index.get(strategy_id)
@@ -1126,6 +1613,26 @@ def ensure_plus1_fields(
     else:
         row["is_plus1_agreed"] = "否"
         row["plus1_update_date"] = ""
+    update_date = parse_optional_date(row["plus1_update_date"])
+    cutoff = parse_optional_date(cutoff_date)
+    row["plus1_agreed_before_current_period"] = (
+        "是"
+        if row["is_plus1_agreed"] == "是"
+        and update_date is not None
+        and cutoff is not None
+        and update_date < cutoff
+        else "否"
+    )
+
+
+def parse_optional_date(value: Any) -> date | None:
+    text = str(value or "").strip()
+    if not text:
+        return None
+    try:
+        return date.fromisoformat(text[:10].replace("/", "-"))
+    except ValueError as exc:
+        raise ValueError(f"Invalid ISO date value: {value!r}") from exc
 
 
 def dimension_key(row: dict[str, Any]) -> tuple[str, ...]:
@@ -1178,17 +1685,37 @@ def build_source_footer(
     payloads: dict[str, dict[str, Any]],
     query_plan: dict[str, Any],
 ) -> dict[str, Any]:
-    checked_at = max(
-        payload.get("context", {}).get("timestamp", "")
-        for payload in payloads.values()
-    ) or "unknown"
+    checked_at = (
+        max(
+            (
+                payload.get("context", {}).get("timestamp", "")
+                for payload in payloads.values()
+            ),
+            default="",
+        )
+        or "unknown"
+    )
+    time_range = query_plan["time_range"]
+    explicit_period = time_range.get("type") == "explicit_weekly_grading_window"
+    if explicit_period:
+        checked_at = str(time_range.get("checked_at") or checked_at)
+        data_freshness = (
+            f"p_date >= {time_range['history_start']} "
+            f"AND p_date <= {time_range['current_end']}; "
+            f"current_period={time_range['current_start']}~{time_range['current_end']}; "
+            f"checked_at={checked_at}"
+        )
+        data_lag = f"uses closed p_date partitions through {time_range['current_end']}"
+    else:
+        data_freshness = (
+            "p_date >= today() - 28 AND p_date < today(); "
+            f"checked_at={checked_at}"
+        )
+        data_lag = "uses closed p_date partitions where p_date < today()"
     return {
         "source_tier": "governed_dataset",
         "metric_definition_version": "draft",
-        "data_freshness": (
-            "p_date >= today() - 28 AND p_date < today(); "
-            f"checked_at={checked_at}"
-        ),
+        "data_freshness": data_freshness,
         "owner": "人审效率域数据 Owner",
         "confidence_tier": "high",
         "review_status": "real_readonly_query_executed",
@@ -1199,8 +1726,8 @@ def build_source_footer(
         "dataset_reference_ref": DATASET_REFERENCE_PATH,
         "analysis_ref": ANALYSIS_RULE_PATH,
         "query_plan_id": query_plan["query_plan_id"],
-        "time_window": query_plan["time_range"],
-        "data_lag": "uses closed p_date partitions where p_date < today()",
+        "time_window": time_range,
+        "data_lag": data_lag,
         "source_priority": query_plan["source_priority"],
         "actual_source": f"aeolus_dataset:{DATASET_ID}",
         "filters": query_plan["filters"],
@@ -1254,6 +1781,7 @@ def build_readonly_execution(
             "label_rate",
             "is_plus1_agreed",
             "plus1_update_date",
+            "plus1_agreed_before_current_period",
             "hit_rule_ids",
             "hit_conditions",
         ],
@@ -1310,6 +1838,7 @@ def build_provenance(
             "dataset_reference": DATASET_REFERENCE_PATH,
             "analysis_rule": ANALYSIS_RULE_PATH,
         },
+        "limitations": readonly_execution["limitations"],
         "source_footer": source_footer,
     }
 
@@ -1323,18 +1852,20 @@ def build_analysis_result(
 ) -> dict[str, Any]:
     level_counts = readonly_execution["level_counts"]
     summary = ", ".join(f"{level}={level_counts.get(level, 0)}" for level in LEVEL_ORDER)
+    time_range = query_plan["time_range"]
+    period = period_label(time_range)
     return {
-        "analysis_id": f"AN-{event_id()}",
-        "event_id": event_id(),
+        "analysis_id": f"AN-{event_id_for_time_range(time_range)}",
+        "event_id": event_id_for_time_range(time_range),
         "templates_used": ["custom_readonly", "impact_assessment", "sop_decision"],
         "query_plan": compact_query_plan(query_plan),
         "readonly_execution": readonly_execution,
         "impact_assessment": {
-            "summary": f"近7天低打标率分级完成，综合命中 {readonly_execution['row_count']} 个预警分组；{summary}。",
+            "summary": f"{period} 低打标率分级完成，综合命中 {readonly_execution['row_count']} 个预警分组；{summary}。",
             "impact_scope": f"comprehensive_strategy_group_count={readonly_execution['row_count']}",
             "risk_level": highest_hit_level(level_counts),
             "business_risk": "本结果为分级查询结果，不自动触发通知或状态写入。",
-            "duration": "trailing_7_days_with_28_day_history",
+            "duration": duration_label(time_range),
             "evidence_refs": [readonly_execution["execution_id"]],
         },
         "root_cause_hypotheses": [
@@ -1379,6 +1910,10 @@ def highest_hit_level(level_counts: dict[str, int]) -> str:
 def compact_query_plan(query_plan: dict[str, Any]) -> dict[str, Any]:
     return {
         "query_plan_id": query_plan["query_plan_id"],
+        "scenario_key": query_plan["scenario_key"],
+        "task_type": query_plan["task_type"],
+        "analysis_mode": query_plan["analysis_mode"],
+        "metric_id": query_plan["metric_id"],
         "metric_entities": query_plan["metric_entities"],
         "dimensions": query_plan["dimensions"],
         "time_range": query_plan["time_range"],
@@ -1390,6 +1925,7 @@ def compact_query_plan(query_plan: dict[str, Any]) -> dict[str, Any]:
         "forbidden_sources": query_plan["forbidden_sources"],
         "fallback_reason": query_plan["fallback_reason"],
         "quality_checks": query_plan["quality_checks"],
+        "review_required": query_plan["review_required"],
     }
 
 
@@ -1422,6 +1958,7 @@ def build_smoke_payload(level: str, index: int = 0) -> dict[str, Any]:
         f"{level} smoke hit condition",
         "否",
         "",
+        "否",
     ]
     return {
         "status": "success",

@@ -21,6 +21,9 @@ PLUS1_CANONICAL_PATH = f"human_review_ops/skills/{PLUS1_RELEASE_PATH}"
 PLUS1_LEGACY_PATH = (
     f"human_review_ops/references/scenarios/{SCENARIO_KEY}/{PLUS1_ASSET_FILENAME}"
 )
+PLUS1_ANALYSIS_PATH = (
+    f"human_review_ops/skills/analysis/assets/{SCENARIO_KEY}/{PLUS1_ASSET_FILENAME}"
+)
 RELEASE_MANIFEST_PATH = HUMAN_REVIEW_OPS_ROOT / "skills" / "skill_release_manifest.json"
 REGISTRY_PATH = HUMAN_REVIEW_OPS_ROOT / "configs" / "skill_path_registry.json"
 PACKAGE_MANIFEST_PATH = (
@@ -29,10 +32,7 @@ PACKAGE_MANIFEST_PATH = (
 SKILL_DIR = HUMAN_REVIEW_OPS_ROOT / "skills" / SKILL_NAME
 STANDALONE_READABILITY_FILES = [
     SKILL_DIR / "SKILL.md",
-    SKILL_DIR / "references" / "scenario_manifest.md",
-    SKILL_DIR / "references" / "scenarios" / f"{SCENARIO_KEY}.md",
-    SKILL_DIR / "references" / "metric_contract.md",
-    SKILL_DIR / "references" / "dataset_reference.md",
+    SKILL_DIR / "references" / "scenario_contract.md",
     SKILL_DIR / "references" / "common.md",
     SKILL_DIR / "assets" / "README.md",
 ]
@@ -97,7 +97,11 @@ def load_json(path: Path, issues: list[str]) -> dict:
 
 def validate_plus1_asset_tracking() -> None:
     issues: list[str] = []
-    for raw_path in (PLUS1_CANONICAL_PATH, PLUS1_LEGACY_PATH):
+    for raw_path in (
+        PLUS1_CANONICAL_PATH,
+        PLUS1_LEGACY_PATH,
+        PLUS1_ANALYSIS_PATH,
+    ):
         if not (REPO_ROOT / raw_path).exists():
             issues.append(f"plus1 asset path missing: {raw_path}")
 
@@ -174,8 +178,7 @@ def validate_standalone_readability() -> None:
                 )
 
     mode_paths = [
-        SKILL_DIR / "references" / "scenario_manifest.md",
-        SKILL_DIR / "references" / "scenarios" / f"{SCENARIO_KEY}.md",
+        SKILL_DIR / "references" / "scenario_contract.md",
     ]
     mode_requirements = {
         "debug_only": ["debug_only", "仅生成本地", "不真实发送", "不写线上状态"],

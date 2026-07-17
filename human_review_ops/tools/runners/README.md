@@ -23,12 +23,14 @@
 
 ```bash
 python3 human_review_ops/tools/runners/run_stage_1_real_readonly_label_rate.py --days 14
+python3 human_review_ops/tools/runners/run_stage_1_real_readonly_label_rate.py --days 7 --start-date 2026-07-06 --end-date 2026-07-12
 python3 human_review_ops/tools/validators/validate_stage_1_real_readonly_label_rate.py --days 14
 python3 human_review_ops/tools/runners/run_stage_1_real_readonly_label_rate.py --days 14 --dimensions reason --query-mode group_count
 python3 human_review_ops/tools/validators/validate_stage_1_real_readonly_label_rate.py --days 14 --dimensions reason --query-mode group_count
 python3 human_review_ops/tools/runners/run_stage_1_real_readonly_label_rate.py --days 14 --dimensions reason,scene
 python3 human_review_ops/tools/validators/validate_stage_1_real_readonly_label_rate.py --days 14 --dimensions reason,scene --query-mode ranking
 python3 human_review_ops/tools/runners/run_stage_1_real_readonly_label_rate_grading.py
+python3 human_review_ops/tools/runners/run_stage_1_real_readonly_label_rate_grading.py --start-date 2026-07-06 --end-date 2026-07-12
 python3 human_review_ops/tools/validators/validate_stage_1_real_readonly_label_rate_grading.py
 python3 human_review_ops/tools/runners/run_stage_2_label_rate_notification_draft.py --sheet-url 'https://bytedance.larkoffice.com/sheets/dry_run_sheet_token'
 python3 human_review_ops/tools/validators/validate_stage_2_label_rate_notification_draft.py
@@ -38,6 +40,7 @@ python3 human_review_ops/tools/runners/run_custom_label_rate_breakdown_e2e.py --
 python3 human_review_ops/tools/validators/validate_custom_label_rate_breakdown_e2e.py
 python3 human_review_ops/tools/validators/validate_label_rate_poc_mapping.py
 python3 human_review_ops/tools/runners/run_label_rate_formal_flow.py --send-chat-id oc_9c691aa76c22a16207c6f443eac25816 --confirm-send
+python3 human_review_ops/tools/runners/run_label_rate_formal_flow.py --request '执行低效打标全等级结果，周期为 2026-07-06~2026-07-12，结果输出为飞书表格链接。' --no-import-workbook
 python3 human_review_ops/tools/validators/validate_label_rate_formal_flow.py human_review_ops/evals/efficiency-label-rate/stage_2_runs/<run_id>_formal_skill_flow --expect-sent
 python3 human_review_ops/tools/runners/demo_aeolus_viz_query_vs_query.py
 python3 human_review_ops/tools/runners/demo_aeolus_viz_query_vs_query.py --execute

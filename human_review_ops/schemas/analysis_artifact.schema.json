@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.bytedance.local/human-review-ops/analysis-artifact.schema.json",
+  "title": "HumanReviewOpsAnalysisArtifact",
+  "description": "Analysis 到 Notification 的唯一交接对象；JSON 与 JSONL 均承载同一对象结构。",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schema_version",
+    "record_type",
+    "scenario_key",
+    "task_type",
+    "analysis_mode",
+    "run_mode",
+    "QueryPlan",
+    "readonly_execution",
+    "source_footer",
+    "provenance"
+  ],
+  "properties": {
+    "schema_version": {"type": "string"},
+    "record_type": {"const": "sample"},
+    "scenario_key": {"type": "string"},
+    "task_type": {"type": "string"},
+    "analysis_mode": {"type": "string"},
+    "run_mode": {"type": "string"},
+    "data_direction": {
+      "type": "string",
+      "enum": ["manual_review_detail", "report_flow"]
+    },
+    "source_profile": {"type": "string"},
+    "QueryPlan": {"type": "object"},
+    "readonly_execution": {"type": "object"},
+    "analysis_result": {"type": "object"},
+    "source_footer": {"type": "object"},
+    "provenance": {"type": "object"},
+    "stop_reason": {"type": "string"},
+    "safety": {"type": "object"}
+  }
+}

@@ -23,7 +23,6 @@ LEVEL_PRIORITY = {"P0": 0, "P1": 1, "P2": 2, "notice": 3}
 DIMENSIONS = ["mach_root_label_name", "strategy_id", "strategy_name"]
 DEDUPE_DIMENSIONS = ["warning_dimension", *DIMENSIONS]
 REQUIRED_SQL_SNIPPETS = [
-    "`[p_date]` >= today() - 7",
     "`[project_title]` NOT LIKE '%虚假%'",
     "`[project_title]` NOT LIKE '%标注%'",
     "`[project_title]` NOT LIKE '%虚假不实%'",
@@ -158,13 +157,39 @@ def assert_query_plan(sample: dict[str, Any]) -> None:
         sql = sql_by_level.get(level, "")
         if not sql:
             raise AssertionError(f"Missing SQL for level: {level}")
-        for snippet in REQUIRED_SQL_SNIPPETS + LEVEL_WINDOW_SNIPPETS[level]:
+        for snippet in REQUIRED_SQL_SNIPPETS + expected_level_window_snippets(
+            query_plan,
+            level,
+        ):
             if snippet not in sql:
                 raise AssertionError(f"{level} SQL missing snippet: {snippet}")
         if "AS mach_root_label_name,\n    ifNull(`[strategy_id]`" in sql:
             raise AssertionError(
                 f"{level} SQL regressed to physical-field alias collision."
             )
+
+
+def expected_level_window_snippets(
+    query_plan: dict[str, Any],
+    level: str,
+) -> list[str]:
+    time_range = query_plan.get("time_range", {})
+    if not time_range.get("current_start"):
+        return LEVEL_WINDOW_SNIPPETS[level]
+    current_start = time_range["current_start"]
+    current_end_exclusive = time_range["current_end_exclusive"]
+    previous_windows = time_range.get("previous_windows", [])
+    snippets = [
+        f"`[p_date]` >= '{current_start}'",
+        f"`[p_date]` < '{current_end_exclusive}'",
+    ]
+    if level in {"P2", "P1"} and previous_windows:
+        snippets.append(f"`[p_date]` >= '{previous_windows[0]['start']}'")
+        snippets.append("风险域维度")
+    if level == "P0":
+        snippets.append(f"`[p_date]` >= '{time_range['history_start']}'")
+        snippets.append("风险域维度")
+    return snippets
 
 
 def assert_tool_calls(sample: dict[str, Any]) -> None:

@@ -21,13 +21,19 @@ from render_label_rate_grading_card import (
     card_design_check,
     render_grading_card,
 )
-from resolve_label_rate_poc_routing import build_poc_routing_plan, load_stage_1_sample
+from resolve_label_rate_poc_routing import (
+    build_poc_routing_plan,
+    load_poc_mapping,
+    load_stage_1_sample,
+    poc_mapping_index,
+    resolve_row_poc,
+)
 from sheet_importer import import_xlsx_as_feishu_sheet
 
 
 ROOT = Path(__file__).resolve().parents[3]
 SCENARIO_KEY = "efficiency-label-rate"
-SCENARIO_REFERENCE = "references/scenarios/efficiency-label-rate.md"
+SCENARIO_REFERENCE = "references/scenario_contract.md"
 CARD_TEMPLATE_ASSET = (
     "assets/efficiency-label-rate/low_efficiency_grading_card_template.json"
 )
@@ -40,6 +46,7 @@ FILTERED_COMPREHENSIVE_CSV = "综合_剔除+1同意.csv"
 FILTERED_SUMMARY_CSV = "汇总统计_剔除+1同意.csv"
 LEVEL_COLUMN_SPECS = [
     ("warning_dimension", "预警维度"),
+    ("severity_level", "预警等级"),
     ("mach_root_label_name", "机审一级标签"),
     ("strategy_id", "策略ID"),
     ("strategy_name", "策略名称"),
@@ -181,11 +188,14 @@ def build_label_rate_notification_artifacts(
     publish_dir = output_dir / "publish"
     publish_dir.mkdir(parents=True, exist_ok=True)
 
-    sample = load_stage_1_sample(source_path)
+    sample = adapt_analysis_sample(load_stage_1_sample(source_path))
     execution = sample["readonly_execution"]
     period = derive_period(sample)
     report = write_report_artifacts(output_dir, execution, period)
+    online_write_attempted = False
+    online_write_executed = False
     if auto_import_sheet and not sheet_url:
+        online_write_attempted = True
         sheet_url = import_xlsx_as_feishu_sheet(
             workbook_path=report.workbook_path,
             output_dir=output_dir,
@@ -194,6 +204,7 @@ def build_label_rate_notification_artifacts(
                 f"{period['current_end']}"
             ),
         )
+        online_write_executed = bool(sheet_url)
     summary = build_summary(
         source_path=source_path,
         output_dir=output_dir,
@@ -206,11 +217,14 @@ def build_label_rate_notification_artifacts(
         label_poc_summary_count=len(report.summary_rows),
         filtered_label_poc_summary_count=len(report.filtered_summary_rows),
         filtered_comprehensive_row_count=report.filtered_comprehensive_row_count,
+        online_write_attempted=online_write_attempted,
+        online_write_executed=online_write_executed,
     )
     poc_routing_path = write_poc_routing_artifact(
         output_dir=output_dir,
         sample=sample,
         source_path=source_path,
+        online_write_executed=online_write_executed,
     )
     card = write_card_artifacts(
         publish_dir=publish_dir,
@@ -220,6 +234,7 @@ def build_label_rate_notification_artifacts(
         top_n=top_n,
         sheet_url=sheet_url,
         title=title,
+        full_evidence_rows=execution["comprehensive_results"],
     )
 
     summary_path = output_dir / "summary.json"
@@ -241,6 +256,8 @@ def build_label_rate_notification_artifacts(
         sent_payload=sent_payload,
         target_user_id=target_user_id,
         target_chat_id=target_chat_id,
+        online_write_attempted=online_write_attempted,
+        online_write_executed=online_write_executed,
     )
     summary["publish"] = publish_summary
     notification_draft = build_notification_draft(
@@ -279,7 +296,147 @@ def build_label_rate_notification_artifacts(
     )
 
 
+def adapt_analysis_sample(sample: dict[str, Any]) -> dict[str, Any]:
+    """Normalize source profiles to the notification evidence contract."""
+
+    if sample.get("analysis_mode") != "report_flow_low_label_rate":
+        return sample
+
+    adapted = dict(sample)
+    execution = dict(sample["readonly_execution"])
+    source_rows = [
+        dict(zip(execution.get("columns", []), row))
+        if isinstance(row, list)
+        else row
+        for row in execution.get("rows", [])
+    ]
+    routing_index = poc_mapping_index(load_poc_mapping())
+    notice_rows = [
+        normalize_report_flow_row(row, index, routing_index)
+        for index, row in enumerate(source_rows)
+    ]
+    level_results = {
+        "notice": {
+            "severity_level": "notice",
+            "severity_priority": 3,
+            "row_count": len(notice_rows),
+            "source_row_count": len(notice_rows),
+            "truncated": execution.get("truncated"),
+            "columns": list(notice_rows[0]) if notice_rows else [],
+            "rows": notice_rows,
+        },
+        "P2": empty_level_result("P2", 2),
+        "P1": empty_level_result("P1", 1),
+        "P0": empty_level_result("P0", 0),
+    }
+    execution.update(
+        {
+            "level_counts": {
+                "notice": len(notice_rows),
+                "P2": 0,
+                "P1": 0,
+                "P0": 0,
+            },
+            "level_results": level_results,
+            "comprehensive_results": notice_rows,
+            "row_count": len(notice_rows),
+            "evidence_fields": [
+                "data_direction",
+                "enpool_reason",
+                "avg_report_review_done_cnt",
+                "avg_report_label_cnt",
+                "report_label_rate",
+            ],
+        }
+    )
+    adapted["readonly_execution"] = execution
+    adapted["data_direction"] = "report_flow"
+    adapted["source_profile"] = "report_flow_review"
+    return adapted
+
+
+def empty_level_result(level: str, priority: int) -> dict[str, Any]:
+    return {
+        "severity_level": level,
+        "severity_priority": priority,
+        "row_count": 0,
+        "source_row_count": 0,
+        "truncated": False,
+        "columns": [],
+        "rows": [],
+    }
+
+
+def normalize_report_flow_row(
+    row: dict[str, Any],
+    index: int,
+    routing_index: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
+    avg_done = float(row.get("avg_report_review_done_cnt", 0) or 0)
+    avg_label = float(row.get("avg_report_label_cnt", 0) or 0)
+    rate = float(row.get("report_label_rate", 0) or 0)
+    reason = str(row.get("enpool_reason") or "（空/enpool_reason）")
+    routing = resolve_row_poc(
+        {
+            **row,
+            "data_direction": "report_flow",
+            "enpool_reason": reason,
+        },
+        routing_index,
+    )
+    poc_name = routing.get("poc_name") or "未映射"
+    return {
+        **row,
+        "data_direction": "report_flow",
+        "warning_dimension": "举报原因维度",
+        "severity_level": "notice",
+        "severity_priority": 3,
+        "mach_root_label_name": "",
+        "strategy_id": "",
+        "strategy_name": reason,
+        "enpool_reason": reason,
+        "POC": poc_name,
+        "poc_name": poc_name,
+        "poc_open_id": routing.get("poc_open_id"),
+        "poc_mapping_status": routing.get("mapping_status"),
+        "max_data_date": row.get("max_data_date", ""),
+        "avg_review_in_cnt": avg_done,
+        "avg_review_done_cnt": avg_done,
+        "avg_label_cnt": avg_label,
+        "label_rate": rate,
+        "is_plus1_agreed": "否",
+        "plus1_update_date": "",
+        "plus1_agreed_before_current_period": "否",
+        "hit_rule_id": f"report_flow_low_label_rate_{index}",
+        "hit_rule_ids": [f"report_flow_low_label_rate_{index}"],
+        "hit_condition": "举报打标率<10%且人审完结量>0",
+        "hit_conditions": ["举报打标率<10%且人审完结量>0"],
+    }
+
+
 def derive_period(sample: dict[str, Any]) -> dict[str, str]:
+    time_range = sample.get("QueryPlan", {}).get("time_range", {})
+    if (
+        isinstance(time_range, dict)
+        and time_range.get("current_start")
+        and time_range.get("current_end")
+    ):
+        current_start = str(time_range["current_start"])
+        current_end = str(time_range["current_end"])
+        history_start = str(time_range.get("history_start") or current_start)
+        checked_at = str(time_range.get("checked_at") or "")
+        if not checked_at:
+            checked_at = datetime.combine(
+                datetime.fromisoformat(current_end).date() + timedelta(days=1),
+                datetime.min.time(),
+            ).isoformat()
+        return {
+            "current_start": current_start,
+            "current_end": current_end,
+            "history_start": history_start,
+            "checked_at": checked_at,
+        }
+
     freshness = sample.get("source_footer", {}).get("data_freshness", "")
     match = re.search(r"checked_at=([^;\\s]+)", freshness)
     if match:
@@ -320,8 +477,15 @@ def write_report_artifacts(
     )
     filtered_comprehensive_csv_path = output_dir / FILTERED_COMPREHENSIVE_CSV
     write_level_csvs(output_dir, level_rows, comprehensive_rows, filtered_comprehensive_rows)
-    summary_rows = build_label_poc_summary_rows(comprehensive_rows)
-    filtered_summary_rows = build_label_poc_summary_rows(filtered_comprehensive_rows)
+    notice_summary_source_rows = level_rows["notice"]
+    filtered_notice_summary_source_rows = build_filtered_comprehensive_rows(
+        notice_summary_source_rows,
+        current_start,
+    )
+    summary_rows = build_label_poc_summary_rows(notice_summary_source_rows)
+    filtered_summary_rows = build_label_poc_summary_rows(
+        filtered_notice_summary_source_rows
+    )
     summary_csv_path = output_dir / "汇总统计.csv"
     filtered_summary_csv_path = output_dir / FILTERED_SUMMARY_CSV
     write_summary_csv(summary_csv_path, summary_rows)
@@ -480,7 +644,13 @@ def is_pre_period_plus1_agreed(row: dict[str, Any], current_start: str) -> bool:
 
 
 def normalize_date_str(value: Any) -> str:
-    return str(value or "").strip().replace("/", "-")
+    text = str(value or "").strip()
+    if not text:
+        return ""
+    try:
+        return datetime.fromisoformat(text[:10].replace("/", "-")).date().isoformat()
+    except ValueError as exc:
+        raise ValueError(f"Invalid ISO date value: {value!r}") from exc
 
 
 def write_poc_routing_artifact(
@@ -488,12 +658,14 @@ def write_poc_routing_artifact(
     output_dir: Path,
     sample: dict[str, Any],
     source_path: Path,
+    online_write_executed: bool,
 ) -> Path:
     poc_routing_path = output_dir / "poc_routing_plan.json"
     plan = build_poc_routing_plan(
         sample,
         source_stage_1_result=relative_to_root(source_path),
     )
+    plan["routing_constraints"]["online_write_executed"] = online_write_executed
     write_json(poc_routing_path, plan)
     return poc_routing_path
 
@@ -511,6 +683,8 @@ def build_summary(
     label_poc_summary_count: int,
     filtered_label_poc_summary_count: int,
     filtered_comprehensive_row_count: int,
+    online_write_attempted: bool,
+    online_write_executed: bool,
 ) -> dict[str, Any]:
     execution = sample["readonly_execution"]
     provenance = sample["provenance"]
@@ -542,6 +716,8 @@ def build_summary(
         "metric_formula": execution["metric_formula"],
         "top_n": top_n,
         "sheet_url": sheet_url,
+        "online_write_attempted": online_write_attempted,
+        "online_write_executed": online_write_executed,
         "label_poc_summary_count": label_poc_summary_count,
         "label_poc_summary_exclude_pre_period_plus1_count": (
             filtered_label_poc_summary_count
@@ -574,23 +750,39 @@ def write_card_artifacts(
     top_n: int,
     sheet_url: str | None,
     title: str,
+    full_evidence_rows: list[dict[str, Any]],
 ) -> CardArtifacts:
+    template_contract = load_card_template_contract()
     level_top_rows = build_level_top_rows(level_results, top_n)
     summary_card_rows = build_card_summary_rows(summary_rows)
-    hash_rows = summary_card_rows + flatten_level_top_rows(level_top_rows)
+    hash_rows = [
+        {
+            "scenario_key": summary.get("scenario_key"),
+            "report_type": summary.get("report_type"),
+            "period": summary.get("period"),
+            "query_plan_id": summary.get("source_footer", {}).get("query_plan_id"),
+            "source_footer": summary.get("source_footer"),
+            "sheet_url": sheet_url,
+            "summary_rows": summary_card_rows,
+            "full_evidence_rows": full_evidence_rows,
+        }
+    ]
     card_with_meta = render_grading_card(
         summary=summary,
         summary_rows=summary_card_rows,
         level_top_rows=level_top_rows,
         sheet_url=sheet_url,
         title=title,
+        hash_input=hash_rows,
+        template_contract=template_contract,
     )
     verify_card_hash(card_with_meta, hash_rows)
     card_json = strip_internal_keys(card_with_meta)
     hash_check = {
         "ok": True,
         "data_hash": card_with_meta["_meta"]["_data_hash"],
-        "top_rows_count": len(hash_rows),
+        "top_rows_count": sum(len(rows) for rows in level_top_rows.values()),
+        "full_evidence_row_count": len(full_evidence_rows),
         "level_top_rows_count": {
             level: len(rows) for level, rows in level_top_rows.items()
         },
@@ -614,6 +806,21 @@ def write_card_artifacts(
     )
 
 
+def load_card_template_contract() -> dict[str, Any]:
+    path = (
+        Path(__file__).resolve().parents[1]
+        / "assets"
+        / "efficiency-label-rate"
+        / "low_efficiency_grading_card_template.json"
+    )
+    payload = load_json(path)
+    if payload.get("schema") != "2.0":
+        raise ValueError("Card template schema must be 2.0.")
+    if payload.get("scenario_key") != SCENARIO_KEY:
+        raise ValueError("Card template scenario_key mismatch.")
+    return payload
+
+
 def build_publish_summary(
     *,
     source_path: Path,
@@ -630,6 +837,8 @@ def build_publish_summary(
     sent_payload: dict[str, Any] | None,
     target_user_id: str | None,
     target_chat_id: str | None,
+    online_write_attempted: bool,
+    online_write_executed: bool,
 ) -> dict[str, Any]:
     return {
         "report_type": REPORT_TYPE,
@@ -643,6 +852,8 @@ def build_publish_summary(
             filtered_summary_csv_path
         ),
         "sheet_url": sheet_url,
+        "online_write_attempted": online_write_attempted,
+        "online_write_executed": online_write_executed,
         "card_json": relative_to_root(card.card_path),
         "card_json_with_meta": relative_to_root(card.card_with_meta_path),
         "card_hash_check": relative_to_root(card.hash_check_path),
@@ -721,6 +932,9 @@ def build_notification_draft(
             "default_recipient": poc_routing.get("default_recipient"),
             "routing_key": poc_routing.get("routing_key"),
             "contact_resolution_status": poc_routing.get("contact_resolution_status"),
+            "requires_contact_resolution_before_real_send": poc_routing.get(
+                "requires_contact_resolution_before_real_send", True
+            ),
             "mapped_row_count": poc_routing.get("mapped_row_count"),
             "unmapped_row_count": poc_routing.get("unmapped_row_count"),
             "missing_route_dimension_count": poc_routing.get(
@@ -753,6 +967,29 @@ def build_notification_draft(
             "self_preview_sent": publish_summary.get("sent", False),
             "self_preview_message_id": publish_summary.get("message_id"),
         },
+        "escalation_draft": {
+            "required_levels": [
+                level
+                for level in ("P0", "P1")
+                if int(summary.get("level_counts", {}).get(level, 0)) > 0
+            ],
+            "message": "请相关负责人复核低效策略证据、处理计划和完成时间。",
+            "send_allowed": False,
+        },
+        "evidence_refs": {
+            "analysis_artifact": summary["source_stage_1_result"],
+            "query_plan_id": summary.get("source_footer", {}).get("query_plan_id"),
+            "source_footer": summary.get("source_footer"),
+            "card_hash_check": relative_to_root(hash_check_path),
+            "reports": summary.get("outputs", {}),
+        },
+        "failure_branches": {
+            "unmapped_poc": "fallback_to_self_preview_and_require_confirmation",
+            "missing_open_id": "block_real_send_until_contact_resolution",
+            "missing_sheet_url": "keep_local_workbook_and_csv_links",
+            "real_group_send_requested": "keep_group_send_blocked",
+            "card_hash_mismatch": "regenerate_card_before_send",
+        },
         "provenance": {
             "reference_docs": [SCENARIO_REFERENCE],
             "asset_refs": {
@@ -762,9 +999,9 @@ def build_notification_draft(
             },
             "dataset_id": summary.get("dataset_id"),
             "region": summary.get("region"),
-            "query_plan_id": summary.get("source_footer", {})
-            .get("query_context", {})
-            .get("query_plan_id"),
+            "query_plan_id": summary.get("source_footer", {}).get("query_plan_id"),
+            "online_write_attempted": summary.get("online_write_attempted", False),
+            "online_write_executed": summary.get("online_write_executed", False),
         },
     }
 
@@ -802,7 +1039,12 @@ def build_send_plan(
         "group_recipients": [],
         "sent": False,
         "real_group_send_executed": False,
-        "online_write_executed": False,
+        "online_write_attempted": publish_summary.get(
+            "online_write_attempted", False
+        ),
+        "online_write_executed": publish_summary.get(
+            "online_write_executed", False
+        ),
         "blocked_reason": (
             "The notification artifact has name-level POC routing only. Feishu open_id resolution, "
             "target chat confirmation, and explicit confirmation are required before "

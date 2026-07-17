@@ -280,9 +280,23 @@ def validate_manifest_script_entry(
             issues.append(f"{rel(MANIFEST_PATH)} {skill}.scripts[{index}].{field} missing.")
 
     side_effects = script.get("side_effects")
-    if not isinstance(side_effects, list) or "none" not in side_effects:
+    allowed_side_effects = {
+        "none",
+        "local_file_write",
+        "online_write_requires_explicit_opt_in",
+    }
+    if (
+        not isinstance(side_effects, list)
+        or not side_effects
+        or not all(item in allowed_side_effects for item in side_effects)
+    ):
         issues.append(
-            f"{rel(MANIFEST_PATH)} {skill}.scripts[{index}].side_effects must include none."
+            f"{rel(MANIFEST_PATH)} {skill}.scripts[{index}].side_effects invalid."
+        )
+    if "none" in side_effects and len(side_effects) > 1:
+        issues.append(
+            f"{rel(MANIFEST_PATH)} {skill}.scripts[{index}].side_effects "
+            "must not combine none with another effect."
         )
 
 
@@ -588,10 +602,12 @@ def build_resolution_notification_draft() -> dict[str, Any]:
 def build_resolution_send_plan() -> dict[str, Any]:
     return {
         "schema_version": "stage_2_send_plan.v1",
+        "scenario_key": "efficiency-label-rate",
         "requires_confirmation": True,
         "group_send_blocked": True,
         "sent": False,
         "real_group_send_executed": False,
+        "online_write_executed": False,
         "content_source": {
             "notification_draft": "notification_draft.json",
             "card_json": "publish/low_efficiency_grading.card.json",

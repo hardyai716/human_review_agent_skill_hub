@@ -78,7 +78,12 @@ def assert_state_machine(manual_tracking: dict[str, Any]) -> None:
         raise AssertionError("manual_tracking previous_state mismatch.")
     if state_machine.get("current_state") != "MANUAL_TRACKING_RECORDED":
         raise AssertionError("manual_tracking current_state mismatch.")
-    if not state_machine.get("state_machine_ref", "").endswith("state_machine.md"):
+    state_machine_ref = state_machine.get("state_machine_ref", "")
+    if not (
+        state_machine_ref.endswith("state_machine.md")
+        or "#状态机" in state_machine_ref
+        or "#state_machine" in state_machine_ref
+    ):
         raise AssertionError("manual_tracking state_machine_ref missing.")
 
 
@@ -107,9 +112,13 @@ def assert_tracking_records(manual_tracking: dict[str, Any]) -> None:
             raise AssertionError(f"{level} status mismatch.")
         if record.get("continue_observation") is not True:
             raise AssertionError(f"{level} continue_observation must be true.")
-        for field in ("evidence_refs", "operator_note", "next_action"):
+        for field in ("operator_note", "next_action"):
             if not record.get(field):
                 raise AssertionError(f"{level} {field} missing.")
+        if record.get("reason_count", 0) > 0 and not record.get("evidence_refs"):
+            raise AssertionError(f"{level} evidence_refs missing when rows exist.")
+        if record.get("reason_count", 0) == 0 and record.get("evidence_refs") != []:
+            raise AssertionError(f"{level} zero-row evidence_refs must be empty.")
         resolution = record.get("recipient_resolution", {})
         if resolution.get("mode") != "mach_root_label_mapping":
             raise AssertionError(f"{level} recipient resolution must be mach_root_label_mapping.")

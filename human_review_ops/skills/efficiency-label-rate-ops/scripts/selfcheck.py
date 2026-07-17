@@ -60,12 +60,14 @@ def run_notification_and_resolution_check(records: list[dict]) -> None:
         tracking = build_manual_tracking(
             notification_draft=notification_draft,
             send_plan=send_plan,
-            state_machine_ref="references/scenarios/efficiency-label-rate.md#状态机",
+            state_machine_ref="references/scenario_contract.md#state_machine.md",
         )
         assert send_plan["sent"] is False
         assert send_plan["group_send_blocked"] is True
         assert tracking["tracking_mode"] == "local_debug_only"
         assert tracking["safety"]["online_write_executed"] is False
+        assert tracking["closure_check"]["can_close"] is False
+        assert tracking["state_machine"]["next_state"] == "MANUAL_TRACKING_RECORDED"
 
 
 def main() -> None:

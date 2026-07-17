@@ -1,6 +1,6 @@
 ---
 name: analyzing-ops-metrics
-description: "当用户需要对已识别的人审运营指标或场景做只读分析时使用；生成 QueryPlan、受控 SQL、分析结果、source_footer 和 provenance；不识别未知场景、不通知、不写状态。"
+description: "内部通用分析能力：仅消费已就绪的结构化感知结果，生成 QueryPlan、受控 SQL、AnalysisArtifact、source_footer 和 provenance；场景级 Skill 已命中时由其显式委派，不直接竞争原始请求，不通知、不写状态。"
 allowed-tools:
   - Read
   - Bash
@@ -69,6 +69,7 @@ allowed-tools:
 - 溯源信息 (`provenance`)：引用的 reference、数据集、字段映射和工具调用记录。
 - 质量检查结果 (`quality_checks`)：新鲜度、分母、字段映射、权限、样本池。
 - 停止原因 (`stop_reason`)：查询失败、权限不足或信息不足时必须输出。
+- 统一分析交接对象 (`AnalysisArtifact`)：JSON 或 JSONL 中的 `record_type=sample` 对象结构一致，Notification 可原样消费。
 
 ## 打标率能力矩阵
 
@@ -239,6 +240,7 @@ python3 human_review_ops/skills/analysis/scripts/label_rate_analysis.py --dry-ru
 - 字段映射失败：停止，列出缺失字段和需要确认的字段。
 - 命中禁用来源：停止，要求改用治理来源。
 - 查询失败：输出错误、QueryPlan、source_footer 和重试建议，不把失败解释成无异常。
+- 返回结果 `truncated=true`：进入 `degraded` 并输出 `stop_reason`，不得生成分级业务结论。
 - 分母为 0 或样本过小：输出质量风险，不给强结论。
 
 ## 验证

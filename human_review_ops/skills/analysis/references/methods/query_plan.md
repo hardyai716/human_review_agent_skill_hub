@@ -20,7 +20,7 @@
 | `forbidden_sources` | 必须包含临时表、无 Owner 历史 SQL、废弃表、敏感明细。 |
 | `fallback_reason` | 未 fallback 时写 `none`；fallback 时写具体原因。 |
 | `quality_checks` | 至少包含新鲜度、分母、字段映射、权限和样本池检查。 |
-| `review_required` | 样本池覆盖、新维度、权限不明或真实执行时为 `true`。 |
+| `review_required` | 样本池覆盖、新维度、权限不明或高风险来源时为 `true`；已治理数据集上的标准只读查询可为 `false`。 |
 
 ## 来源优先级
 

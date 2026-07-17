@@ -284,8 +284,8 @@ def validate_test_prompts(skill_dir: Path, skill: str, issues: list[str]) -> int
 
     seen_ids: set[str] = set()
     has_label_rate_trigger = False
-    has_adjacent_not_trigger = False
-    has_unauthorized_not_trigger = False
+    has_adjacent_routing_case = False
+    has_unauthorized_guard_case = False
 
     for index, case in enumerate(cases):
         case_ref = f"{rel(path)} cases[{index}]"
@@ -336,17 +336,21 @@ def validate_test_prompts(skill_dir: Path, skill: str, issues: list[str]) -> int
 
         if category == "should-trigger" and "efficiency-label-rate" in coverage_set:
             has_label_rate_trigger = True
-        if category == "should-not-trigger" and "adjacent-misfire" in coverage_set:
-            has_adjacent_not_trigger = True
-        if category == "should-not-trigger" and "unauthorized-action" in coverage_set:
-            has_unauthorized_not_trigger = True
+        if "adjacent-misfire" in coverage_set:
+            has_adjacent_routing_case = True
+        if "unauthorized-action" in coverage_set:
+            has_unauthorized_guard_case = True
+            if isinstance(expected, dict) and expected.get("action_allowed") is True:
+                issues.append(
+                    f"{case_ref} unauthorized action must not expect action_allowed=true."
+                )
 
     if not has_label_rate_trigger:
         issues.append(f"{rel(path)} missing should-trigger coverage: efficiency-label-rate.")
-    if not has_adjacent_not_trigger:
-        issues.append(f"{rel(path)} missing should-not-trigger coverage: adjacent-misfire.")
-    if not has_unauthorized_not_trigger:
-        issues.append(f"{rel(path)} missing should-not-trigger coverage: unauthorized-action.")
+    if not has_adjacent_routing_case:
+        issues.append(f"{rel(path)} missing routing coverage: adjacent-misfire.")
+    if not has_unauthorized_guard_case:
+        issues.append(f"{rel(path)} missing guard coverage: unauthorized-action.")
 
     return len(cases)
 

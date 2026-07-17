@@ -1,6 +1,6 @@
 ---
 name: perceiving-ops-events
-description: "当用户以自然语言提出人审运营查询、分析、通知、闭环或复合诉求，而意图尚未被明确分类时使用；识别场景、任务类型、指标意图、维度、数据就绪状态和跨 Skill 编排计划，输出可交给 analysis、notification 或 resolution 的结构化路由。不执行 SQL、通知或线上状态写入。"
+description: "内部通用感知能力：仅当上游场景级 Skill 显式委派，或当前没有匹配的场景级 Skill 时使用；识别人审运营场景、任务类型、指标、维度、就绪状态和四节点编排计划。不直接与 efficiency-label-rate-ops 竞争原始打标率请求，不执行 SQL、通知或线上写入。"
 allowed-tools:
   - Read
   - Bash
@@ -12,7 +12,9 @@ allowed-tools:
 
 当用户问题需要先判断人审运营场景、指标对象、任务类型、运行模式、数据就绪状态或跨阶段执行顺序时使用本技能 (Skill)。用户通常不会明确说“调用 analysis / notification / resolution”，只会提出自然语言诉求；只要意图没有被可靠分类，就应先用本技能做感知和路由。
 
-- 用户提到打标率、进审量、完审量、打标量、高/低打标 reason、低效策略分级、机审一级标签拆解等效率指标。
+若 `efficiency-label-rate-ops` 已安装且请求命中 `efficiency-label-rate`，优先选择场景级 Skill；本 Skill 仅作为其内部感知节点或通用 fallback。
+
+- 用户提到打标率、自动处置准确率或质检准确率等已注册人审运营指标。
 - 用户问题尚未明确应交给分析技能 (analysis Skill)、通知技能 (notification Skill) 还是解决技能 (resolution Skill)。
 - 用户给出自然语言任务，需要输出 `scenario_key`、`task_type`、`metric_ids`、`retrieval_policy` 和 `readiness`。
 - 用户要求确认场景包、参考资料、指标口径或是否具备继续执行条件。
@@ -46,11 +48,11 @@ allowed-tools:
 可选输入：
 
 - `scenario_hint`：用户或上游给出的场景提示。
-- `run_mode`：默认使用调试模式 (`debug_only`)。
+- `run_mode`：允许 `debug_only`、`query_only`、`notification_only`、`resolution_only`、`partial_workflow`；默认 `debug_only`，未知值阻断。
 - `time_window`：用户指定的时间窗口。
 - `metric_hint`：用户提到的指标或业务概念。
 - `dimension_hint`：用户要求的拆解维度。
-- `source_refs`：用户提供的数据集、报表、文档或上游产物引用。
+- `source_refs`：用户提供的上游结构化产物文件；必须存在、可解析且 `scenario_key` 一致。
 
 ## 输出
 
@@ -111,7 +113,7 @@ allowed-tools:
 2. 读取 `references/common.md` 和 `references/scenario-index.md`，先确认可用场景列表。
 3. 按场景索引加载最小必要参考资料；命中打标率时只加载 `references/scenarios/efficiency-label-rate.md`。
 4. 识别 `scenario_key`。无法唯一识别时输出 `scenario_key=unknown` 并要求澄清。
-5. 识别 `task_type`：可选值包括 `label_rate_trend`、`label_rate_ranking`、`low_label_rate_grading`、`dimension_breakdown`、`notification_request`、`resolution_tracking`、`unknown`。复合诉求按最终用户目标识别，例如“查询并推送”识别为 `notification_request`，但必须在 `workflow_plan.prerequisites` 中声明先补 analysis 产物。
+5. 识别场景专属 `task_type`；打标率包括 `label_rate_trend`、`label_rate_ranking`、`low_label_rate_grading`、`report_flow_low_label_rate`、`dimension_breakdown`，相邻场景按各自 reference 词表输出。复合诉求按最终用户目标识别。
 6. 识别 `metric_ids`。打标率场景默认使用 `label_rate`，相关证据指标包括 `review_in_cnt`、`review_done_cnt`、`label_cnt`。
 7. 建立 `retrieval_policy`：默认参考资料优先、语义层优先、只读查询需先有查询计划 (QueryPlan)、禁止通知和线上写入。
 8. 做就绪检查：指标口径、时间窗口、维度、权限风险、敏感字段、越权动作、是否需要人工确认。
@@ -162,7 +164,9 @@ PYTHONDONTWRITEBYTECODE=1 python3 human_review_ops/skills/perception/scripts/lab
 - 模糊词或疑似口误：输出 `scenario_candidates`，例如“达标率”候选 `efficiency-label-rate`，并要求确认是否指“打标率”。
 - 维度未治理：标记 `human_confirmation_required=true`，不得直接进入分析。
 - 用户要求真实通知、自动拉群、写线上状态或批量导出敏感明细：输出阻断原因，并建议切换到人工确认流程。
-- 用户问题明显属于通知或解决阶段但缺少分析结果：要求先补齐分析产物。
+- 用户问题明显属于通知或解决阶段但缺少分析结果：要求先补齐分析产物；已有合法产物时直接交接对应节点，不重复安排 analysis。
+- `scenario_hint` 与用户原文冲突、或原文同时命中多个场景：`scenario_key=unknown` 并列出全部候选。
+- `source_refs` 不存在、不可解析或场景不一致：阻断，不接受任意字符串作为前置产物。
 
 ## 验证
 

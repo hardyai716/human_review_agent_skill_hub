@@ -38,13 +38,6 @@ DATASET_NAME = "[重点模型]-社区_人工审核明细数据"
 SOURCE_TABLE = "olap_content_security_community.dws_sft_tcs_review_task_detail_di"
 DEFAULT_START_DATE = "2026-06-29"
 DEFAULT_END_DATE = "2026-07-05"
-DEFAULT_OUTPUT_DIR = (
-    ROOT
-    / "evals"
-    / SCENARIO_KEY
-    / "stage_2_runs"
-    / "20260709_custom_label_rate_breakdown_summary_default_20260629_20260705"
-)
 DEFAULT_DIMENSIONS = [
     "mach_root_label_name",
     "strategy_id",
@@ -98,14 +91,14 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--start-date", default=DEFAULT_START_DATE)
     parser.add_argument("--end-date", default=DEFAULT_END_DATE)
-    parser.add_argument("--output-dir", default=str(DEFAULT_OUTPUT_DIR))
+    parser.add_argument("--output-dir")
     parser.add_argument("--limit", type=int, default=50000)
     parser.add_argument("--top-n", type=int, default=10)
     parser.add_argument("--import-workbook", dest="import_workbook", action="store_true", default=True)
     parser.add_argument("--no-import-workbook", dest="import_workbook", action="store_false")
     parser.add_argument("--send-chat-id")
     parser.add_argument("--identity", choices=["bot", "user"], default="bot")
-    parser.add_argument("--title", default="6月29日-7月5日低打标率多维明细")
+    parser.add_argument("--title")
     args = parser.parse_args()
 
     start_date = parse_date(args.start_date)
@@ -117,7 +110,10 @@ def main() -> None:
     if args.top_n <= 0:
         raise SystemExit("--top-n must be a positive integer.")
 
-    output_dir = Path(args.output_dir)
+    output_dir = Path(args.output_dir) if args.output_dir else default_output_dir(
+        start_date=start_date,
+        end_date=end_date,
+    )
     publish_dir = output_dir / "publish"
     output_dir.mkdir(parents=True, exist_ok=True)
     publish_dir.mkdir(parents=True, exist_ok=True)
@@ -184,7 +180,8 @@ def main() -> None:
             summary=summary,
             top_rows=card_top_rows,
             sheet_url=sheet_url,
-            title=args.title,
+            title=args.title
+            or f"{start_date.isoformat()}~{end_date.isoformat()}低打标率多维明细",
         )
         card_json = strip_internal_keys(card_with_meta)
         write_json(card_with_meta_path, card_with_meta)
@@ -269,6 +266,23 @@ def parse_date(raw_value: str) -> date:
     return date.fromisoformat(raw_value)
 
 
+def period_id(start_date: date, end_date: date) -> str:
+    return f"{start_date.strftime('%Y%m%d')}-{end_date.strftime('%Y%m%d')}"
+
+
+def default_output_dir(*, start_date: date, end_date: date) -> Path:
+    return (
+        ROOT
+        / "evals"
+        / SCENARIO_KEY
+        / "stage_2_runs"
+        / (
+            f"{datetime.now().strftime('%Y%m%d')}_custom_label_rate_breakdown_"
+            f"{period_id(start_date, end_date).replace('-', '_')}"
+        )
+    )
+
+
 def build_sql(*, start_date: date, end_date: date, limit: int) -> str:
     end_exclusive = end_date + timedelta(days=1)
     dimension_select = ",\n    ".join(
@@ -280,7 +294,6 @@ def build_sql(*, start_date: date, end_date: date, limit: int) -> str:
         f"{DIMENSION_SPECS[name]['key_alias']} AS {name}" for name in DEFAULT_DIMENSIONS
     )
     dimension_keys = ", ".join(DIMENSION_SPECS[name]["key_alias"] for name in DEFAULT_DIMENSIONS)
-    dimension_names = ", ".join(DEFAULT_DIMENSIONS)
     return f"""
 SELECT
   {dimension_output_select},
@@ -472,7 +485,11 @@ def build_records(
     payload: dict[str, Any],
     sql: str,
 ) -> list[dict[str, Any]]:
-    query_plan_id = "QP-ELR-CUSTOM-BREAKDOWN-20260629-20260705"
+    start_date = parse_date(summary["period"]["start_date"])
+    end_date = parse_date(summary["period"]["end_date"])
+    current_period_id = period_id(start_date, end_date)
+    query_plan_id = f"QP-ELR-CUSTOM-BREAKDOWN-{current_period_id}"
+    event_id = f"ELR-CUSTOM-BREAKDOWN-{current_period_id}"
     tool_call_id = f"TCR-{query_plan_id}-01"
     query_plan = {
         "query_plan_id": query_plan_id,
@@ -558,8 +575,8 @@ def build_records(
         "source_footer": summary["source_footer"],
     }
     analysis_result = {
-        "analysis_id": "AN-ELR-CUSTOM-BREAKDOWN-20260629-20260705",
-        "event_id": "ELR-CUSTOM-BREAKDOWN-20260629-20260705",
+        "analysis_id": f"AN-{event_id}",
+        "event_id": event_id,
         "templates_used": ["custom_dimension_breakdown", "readonly_execution", "source_footer"],
         "query_plan": query_plan,
         "readonly_execution": readonly_execution,
@@ -583,7 +600,11 @@ def build_records(
         "metric_id": "label_rate",
         "execution_mode": "real_readonly_query",
         "real_query_executed": True,
-        "input_summary": "2026-06-29..2026-07-05; mach_root_label_name × strategy_id × strategy_name × reason; label_rate < 0.1.",
+        "input_summary": (
+            f"{summary['period']['start_date']}..{summary['period']['end_date']}; "
+            "mach_root_label_name × strategy_id × strategy_name × reason; "
+            "label_rate < 0.1."
+        ),
         "output_summary": f"Returned {payload['data']['rowCount']} rows; truncated={payload['data'].get('truncated')}.",
         "status": "success",
         "latency_ms": payload.get("context", {}).get("execution_time_ms", 0),
@@ -601,8 +622,11 @@ def build_records(
         },
         {
             "record_type": "sample",
-            "id": "ELR-CUSTOM-BREAKDOWN-20260629-20260705",
-            "input": "2026-06-29 到 2026-07-05 打标率小于 0.1 的机审一级标签 × strategy_id × strategy_name × reason 明细。",
+            "id": event_id,
+            "input": (
+                f"{summary['period']['start_date']} 到 {summary['period']['end_date']} "
+                "打标率小于 0.1 的机审一级标签 × strategy_id × strategy_name × reason 明细。"
+            ),
             "run_mode": "debug_only_with_optional_group_validation",
             "scenario_key": SCENARIO_KEY,
             "task_type": "custom_dimension_breakdown",

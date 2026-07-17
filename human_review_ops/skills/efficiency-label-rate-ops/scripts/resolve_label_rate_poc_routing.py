@@ -10,7 +10,7 @@ from typing import Any
 
 
 LEVEL_ORDER = ["notice", "P2", "P1", "P0"]
-SCENARIO_REFERENCE = "references/scenarios/efficiency-label-rate.md"
+SCENARIO_REFERENCE = "references/scenario_contract.md"
 POC_MAPPING_ASSET = "assets/efficiency-label-rate/mach_root_label_poc_mapping.json"
 REPORT_FLOW_FALLBACK_LABEL = "举报"
 DEFAULT_POC_MAPPING_PATH = (
@@ -69,11 +69,22 @@ def main() -> None:
 
 
 def load_jsonl(path: Path) -> list[dict[str, Any]]:
-    return [
-        json.loads(line)
-        for line in path.read_text(encoding="utf-8").splitlines()
-        if line.strip()
-    ]
+    text = path.read_text(encoding="utf-8").strip()
+    if not text:
+        return []
+    try:
+        payload = json.loads(text)
+    except json.JSONDecodeError:
+        return [
+            json.loads(line)
+            for line in text.splitlines()
+            if line.strip()
+        ]
+    if isinstance(payload, dict):
+        return [payload]
+    if isinstance(payload, list) and all(isinstance(item, dict) for item in payload):
+        return payload
+    raise ValueError("Analysis artifact must be a JSON object or JSONL objects.")
 
 
 def load_stage_1_sample(path: Path) -> dict[str, Any]:
@@ -84,10 +95,26 @@ def load_stage_1_sample(path: Path) -> dict[str, Any]:
     )
     if not sample:
         raise ValueError("Missing sample record in analysis_result JSONL.")
-    if sample.get("analysis_mode") != "low_label_rate_grading":
-        raise ValueError("Analysis result source must be low_label_rate_grading.")
-    if "readonly_execution" not in sample:
-        raise ValueError("Analysis result source missing readonly_execution.")
+    if sample.get("scenario_key") != "efficiency-label-rate":
+        raise ValueError("Analysis artifact scenario_key must be efficiency-label-rate.")
+    if sample.get("analysis_mode") not in {
+        "low_label_rate_grading",
+        "report_flow_low_label_rate",
+    }:
+        raise ValueError("Unsupported analysis_mode for label-rate notification.")
+    for field in ("QueryPlan", "readonly_execution", "source_footer", "provenance"):
+        if not isinstance(sample.get(field), dict):
+            raise ValueError(f"Analysis artifact missing {field}.")
+    query_plan = sample["QueryPlan"]
+    if query_plan.get("scenario_key") != "efficiency-label-rate":
+        raise ValueError("QueryPlan scenario_key mismatch.")
+    execution = sample["readonly_execution"]
+    if execution.get("status") not in {"success", "not_executed"}:
+        raise ValueError(
+            f"Analysis artifact is not usable: status={execution.get('status')}"
+        )
+    if sample.get("stop_reason"):
+        raise ValueError(f"Analysis artifact is blocked: {sample['stop_reason']}")
     return sample
 
 
@@ -129,7 +156,11 @@ def resolve_row_poc(
 ) -> dict[str, Any]:
     label = row_mach_root_label(row)
     report_flow_fallback = False
-    if not label and normalize_label(row.get("enpool_reason")):
+    if (
+        not label
+        and row.get("data_direction") == "report_flow"
+        and normalize_label(row.get("enpool_reason"))
+    ):
         label = REPORT_FLOW_FALLBACK_LABEL
         report_flow_fallback = True
     if not label:
@@ -305,10 +336,15 @@ def build_poc_routing_plan(
     level_counts = execution.get("level_counts", {})
     mapping = load_poc_mapping()
     index = poc_mapping_index(mapping)
+    data_direction = (
+        sample.get("data_direction")
+        or sample.get("QueryPlan", {}).get("data_direction")
+        or "manual_review_detail"
+    )
     comprehensive_rows = execution.get("comprehensive_results", [])
     assignments = [
-        resolve_row_poc(row, index)
-        | summarize_row(row)
+        resolve_row_poc({**row, "data_direction": data_direction}, index)
+        | summarize_row({**row, "data_direction": data_direction})
         | {
             "severity_level": row.get("severity_level"),
             "hit_rule_ids": row.get("hit_rule_ids"),
@@ -324,7 +360,12 @@ def build_poc_routing_plan(
         if item["mapping_status"] == "missing_route_dimension"
     ]
     routing_rules = {
-        level: build_level_rule(level, level_results.get(level, {}), index)
+        level: build_level_rule(
+            level,
+            level_results.get(level, {}),
+            index,
+            data_direction=data_direction,
+        )
         for level in LEVEL_ORDER
     }
     return {
@@ -343,6 +384,7 @@ def build_poc_routing_plan(
         "real_poc_mapping_used": bool(mapped),
         "real_poc_mapping_source": mapping.get("source"),
         "contact_resolution_status": mapping.get("contact_resolution_status", "name_only"),
+        "requires_contact_resolution_before_real_send": True,
         "level_counts": {level: int(level_counts.get(level, 0)) for level in LEVEL_ORDER},
         "comprehensive_alert_count": int(execution.get("row_count", 0)),
         "comprehensive_reason_count": int(execution.get("row_count", 0)),
@@ -362,6 +404,8 @@ def build_poc_routing_plan(
         "assignment_preview": assignments[:20],
         "routing_rules": routing_rules,
         "routing_constraints": {
+            "requires_contact_resolution_before_real_send": True,
+            "requires_human_confirmation_before_real_send": True,
             "group_send_blocked": True,
             "group_send_allowed": False,
             "group_recipients": [],
@@ -389,12 +433,14 @@ def build_level_rule(
     level: str,
     level_result: dict[str, Any],
     mapping_index: dict[str, dict[str, Any]],
+    *,
+    data_direction: str = "manual_review_detail",
 ) -> dict[str, Any]:
     rule = LEVEL_RULES[level]
     rows = level_result.get("rows", [])
     assignments = [
-        resolve_row_poc(row, mapping_index)
-        | summarize_row(row)
+        resolve_row_poc({**row, "data_direction": data_direction}, mapping_index)
+        | summarize_row({**row, "data_direction": data_direction})
         | {
             "severity_level": level,
             "hit_rule_ids": row.get("hit_rule_ids"),

@@ -38,7 +38,6 @@ DIMENSION_ALIASES = {
     "mach_root_label_name": "mach_root_label_name",
 }
 REQUIRED_SQL_SNIPPETS_STATIC = [
-    "`[p_date]` < today()",
     "`[project_title]` NOT LIKE '%虚假%'",
     "`[project_title]` NOT LIKE '%标注%'",
     "`[project_title]` NOT LIKE '%虚假不实%'",
@@ -118,6 +117,7 @@ def required_sql_snippets(
     days: int,
     dimensions: list[dict[str, str]],
     query_mode: str,
+    time_range: dict[str, Any],
 ) -> list[str]:
     dimension_snippets = [
         f"{dimension['source_field']} AS {dimension['name']}"
@@ -137,12 +137,17 @@ def required_sql_snippets(
             "ORDER BY review_done_cnt DESC",
             "LIMIT 1000",
         ]
-    return (
-        [f"`[p_date]` >= today() - {days}"]
-        + dimension_snippets
-        + REQUIRED_SQL_SNIPPETS_STATIC
-        + mode_snippets
-    )
+    if time_range.get("start_date") and time_range.get("end_date_exclusive"):
+        date_snippets = [
+            f"`[p_date]` >= '{time_range['start_date']}'",
+            f"`[p_date]` < '{time_range['end_date_exclusive']}'",
+        ]
+    else:
+        date_snippets = [
+            f"`[p_date]` >= today() - {days}",
+            "`[p_date]` < today()",
+        ]
+    return date_snippets + dimension_snippets + REQUIRED_SQL_SNIPPETS_STATIC + mode_snippets
 
 
 def load_jsonl(path: Path) -> list[dict[str, Any]]:
@@ -234,12 +239,19 @@ def assert_query_plan(
         raise AssertionError("QueryPlan dimension_mappings mismatch.")
     if query_plan.get("time_range", {}).get("days") != days:
         raise AssertionError("QueryPlan days mismatch.")
-    expected_where = f"`[p_date]` >= today() - {days} AND `[p_date]` < today()"
-    if query_plan.get("time_range", {}).get("where") != expected_where:
+    time_range = query_plan.get("time_range", {})
+    if time_range.get("start_date") and time_range.get("end_date_exclusive"):
+        expected_where = (
+            f"`[p_date]` >= '{time_range['start_date']}' "
+            f"AND `[p_date]` < '{time_range['end_date_exclusive']}'"
+        )
+    else:
+        expected_where = f"`[p_date]` >= today() - {days} AND `[p_date]` < today()"
+    if time_range.get("where") != expected_where:
         raise AssertionError("QueryPlan where mismatch.")
 
     sql = query_plan.get("sql", "")
-    for snippet in required_sql_snippets(days, dimensions, query_mode):
+    for snippet in required_sql_snippets(days, dimensions, query_mode, time_range):
         if snippet not in sql:
             raise AssertionError(f"SQL missing required snippet: {snippet}")
 

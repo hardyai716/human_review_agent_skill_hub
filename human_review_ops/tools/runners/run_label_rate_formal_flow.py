@@ -9,7 +9,7 @@ import os
 import re
 import subprocess
 import sys
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
@@ -69,6 +69,8 @@ def main() -> None:
     parser.add_argument("--levels", default="notice,P2,P1,P0")
     parser.add_argument("--top-n", type=int, default=10)
     parser.add_argument("--run-id", default=datetime.now().strftime("%Y%m%d_%H%M%S"))
+    parser.add_argument("--start-date")
+    parser.add_argument("--end-date")
     parser.add_argument("--output-dir")
     parser.add_argument("--send-chat-id")
     parser.add_argument("--send-identity", choices=["bot", "user"], default="bot")
@@ -99,13 +101,16 @@ def main() -> None:
     original_perception = run_perception(args.request)
     write_json(base / "perception_notification_request.json", original_perception)
     assert_notification_intent_or_raise(original_perception)
+    time_range = resolve_grading_time_range(args, original_perception)
+    if time_range:
+        write_json(base / "resolved_time_range.json", time_range)
 
     analysis_request = build_analysis_request(original_perception)
     analysis_perception = run_perception(analysis_request)
     write_json(base / "perception_analysis_request.json", analysis_perception)
     assert_analysis_ready_or_raise(analysis_perception)
 
-    stage1_record = run_analysis(args, base, stage1_path)
+    stage1_record = run_analysis(args, base, stage1_path, time_range=time_range)
 
     sheet_url = args.sheet_url
     artifacts = build_notification(
@@ -142,6 +147,7 @@ def main() -> None:
         "stage2_output_dir": str(base),
         "level_counts": stage1_record["readonly_execution"]["level_counts"],
         "row_count": stage1_record["readonly_execution"]["row_count"],
+        "period": stage1_record["QueryPlan"]["time_range"],
         "sheet_url": sheet_url,
         "message_id": (dispatch_record or {}).get("message_id"),
         "target_chat_id": args.send_chat_id,
@@ -177,8 +183,30 @@ def build_analysis_request(perception: dict[str, Any]) -> str:
     time_window = perception.get("time_window") or "近7天"
     return (
         f"查询{time_window}低效打标策略，按P0/P1/P2/notice分级，"
-        "按机审一级标签、策略ID、策略名称、送审原因拆分。"
+        "默认按机审一级标签、策略ID、策略名称三维分级。"
     )
+
+
+def resolve_grading_time_range(
+    args: argparse.Namespace,
+    perception: dict[str, Any],
+) -> dict[str, Any] | None:
+    if bool(args.start_date) != bool(args.end_date):
+        raise RuntimeError("--start-date and --end-date must be provided together.")
+    if args.start_date and args.end_date:
+        return label_rate_analysis.build_grading_time_range(
+            start_date=parse_date(args.start_date),
+            end_date=parse_date(args.end_date),
+        )
+    for raw_text in (args.request, perception.get("time_window")):
+        time_range = label_rate_analysis.parse_user_period(raw_text)
+        if time_range:
+            return time_range
+    return None
+
+
+def parse_date(raw_value: str) -> date:
+    return date.fromisoformat(raw_value.strip().replace("/", "-"))
 
 
 def assert_analysis_ready_or_raise(payload: dict[str, Any]) -> None:
@@ -194,18 +222,20 @@ def run_analysis(
     args: argparse.Namespace,
     base: Path,
     stage1_path: Path,
+    *,
+    time_range: dict[str, Any] | None,
 ) -> dict[str, Any]:
     levels = label_rate_analysis.parse_levels(args.levels)
-    sql_map = label_rate_analysis.sql_by_level()
-    query_plan = label_rate_analysis.build_query_plan(levels, sql_map)
+    sql_map = label_rate_analysis.sql_by_level(time_range)
+    query_plan = label_rate_analysis.build_query_plan(
+        levels,
+        sql_map,
+        time_range=time_range,
+    )
     write_json(base / "analysis_query_plan.json", query_plan)
     write_json(base / "analysis_sql_by_level.json", sql_map)
 
-    freshness_sql = (
-        "SELECT max(`[p_date]`) AS max_dt, count() AS c "
-        "FROM olap_content_security_community.dws_sft_tcs_review_task_detail_di "
-        "WHERE `[p_date]` >= today() - 3"
-    )
+    freshness_sql = build_freshness_sql(time_range)
     freshness = run_aeolus_query(freshness_sql, limit="10")
     write_json(base / "analysis_freshness_check.json", freshness)
 
@@ -221,6 +251,7 @@ def run_analysis(
         levels,
         sql_map,
         row_enricher=lambda row: build_poc_row_enrichment(row, mapping_index),
+        time_range=time_range,
     )
     stage1_path.parent.mkdir(parents=True, exist_ok=True)
     stage1_path.write_text(
@@ -243,6 +274,21 @@ def run_analysis(
         },
     )
     return sample
+
+
+def build_freshness_sql(time_range: dict[str, Any] | None) -> str:
+    if time_range and time_range.get("current_start") and time_range.get("current_end_exclusive"):
+        where = (
+            f"`[p_date]` >= '{time_range['current_start']}' "
+            f"AND `[p_date]` < '{time_range['current_end_exclusive']}'"
+        )
+    else:
+        where = "`[p_date]` >= today() - 3"
+    return (
+        "SELECT max(`[p_date]`) AS max_dt, count() AS c "
+        "FROM olap_content_security_community.dws_sft_tcs_review_task_detail_di "
+        f"WHERE {where}"
+    )
 
 
 def run_aeolus_query(sql: str, *, limit: str) -> dict[str, Any]:
@@ -298,13 +344,28 @@ def build_notification(
         top_n=args.top_n,
         sheet_url=sheet_url,
         identity=args.send_identity,
-        title="正规流程复跑：近7天低效打标策略全等级结果",
+        title=build_report_title(stage1_path),
         self_send_requested=bool(args.send_chat_id),
         sent_payload=sent_payload,
         target_user_id=None,
         target_chat_id=args.send_chat_id,
         auto_import_sheet=not args.no_import_workbook,
     )
+
+
+def build_report_title(stage1_path: Path) -> str:
+    try:
+        sample = next(
+            json.loads(line)
+            for line in stage1_path.read_text(encoding="utf-8").splitlines()
+            if line.strip() and json.loads(line).get("record_type") == "sample"
+        )
+        period = sample.get("QueryPlan", {}).get("time_range", {})
+        if period.get("current_start") and period.get("current_end"):
+            return f"低效打标全等级结果（{period['current_start']}~{period['current_end']}）"
+    except Exception:
+        pass
+    return "正规流程复跑：近7天低效打标策略全等级结果"
 
 
 def import_workbook(workbook_path: Path, *, name: str, base: Path) -> str:

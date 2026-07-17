@@ -107,6 +107,7 @@ LEVEL_WINDOW_SNIPPETS = {
 
 def main() -> None:
     validate_imported_module_contract()
+    validate_explicit_period_contract()
     validate_report_flow_contract()
     validate_cli_dry_run()
     print("Label-rate analysis scripts OK")
@@ -126,6 +127,33 @@ def validate_imported_module_contract() -> None:
     assert_source_footer(sample["source_footer"], query_plan)
     assert_readonly_execution(sample["readonly_execution"], levels)
     assert_analysis_result(sample)
+
+
+def validate_explicit_period_contract() -> None:
+    time_range = label_rate_analysis.build_grading_time_range(
+        start_date="2026-07-06",
+        end_date="2026-07-12",
+    )
+    sql_map = label_rate_analysis.sql_by_level(time_range)
+    if any("today()" in sql for sql in sql_map.values()):
+        raise AssertionError("Explicit period SQL must not contain today().")
+    if "`[p_date]` >= '2026-07-06'" not in sql_map["notice"]:
+        raise AssertionError("Explicit notice SQL missing current period start.")
+    if "`[p_date]` < '2026-07-13'" not in sql_map["notice"]:
+        raise AssertionError("Explicit notice SQL missing current period exclusive end.")
+    if "`[p_date]` >= '2026-06-15'" not in sql_map["P0"]:
+        raise AssertionError("Explicit P0 SQL missing four-week history start.")
+    query_plan = label_rate_analysis.build_query_plan(
+        list(label_rate_analysis.DEFAULT_LEVELS),
+        sql_map,
+        time_range=time_range,
+    )
+    if query_plan["time_range"].get("current_start") != "2026-07-06":
+        raise AssertionError("Explicit QueryPlan current_start mismatch.")
+    if query_plan["query_plan_id"] != (
+        "QP-ELR-REAL-LOW-LABEL-RATE-GRADING-20260706-20260712"
+    ):
+        raise AssertionError("Explicit QueryPlan id must include period.")
 
 
 def validate_cli_dry_run() -> None:
@@ -181,17 +209,18 @@ def validate_report_flow_contract() -> None:
     required_snippets = [
         "`[进审日期]` >= today() - 7",
         "`[进审日期]` < today()",
-        "ifNull(`[enpool_reason]`, '（空/enpool_reason）') AS enpool_reason",
-        "`[人审完结量_report_id]` / count(distinct `[进审日期]`) AS avg_report_review_done_cnt",
-        "`[打标量_report_id]` / count(distinct `[进审日期]`) AS avg_report_label_cnt",
-        "`[打标率_report_id]` AS report_label_rate",
+        "ifNull(`[enpool_reason]`, '（空/enpool_reason）') AS enpool_reason_key",
+        "enpool_reason_key AS enpool_reason",
+        "SUM(report_review_done_cnt) / count(distinct review_date_key) AS avg_report_review_done_cnt",
+        "SUM(report_label_cnt) / count(distinct review_date_key) AS avg_report_label_cnt",
+        "SUM(report_label_cnt) / nullIf(SUM(report_review_done_cnt), 0) AS report_label_rate",
         "`[终轮队列名称]` IN",
         "`[一轮队列名称]` IN",
         "`[任务类型]` IN ('关注-【举报专项】任务链路流转')",
         "`[一轮队列名称]` NOT LIKE '%兜底%'",
-        "GROUP BY enpool_reason",
-        "HAVING `[人审完结量_report_id]` > 0",
-        "AND `[打标率_report_id]` < 0.1",
+        "GROUP BY enpool_reason_key",
+        "HAVING SUM(report_review_done_cnt) > 0",
+        "AND SUM(report_label_cnt) / nullIf(SUM(report_review_done_cnt), 0) < 0.1",
     ]
     for snippet in required_snippets:
         if snippet not in sql:
@@ -224,6 +253,18 @@ def validate_report_flow_contract() -> None:
         raise AssertionError("Report-flow QueryPlan dimensions mismatch.")
     if payload.get("safety", {}).get("sql_executed") is not False:
         raise AssertionError("Report-flow dry-run must not execute SQL.")
+    explicit = label_rate_analysis.build_report_flow_dry_run_payload(
+        dry_run=True,
+        time_range=label_rate_analysis.build_grading_time_range(
+            start_date="2026-07-06",
+            end_date="2026-07-12",
+        ),
+    )
+    explicit_sql = explicit["QueryPlan"]["sql"]
+    if "today()" in explicit_sql:
+        raise AssertionError("Explicit report-flow SQL must not contain today().")
+    if "`[进审日期]` >= '2026-07-06'" not in explicit_sql:
+        raise AssertionError("Explicit report-flow SQL missing start date.")
 
 
 def assert_query_plan(query_plan: dict[str, Any], levels: list[str]) -> None:

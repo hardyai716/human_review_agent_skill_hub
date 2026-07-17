@@ -99,7 +99,7 @@ def build_sample() -> dict[str, Any]:
     execution = {
         "analysis_mode": "low_label_rate_grading",
         "execution_mode": "smoke",
-        "status": "ok",
+        "status": "success",
         "level_counts": {"notice": 4, "P2": 1, "P1": 1, "P0": 1},
         "level_results": {
             "notice": {"rows": comprehensive},
@@ -120,6 +120,8 @@ def build_sample() -> dict[str, Any]:
         "run_mode": "debug_only",
         "QueryPlan": {
             "query_plan_id": "QP-SMOKE-LABEL-RATE-NOTIFICATION",
+            "scenario_key": "efficiency-label-rate",
+            "task_type": "low_label_rate_grading",
             "fallback_reason": "smoke_test_fixture",
         },
         "readonly_execution": execution,

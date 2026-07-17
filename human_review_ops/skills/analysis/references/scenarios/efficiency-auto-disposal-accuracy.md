@@ -68,7 +68,7 @@
 - 自动处置准确率在本数据集中对应 `[三级标签准确率]`。
 - 一级风险标签维度表现使用 `[一级标签准确率]`。
 - 物理表已经提供加权准确率字段；单日、单标签、单 `weight_type` 查询可直接展示对应 rate 字段。
-- 周维度准确率使用 `sum([一级标签准确率]) / count(distinct [date])`；不得只输出 `SUM(rate)`。
+- 周维度准确率必须按分子、分母重算：`SUM([一级标签准确量]) / NULLIF(SUM([一级标签准确量]) + SUM([mach_rlabel_injury_cnt_1d]), 0)`；禁止对日准确率做算术平均或直接 `SUM(rate)`。
 - 跨标签、跨 `weight_type` 汇总时，应先确认权重口径，不得把不同口径的 rate 直接相加。
 - 环比以百分点差值展示：`cur_rate - prev_rate`，回答时乘 100 后展示为 `pp`。
 - 不得用质检准确率、底线事故数或人工审核准确率替代本指标。
@@ -309,7 +309,7 @@ ORDER BY delta_rate ASC
 
 ### P1 条件 1：周维度低于目标
 
-周维度准确率使用日级 `rlabel_acc_weight_rate` 跨日期求和后除以日期数。
+周维度准确率按一级标签准确量和误伤量跨日期聚合后重算，避免不同日期样本量不一致时日准确率算术平均失真。
 
 ```sql
 SELECT
@@ -319,8 +319,13 @@ SELECT
     when root_label_name = '未成年人' then '侵犯未成年权益'
     else root_label_name
   end AS root_label,
-  sum(rlabel_acc_weight_rate) / count(distinct `date`) AS week_rate,
-  (sum(rlabel_acc_weight_rate) / count(distinct `date`) - 0.8) AS gap_to_target,
+  sum(`[一级标签准确量]`) /
+    nullIf(sum(`[一级标签准确量]`) + sum(`[mach_rlabel_injury_cnt_1d]`), 0) AS week_rate,
+  (
+    sum(`[一级标签准确量]`) /
+      nullIf(sum(`[一级标签准确量]`) + sum(`[mach_rlabel_injury_cnt_1d]`), 0)
+    - 0.8
+  ) AS gap_to_target,
   min(`date`) AS window_start,
   max(`date`) AS window_end,
   'P1_week_rate_lt_80pct' AS hit_rule_id
@@ -350,7 +355,8 @@ WITH weekly AS (
             `date` >= today() - 14 AND `date` < today() - 7, 'week_1',
             `date` >= today() - 21 AND `date` < today() - 14, 'week_2',
             'other') AS week_bucket,
-    sum(rlabel_acc_weight_rate) / count(distinct `date`) AS week_rate
+    sum(`[一级标签准确量]`) /
+      nullIf(sum(`[一级标签准确量]`) + sum(`[mach_rlabel_injury_cnt_1d]`), 0) AS week_rate
   FROM olap_content_security_community.dm_sft_eft_mach_label_injury_aggr_1d
   WHERE `date` >= today() - 21
     AND `date` < today()
@@ -412,7 +418,7 @@ source_footer ref 示例：
 - 数据源未确认：停止，输出待确认数据源和 Owner。
 - 字段映射失败：停止，列出缺失字段。
 - 分母为 0：输出质量风险，不给强结论。
-- 周聚合口径异常：必须使用 `sum(rlabel_acc_weight_rate) / count(distinct date)`；不得只输出 `SUM(rate)` 或跨 `weight_type` 混算。
+- 周聚合口径异常：必须使用 `sum(`[一级标签准确量]`) / nullIf(sum(`[一级标签准确量]`) + sum(`[mach_rlabel_injury_cnt_1d]`), 0)`；不得平均日 rate、直接 `SUM(rate)` 或跨 `weight_type` 混算。
 - 查询失败：输出错误、QueryPlan、source_footer 和下一步修复建议。
 
 ## 正反例

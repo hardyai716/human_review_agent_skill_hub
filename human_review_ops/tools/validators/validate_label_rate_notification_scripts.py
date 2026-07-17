@@ -113,14 +113,24 @@ def build_sample() -> dict[str, Any]:
         avg_done=800,
         label_rate=0.08,
     )
-    comprehensive = [p0, p1, p2, notice]
+    notice_overlap = make_row(
+        level="notice",
+        label="违法违规",
+        poc="叶健",
+        strategy_id="strategy_notice_overlap",
+        reason="reason_notice_overlap",
+        avg_done=700,
+        label_rate=0.07,
+    )
+    notice_rows = [notice, notice_overlap]
+    comprehensive = [p0, p1, p2, *notice_rows]
     execution = {
         "analysis_mode": "low_label_rate_grading",
         "execution_mode": "smoke",
-        "status": "ok",
-        "level_counts": {"notice": 4, "P2": 1, "P1": 1, "P0": 1},
+        "status": "success",
+        "level_counts": {"notice": len(notice_rows), "P2": 1, "P1": 1, "P0": 1},
         "level_results": {
-            "notice": {"rows": comprehensive},
+            "notice": {"rows": notice_rows},
             "P2": {"rows": [p2]},
             "P1": {"rows": [p1]},
             "P0": {"rows": [p0]},
@@ -138,6 +148,8 @@ def build_sample() -> dict[str, Any]:
         "run_mode": "debug_only",
         "QueryPlan": {
             "query_plan_id": "QP-SMOKE-LABEL-RATE-NOTIFICATION",
+            "scenario_key": "efficiency-label-rate",
+            "task_type": "low_label_rate_grading",
             "fallback_reason": "smoke_test_fixture",
         },
         "readonly_execution": execution,
@@ -212,7 +224,7 @@ def validate_artifacts(artifacts: Any) -> None:
         raise AssertionError("summary schema mismatch.")
     if summary.get("outputs", {}).get("summary_by_label_poc_csv") != "汇总统计.csv":
         raise AssertionError("summary must expose summary_by_label_poc_csv.")
-    if summary.get("label_poc_summary_count") != 4:
+    if summary.get("label_poc_summary_count") != 2:
         raise AssertionError("summary label_poc_summary_count mismatch.")
     if notification_draft.get("real_poc_mapping_used") is not True:
         raise AssertionError("notification_draft must use name-level POC mapping.")
@@ -224,11 +236,11 @@ def validate_artifacts(artifacts: Any) -> None:
         raise AssertionError("send_plan must not mark real send as sent.")
     if poc_routing.get("routing_mode") != "mach_root_label_mapping":
         raise AssertionError("poc_routing must use mach_root_label_mapping.")
-    if poc_routing.get("mapped_row_count") != 4:
+    if poc_routing.get("mapped_row_count") != 5:
         raise AssertionError("poc_routing mapped_row_count mismatch.")
 
     summary_rows = read_csv_rows(output_dir / "汇总统计.csv")
-    if len(summary_rows) != 4:
+    if len(summary_rows) != 2:
         raise AssertionError("summary CSV row count mismatch.")
     for field in ("机审一级标签", "POC", "低效策略打标率"):
         if field not in summary_rows[0]:
@@ -241,8 +253,20 @@ def validate_artifacts(artifacts: Any) -> None:
         if abs(rate - expected_rate) > 1e-12:
             raise AssertionError("summary CSV label_rate must equal label / done.")
     comprehensive_rows = read_csv_rows(output_dir / "综合.csv")
-    if len(comprehensive_rows) != 4:
+    if len(comprehensive_rows) != 5:
         raise AssertionError("comprehensive CSV row count mismatch.")
+    if "预警等级" not in comprehensive_rows[0]:
+        raise AssertionError("comprehensive CSV must keep severity level.")
+    notice_rows = read_csv_rows(output_dir / "notice.csv")
+    expected_summary_counts = expected_summary_counts_from_notice(notice_rows)
+    actual_summary_counts = {
+        (row.get("机审一级标签", ""), row.get("POC", "")): int(
+            row.get("低效策略数") or 0
+        )
+        for row in summary_rows
+    }
+    if actual_summary_counts != expected_summary_counts:
+        raise AssertionError("summary CSV must aggregate Notice rows by label and POC.")
     plus1_period_field = "+1同意日期是否在本次统计周期前"
     if plus1_period_field not in comprehensive_rows[0]:
         raise AssertionError(f"comprehensive CSV missing field: {plus1_period_field}")
@@ -275,19 +299,26 @@ def validate_artifacts(artifacts: Any) -> None:
         raise AssertionError("send card must not contain _meta.")
     if strip_internal_keys(card_with_meta) != card:
         raise AssertionError("card must equal stripped card_with_meta.")
-    level_top_rows = build_level_top_rows(
-        build_sample()["readonly_execution"]["level_results"],
-        2,
-    )
-    hash_rows = build_card_summary_rows(artifacts.report.summary_rows)
-    hash_rows += flatten_level_top_rows(level_top_rows)
-    verify_card_hash(card_with_meta, hash_rows)
+    verify_card_hash(card_with_meta, card_with_meta["_meta"]["hash_input"])
     if hash_check.get("ok") is not True:
         raise AssertionError("hash_check must be ok.")
     design_check = card_design_check(card_with_meta)
     assert_no_old_card_contract(card_with_meta, design_check)
     if design_check.get("passes_p0_p3_basic_gate") is not True:
         raise AssertionError("card design smoke gate failed.")
+
+
+def expected_summary_counts_from_notice(
+    notice_rows: list[dict[str, str]],
+) -> dict[tuple[str, str], int]:
+    grouped: dict[tuple[str, str], set[str]] = {}
+    for row in notice_rows:
+        key = (row.get("机审一级标签", ""), row.get("POC", "") or "未映射")
+        strategy_key = (row.get("策略ID") or row.get("策略名称") or "").strip()
+        if not strategy_key:
+            continue
+        grouped.setdefault(key, set()).add(strategy_key)
+    return {key: len(values) for key, values in grouped.items()}
 
 
 def iter_card_tags(value: Any) -> list[str]:
@@ -420,6 +451,17 @@ def validate_sheet_import_optin() -> None:
         if artifacts.publish_summary.get("sheet_url") != expected_url:
             raise AssertionError(
                 "publish_summary sheet_url was not filled by opt-in import."
+            )
+        if artifacts.send_plan.get("online_write_executed") is not True:
+            raise AssertionError("send_plan must audit successful online write.")
+        if (
+            artifacts.notification_draft.get("send_safety", {}).get(
+                "online_write_executed"
+            )
+            is not True
+        ):
+            raise AssertionError(
+                "notification_draft must audit successful online write."
             )
         import_result = read_json(optin_output_dir / "sheet_import_result.json")
         if import_result.get("status") != "success":

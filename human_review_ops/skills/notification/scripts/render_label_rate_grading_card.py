@@ -353,6 +353,8 @@ def render_grading_card(
     level_top_rows: dict[str, list[dict[str, Any]]],
     sheet_url: str | None,
     title: str | None = None,
+    hash_input: list[dict[str, Any]] | None = None,
+    template_contract: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     report_title = title or "近7天低效打标策略全等级结果"
     period = summary.get("period", {})
@@ -375,15 +377,16 @@ def render_grading_card(
     elements.append(methodology_panel(summary))
 
     flattened_rows = list(summary_rows) + [
-        row
-        for level in LEVELS
-        for row in level_top_rows.get(level, [])
+        row for level in LEVELS for row in level_top_rows.get(level, [])
     ]
-    hits_hash = compute_hits_hash(flattened_rows)
+    hits_hash = compute_hits_hash(hash_input or flattened_rows)
     return embed_hash_in_card(
         card,
         hits_hash,
         metadata={
+            "hash_input": hash_input or flattened_rows,
+            "template_name": (template_contract or {}).get("template_name"),
+            "template_version": (template_contract or {}).get("template_version"),
             "report_type": "low_efficiency_grading",
             "scenario_key": "efficiency-label-rate",
             "top_rows_count": len(flattened_rows),

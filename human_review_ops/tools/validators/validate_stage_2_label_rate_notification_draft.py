@@ -162,8 +162,6 @@ def assert_level_counts(summary: dict[str, Any]) -> None:
     )
     if comprehensive_alert_count != comprehensive_reason_count:
         raise AssertionError("summary comprehensive_alert_count mismatch.")
-    if comprehensive_reason_count > level_counts.get("notice", 0):
-        raise AssertionError("summary comprehensive_reason_count cannot exceed notice count.")
     comprehensive_group_count = summary.get("comprehensive_strategy_group_count")
     if comprehensive_group_count != comprehensive_reason_count:
         raise AssertionError("summary comprehensive_strategy_group_count mismatch.")
@@ -200,8 +198,21 @@ def assert_notification_draft(
         raise AssertionError("notification_draft report_type mismatch.")
     if notification_draft.get("default_self_validation") is not True:
         raise AssertionError("notification_draft must declare default self validation.")
-    if notification_draft.get("real_poc_mapping_used") is not True:
-        raise AssertionError("notification_draft must use name-level POC mapping.")
+    comprehensive_group_count = summary.get("comprehensive_strategy_group_count", 0)
+    if (
+        comprehensive_group_count > 0
+        and notification_draft.get("real_poc_mapping_used") is not True
+    ):
+        raise AssertionError(
+            "notification_draft must use name-level POC mapping when rows exist."
+        )
+    if (
+        comprehensive_group_count == 0
+        and notification_draft.get("real_poc_mapping_used") is not False
+    ):
+        raise AssertionError(
+            "zero-row dry-run must not claim name-level POC mapping was used."
+        )
     if notification_draft.get("level_counts") != summary.get("level_counts"):
         raise AssertionError("notification_draft level_counts mismatch.")
     if notification_draft.get("comprehensive_reason_count") != summary.get(
@@ -241,8 +252,13 @@ def assert_notification_draft(
         raise AssertionError("notification_draft routing_key mismatch.")
     if poc_routing.get("contact_resolution_status") != "name_only":
         raise AssertionError("notification_draft contact_resolution_status mismatch.")
-    if poc_routing.get("mapped_row_count", 0) <= 0:
-        raise AssertionError("notification_draft mapped_row_count must be positive.")
+    mapped_row_count = poc_routing.get("mapped_row_count", 0)
+    if comprehensive_group_count > 0 and mapped_row_count <= 0:
+        raise AssertionError(
+            "notification_draft mapped_row_count must be positive when rows exist."
+        )
+    if comprehensive_group_count == 0 and mapped_row_count != 0:
+        raise AssertionError("zero-row dry-run mapped_row_count must be zero.")
     if poc_routing.get("default_recipient") != "self":
         raise AssertionError("notification_draft default_recipient must be self.")
     routing_rules = poc_routing.get("routing_rules", {})
@@ -344,6 +360,8 @@ def assert_csvs(output_dir: Path, summary: dict[str, Any]) -> None:
                     raise AssertionError(f"{filename} missing field: {field}")
             assert_summary_label_rate_matches_displayed_counts(rows, filename)
             continue
+        if rows and "预警等级" not in rows[0]:
+            raise AssertionError(f"{filename} missing severity level field.")
         for field in (
             "机审一级标签",
             "策略ID",
@@ -363,6 +381,31 @@ def assert_csvs(output_dir: Path, summary: dict[str, Any]) -> None:
             if rows and field not in rows[0]:
                 raise AssertionError(f"{filename} missing field: {field}")
         assert_plus1_period_flag(rows, summary["plus1_exclusion_cutoff_date"], filename)
+
+    summary_rows = read_csv_rows(output_dir / "汇总统计.csv")
+    notice_rows = read_csv_rows(output_dir / "notice.csv")
+    expected_counts = expected_summary_counts_from_notice(notice_rows)
+    actual_counts = {
+        (row.get("机审一级标签", ""), row.get("POC", "")): int(
+            row.get("低效策略数") or 0
+        )
+        for row in summary_rows
+    }
+    if actual_counts != expected_counts:
+        raise AssertionError("汇总统计 must aggregate Notice rows by label and POC.")
+
+
+def expected_summary_counts_from_notice(
+    notice_rows: list[dict[str, str]],
+) -> dict[tuple[str, str], int]:
+    grouped: dict[tuple[str, str], set[str]] = {}
+    for row in notice_rows:
+        key = (row.get("机审一级标签", ""), row.get("POC", "") or "未映射")
+        strategy_key = (row.get("策略ID") or row.get("策略名称") or "").strip()
+        if not strategy_key:
+            continue
+        grouped.setdefault(key, set()).add(strategy_key)
+    return {key: len(values) for key, values in grouped.items()}
 
 
 def assert_summary_label_rate_matches_displayed_counts(
@@ -415,8 +458,13 @@ def assert_card(
         raise AssertionError("hash_check must confirm _meta removal.")
 
     summary_table_rows = extract_summary_table_rows(card_with_meta)
-    if not summary_table_rows:
-        raise AssertionError("Card summary table rows not found.")
+    full_evidence_row_count = hash_check.get("full_evidence_row_count")
+    if not isinstance(full_evidence_row_count, int) or full_evidence_row_count < 0:
+        raise AssertionError("hash_check full_evidence_row_count must be non-negative.")
+    if full_evidence_row_count > 0 and not summary_table_rows:
+        raise AssertionError("Card summary table rows not found when evidence exists.")
+    if full_evidence_row_count == 0 and summary_table_rows:
+        raise AssertionError("zero-row dry-run Card summary table must be empty.")
     for row in summary_table_rows:
         for field in (
             "mach_root_label_name",
@@ -454,7 +502,10 @@ def assert_card(
                 raise AssertionError(f"Card table row missing field: {field}")
         if not str(row.get("label_rate", "")).endswith("%"):
             raise AssertionError("Card table label_rate must be rendered as percent.")
-    verify_card_hash(card_with_meta, summary_table_rows + top_rows)
+    hash_input = card_with_meta.get("_meta", {}).get("hash_input")
+    if not isinstance(hash_input, list):
+        raise AssertionError("card_with_meta must preserve canonical hash_input.")
+    verify_card_hash(card_with_meta, hash_input)
     design_check = card_design_check(card_with_meta)
     assert_no_old_card_contract(card_with_meta, design_check)
     expected_design_check = hash_check.get("design_check", {})

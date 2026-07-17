@@ -13,7 +13,7 @@
 期望：
 
 - 命中 `efficiency-label-rate`。
-- `task_type` 为 `query_only` 或 `partial_workflow`。
+- `task_type=dimension_breakdown`；`run_mode=query_only` 或 `partial_workflow`。
 - 输出 QueryPlan 和 source_footer。
 - 若需要低效分级，默认包含 notice/P2/P1/P0。
 

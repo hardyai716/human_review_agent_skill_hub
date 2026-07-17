@@ -44,7 +44,7 @@ PERCEPTION_READY
 ANALYSIS_READY
 NOTIFICATION_DRAFTED
 MANUAL_TRACKING_RECORDED
-DEBUG_CLOSED_AFTER_MANUAL_REVIEW
+DEBUG_CLOSED
 NEED_MORE_INFO
 DATA_NOT_READY
 PERMISSION_BLOCKED
@@ -59,7 +59,7 @@ INTAKE
   -> SCENARIO_RESOLVED
   -> PERCEPTION_READY
   -> ANALYSIS_READY
-  -> DEBUG_CLOSED_AFTER_MANUAL_REVIEW
+  -> DEBUG_CLOSED
 ```
 
 通知后跟踪流转：
@@ -68,7 +68,7 @@ INTAKE
 ANALYSIS_READY
   -> NOTIFICATION_DRAFTED
   -> MANUAL_TRACKING_RECORDED
-  -> DEBUG_CLOSED_AFTER_MANUAL_REVIEW
+  -> DEBUG_CLOSED
 ```
 
 阻断条件：
@@ -111,7 +111,7 @@ ANALYSIS_READY
     "state_machine_ref": "references/scenarios/efficiency-auto-disposal-accuracy.md#状态机",
     "previous_state": "ANALYSIS_READY",
     "current_state": "MANUAL_TRACKING_RECORDED",
-    "next_state": "DEBUG_CLOSED_AFTER_MANUAL_REVIEW"
+    "next_state": "DEBUG_CLOSED"
   },
   "overall_status": "pending_manual_confirmation",
   "continue_observation": true,

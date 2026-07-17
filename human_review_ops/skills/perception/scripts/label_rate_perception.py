@@ -14,12 +14,24 @@ from typing import Any
 SCHEMA_VERSION = "label_rate_perception.v1"
 SCENARIO_KEY = "efficiency-label-rate"
 DEFAULT_RUN_MODE = "debug_only"
+ALLOWED_RUN_MODES = {
+    "debug_only",
+    "query_only",
+    "notification_only",
+    "resolution_only",
+    "partial_workflow",
+}
 ANALYSIS_TASK_TYPES = {
     "label_rate_trend",
     "label_rate_ranking",
     "low_label_rate_grading",
     "report_flow_low_label_rate",
     "dimension_breakdown",
+    "auto_disposal_accuracy_trend",
+    "auto_disposal_root_label_accuracy_breakdown",
+    "auto_disposal_alert_grading",
+    "quality_inspection_trend",
+    "quality_market_no_report_accuracy",
 }
 REFERENCE_FILES = [
     "references/common.md",
@@ -27,8 +39,20 @@ REFERENCE_FILES = [
     "references/scenarios/efficiency-label-rate.md",
 ]
 SCENARIO_REFERENCE_FILES = ["references/scenarios/efficiency-label-rate.md"]
+REFERENCE_BY_SCENARIO = {
+    "efficiency-label-rate": "references/scenarios/efficiency-label-rate.md",
+    "efficiency-auto-disposal-accuracy": (
+        "references/scenarios/efficiency-auto-disposal-accuracy.md"
+    ),
+    "quality-inspection-accuracy": (
+        "references/scenarios/quality-inspection-accuracy.md"
+    ),
+}
 LABEL_RATE_KEYWORDS = (
     "打标率",
+    "低效打标",
+    "打标全等级",
+    "低效打标全等级",
     "低打标",
     "高打标",
     "打标量",
@@ -76,6 +100,7 @@ HUMAN_REVIEW_CONTEXT_KEYWORDS = (
 GRADING_KEYWORDS = (
     "低打标",
     "低效",
+    "全等级",
     "分级",
     "p0",
     "p1",
@@ -107,11 +132,12 @@ TIME_WINDOW_PATTERNS = (
     r"\d{4}[-/]\d{1,2}[-/]\d{1,2}\s*(至|到|~|—)\s*\d{4}[-/]\d{1,2}[-/]\d{1,2}",
     r"(今天|昨天|前天|本周|上周|本月|上月|近一周|近两周|近一个月)",
 )
-EXCLUDED_SCENARIOS = {
+ADJACENT_SCENARIOS = {
     "efficiency-auto-disposal-accuracy": ("自动处置准确率", "自动处置"),
     "quality-inspection-accuracy": ("质检准确率", "质量准确率"),
     "baseline-incident": ("底线事故", "事故数"),
 }
+ROUTE_ADJACENT_SCENARIOS = True
 DIMENSION_KEYWORDS = {
     "enpool_reason": ("enpool_reason", "举报入池原因", "入池原因"),
     "mach_root_label_name": ("机审一级标签", "机审标签", "一级标签", "mach_root_label"),
@@ -206,33 +232,44 @@ def detect_label_rate_perception(
         ]
     )
     canonical = canonicalize(combined_text)
-    excluded_scenario = detect_excluded_scenario(canonical)
-    scenario_key = detect_scenario_key(canonical, scenario_hint, excluded_scenario)
+    request_canonical = canonicalize(request)
+    scenario_matches = detect_scenario_matches(request_canonical)
+    hint_scenario = normalize_scenario_hint(scenario_hint)
+    if hint_scenario:
+        scenario_matches = dedupe([*scenario_matches, hint_scenario])
+    scenario_key = scenario_matches[0] if len(scenario_matches) == 1 else "unknown"
     scenario_candidates = detect_scenario_candidates(
-        canonical,
-        scenario_key,
-        excluded_scenario,
+        request_canonical,
+        scenario_matches,
     )
     task_type = detect_task_type(canonical, scenario_key)
     metrics = detect_metric_ids(canonical, scenario_key)
     dimensions = detect_dimensions(combined_text, dimension_hint or [])
-    unsupported_dimensions = detect_unsupported_dimensions(canonical, dimensions)
+    unsupported_dimensions = detect_unsupported_dimensions(
+        canonical,
+        dimensions,
+        dimension_hint or [],
+    )
     resolved_time_window = time_window or extract_time_window(request)
     source_refs = source_refs or []
     data_direction = detect_data_direction(canonical)
-    source_profile = source_profile_for(data_direction)
-    missing_refs = missing_reference_files()
+    source_profile = source_profile_for(data_direction, scenario_key)
+    missing_refs = missing_reference_files(scenario_key)
     risk_flags = detect_risk_flags(request)
+    invalid_source_refs = validate_source_refs(source_refs, scenario_key)
+    resolved_run_mode = run_mode or DEFAULT_RUN_MODE
     readiness = build_readiness(
         raw_user_request=request,
         scenario_key=scenario_key,
         task_type=task_type,
         time_window=resolved_time_window,
         source_refs=source_refs,
-        excluded_scenario=excluded_scenario,
+        scenario_ambiguous=len(scenario_matches) > 1,
         unsupported_dimensions=unsupported_dimensions,
         missing_refs=missing_refs,
         risk_flags=risk_flags,
+        run_mode=resolved_run_mode,
+        invalid_source_refs=invalid_source_refs,
     )
 
     handoff = build_handoff(task_type, scenario_key, readiness)
@@ -242,9 +279,10 @@ def detect_label_rate_perception(
         "scenario_key": scenario_key,
         "scenario_candidates": scenario_candidates,
         "task_type": task_type,
-        "run_mode": run_mode or DEFAULT_RUN_MODE,
+        "run_mode": resolved_run_mode,
         "data_direction": data_direction,
         "source_profile": source_profile,
+        "date_field": "进审日期" if data_direction == "report_flow" else "p_date",
         "metric_ids": metrics,
         "time_window": resolved_time_window,
         "dimensions": dimensions,
@@ -261,8 +299,8 @@ def detect_label_rate_perception(
             risk_flags=risk_flags,
         ),
         "reference_loading": {
-            "skill_reference_root": "human_review_ops/skills/perception/references",
-            "required_refs": REFERENCE_FILES,
+            "skill_reference_root": "references",
+            "required_refs": reference_files_for(scenario_key),
             "missing_refs": missing_refs,
         },
         "safety": {
@@ -288,49 +326,57 @@ def detect_data_direction(canonical: str) -> str:
     return "manual_review_detail"
 
 
-def source_profile_for(data_direction: str) -> str:
+def source_profile_for(data_direction: str, scenario_key: str = SCENARIO_KEY) -> str:
+    if scenario_key == "efficiency-auto-disposal-accuracy":
+        return "auto_disposal_accuracy"
+    if scenario_key == "quality-inspection-accuracy":
+        return "quality_inspection_accuracy"
     if data_direction == "report_flow":
         return "report_flow_review"
     return "community_manual_review"
 
 
-def detect_excluded_scenario(canonical: str) -> str | None:
-    for scenario, keywords in EXCLUDED_SCENARIOS.items():
-        if contains_any(canonical, keywords):
-            return scenario
-    return None
-
-
-def detect_scenario_key(
-    canonical: str,
-    scenario_hint: str | None,
-    excluded_scenario: str | None,
-) -> str:
-    hint = canonicalize(scenario_hint or "")
-    if hint in {SCENARIO_KEY, "labelrate", "label_rate", "打标率"}:
-        return SCENARIO_KEY
-    if excluded_scenario and not contains_any(canonical, LABEL_RATE_KEYWORDS):
-        return "unknown"
+def detect_scenario_matches(canonical: str) -> list[str]:
+    matches: list[str] = []
     if contains_any(canonical, LABEL_RATE_KEYWORDS) or looks_like_label_rate_grading(
         canonical
     ):
-        return SCENARIO_KEY
-    return "unknown"
+        matches.append(SCENARIO_KEY)
+    if ROUTE_ADJACENT_SCENARIOS:
+        for scenario, keywords in ADJACENT_SCENARIOS.items():
+            if contains_any(canonical, keywords):
+                matches.append(scenario)
+    return dedupe(matches)
+
+
+def normalize_scenario_hint(scenario_hint: str | None) -> str | None:
+    hint = canonicalize(scenario_hint or "")
+    aliases = {
+        SCENARIO_KEY: SCENARIO_KEY,
+        "labelrate": SCENARIO_KEY,
+        "label_rate": SCENARIO_KEY,
+        "打标率": SCENARIO_KEY,
+        "efficiency-auto-disposal-accuracy": "efficiency-auto-disposal-accuracy",
+        "自动处置准确率": "efficiency-auto-disposal-accuracy",
+        "quality-inspection-accuracy": "quality-inspection-accuracy",
+        "质检准确率": "quality-inspection-accuracy",
+    }
+    return aliases.get(hint)
 
 
 def detect_scenario_candidates(
     canonical: str,
-    scenario_key: str,
-    excluded_scenario: str | None,
+    scenario_matches: list[str],
 ) -> list[dict[str, Any]]:
-    if scenario_key == SCENARIO_KEY:
+    if scenario_matches:
         return [
             {
-                "scenario_key": SCENARIO_KEY,
+                "scenario_key": scenario,
                 "confidence": "high",
-                "reason": "matched_label_rate_keywords",
-                "needs_confirmation": False,
+                "reason": "matched_scenario_keywords",
+                "needs_confirmation": len(scenario_matches) > 1,
             }
+            for scenario in scenario_matches
         ]
     if contains_any(canonical, AMBIGUOUS_LABEL_RATE_KEYWORDS):
         confidence = (
@@ -345,15 +391,6 @@ def detect_scenario_candidates(
                 "reason": "possible_mistyped_label_rate_keyword:达标率",
                 "needs_confirmation": True,
                 "clarification_question": "这里的“达标率”是否指人审效率指标“打标率”？",
-            }
-        ]
-    if excluded_scenario:
-        return [
-            {
-                "scenario_key": excluded_scenario,
-                "confidence": "high",
-                "reason": "matched_excluded_adjacent_metric",
-                "needs_confirmation": False,
             }
         ]
     return []
@@ -382,13 +419,33 @@ def is_low_label_rate_request(canonical: str) -> bool:
 
 
 def detect_task_type(canonical: str, scenario_key: str) -> str:
-    if scenario_key != SCENARIO_KEY:
+    if scenario_key == "unknown":
         return "unknown"
-    data_direction = detect_data_direction(canonical)
-    if contains_any(canonical, NOTIFICATION_KEYWORDS):
+    intent_text = strip_negated_actions(canonical)
+    if contains_any(intent_text, NOTIFICATION_KEYWORDS):
         return "notification_request"
-    if contains_any(canonical, RESOLUTION_KEYWORDS):
+    if contains_any(intent_text, RESOLUTION_KEYWORDS):
         return "resolution_tracking"
+
+    if scenario_key == "efficiency-auto-disposal-accuracy":
+        if contains_any(canonical, SEVERITY_KEYWORDS) or "预警" in canonical:
+            return "auto_disposal_alert_grading"
+        if any(token in canonical for token in ("一级风险标签", "一级标签", "三级标签", "拆解")):
+            return "auto_disposal_root_label_accuracy_breakdown"
+        return "auto_disposal_accuracy_trend"
+
+    if scenario_key == "quality-inspection-accuracy":
+        if any(token in canonical for token in ("队列", "大盘", "不含举报", "分类汇总")):
+            return "quality_market_no_report_accuracy"
+        return "quality_inspection_trend"
+
+    data_direction = detect_data_direction(canonical)
+    explicit_breakdown = (
+        "reason" in detect_dimensions(canonical, [])
+        and any(token in canonical for token in ("拆解", "拆分", "明细和汇总", "不要作为默认"))
+    )
+    if explicit_breakdown:
+        return "dimension_breakdown"
     if data_direction == "report_flow" and is_low_label_rate_request(canonical):
         return "report_flow_low_label_rate"
     if is_low_label_rate_request(canonical):
@@ -404,7 +461,24 @@ def detect_task_type(canonical: str, scenario_key: str) -> str:
     return "unknown"
 
 
+def strip_negated_actions(canonical: str) -> str:
+    return re.sub(
+        r"(不要|无需|不需要|别)(通知|发送|推送|群发|飞书卡片|卡片|关闭|写状态)",
+        "",
+        canonical,
+    )
+
+
 def detect_metric_ids(canonical: str, scenario_key: str) -> list[str]:
+    if scenario_key == "efficiency-auto-disposal-accuracy":
+        return ["auto_disposal_accuracy"]
+    if scenario_key == "quality-inspection-accuracy":
+        metrics = ["quality_inspection_accuracy"]
+        if "通过" in canonical:
+            metrics.append("pass_accuracy")
+        if "打标" in canonical:
+            metrics.append("label_accuracy")
+        return metrics
     if scenario_key != SCENARIO_KEY:
         return []
     if detect_data_direction(canonical) == "report_flow":
@@ -435,15 +509,24 @@ def detect_dimensions(text: str, dimension_hints: list[str]) -> list[str]:
 
 def detect_unsupported_dimensions(
     canonical: str,
-    known_dimensions: list[str],
+    _known_dimensions: list[str],
+    dimension_hints: list[str],
 ) -> list[str]:
-    if "reviewer" in known_dimensions:
-        return []
-    return [
+    unsupported = [
         keyword
         for keyword in UNKNOWN_DIMENSION_HINTS
         if canonicalize(keyword) in canonical
     ]
+    for hint in dimension_hints:
+        hint_canonical = canonicalize(hint)
+        if not hint_canonical:
+            continue
+        if not any(
+            contains_any(hint_canonical, keywords)
+            for keywords in DIMENSION_KEYWORDS.values()
+        ):
+            unsupported.append(hint)
+    return dedupe(unsupported)
 
 
 def extract_time_window(text: str) -> str | None:
@@ -462,9 +545,52 @@ def detect_risk_flags(text: str) -> list[str]:
     return flags
 
 
-def missing_reference_files() -> list[str]:
+def reference_files_for(scenario_key: str) -> list[str]:
+    scenario_ref = REFERENCE_BY_SCENARIO.get(scenario_key)
+    return [
+        "references/common.md",
+        "references/scenario-index.md",
+        *([scenario_ref] if scenario_ref else []),
+    ]
+
+
+def missing_reference_files(scenario_key: str) -> list[str]:
     skill_root = Path(__file__).resolve().parents[1]
-    return [ref for ref in REFERENCE_FILES if not (skill_root / ref).exists()]
+    return [
+        ref for ref in reference_files_for(scenario_key) if not (skill_root / ref).exists()
+    ]
+
+
+def validate_source_refs(source_refs: list[str], scenario_key: str) -> list[str]:
+    invalid: list[str] = []
+    for source_ref in source_refs:
+        path = Path(source_ref).expanduser()
+        if not path.is_file():
+            invalid.append(source_ref)
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+            if path.suffix == ".jsonl":
+                values = [
+                    json.loads(line) for line in text.splitlines() if line.strip()
+                ]
+                payload = next(
+                    (
+                        value
+                        for value in values
+                        if isinstance(value, dict)
+                        and value.get("record_type") == "sample"
+                    ),
+                    None,
+                )
+            else:
+                payload = json.loads(text)
+        except (OSError, json.JSONDecodeError):
+            invalid.append(source_ref)
+            continue
+        if not isinstance(payload, dict) or payload.get("scenario_key") != scenario_key:
+            invalid.append(source_ref)
+    return invalid
 
 
 def build_readiness(
@@ -474,10 +600,12 @@ def build_readiness(
     task_type: str,
     time_window: str | None,
     source_refs: list[str],
-    excluded_scenario: str | None,
+    scenario_ambiguous: bool,
     unsupported_dimensions: list[str],
     missing_refs: list[str],
     risk_flags: list[str],
+    run_mode: str,
+    invalid_source_refs: list[str],
 ) -> dict[str, Any]:
     reasons: list[str] = []
     clarification_fields: list[str] = []
@@ -486,15 +614,18 @@ def build_readiness(
     if not raw_user_request.strip():
         reasons.append("missing_raw_user_request")
         clarification_fields.append("raw_user_request")
-    if excluded_scenario and scenario_key != SCENARIO_KEY:
-        reasons.append(f"excluded_adjacent_metric:{excluded_scenario}")
+    if scenario_ambiguous:
+        reasons.append("scenario_not_unique")
         clarification_fields.append("scenario_key")
     if scenario_key == "unknown":
         reasons.append("scenario_not_recognized")
         clarification_fields.extend(["scenario_key", "metric_ids"])
-    if scenario_key == SCENARIO_KEY and task_type == "unknown":
+    if scenario_key != "unknown" and task_type == "unknown":
         reasons.append("task_type_not_clear")
         clarification_fields.append("task_type")
+    if run_mode not in ALLOWED_RUN_MODES:
+        reasons.append(f"invalid_run_mode:{run_mode}")
+        clarification_fields.append("run_mode")
     if risk_flags:
         reasons.extend(risk_flags)
         human_confirmation_required = True
@@ -504,6 +635,9 @@ def build_readiness(
         reasons.append("unsupported_dimension_requires_field_discovery")
         clarification_fields.append("dimension_hint")
         human_confirmation_required = True
+    if invalid_source_refs:
+        reasons.append("invalid_source_refs")
+        clarification_fields.append("source_refs")
 
     if task_type in ANALYSIS_TASK_TYPES and not time_window:
         reasons.append("missing_time_window")
@@ -517,7 +651,7 @@ def build_readiness(
 
     blocking_reasons = dedupe(reasons)
     clarification_fields = dedupe(clarification_fields)
-    if risk_flags or missing_refs or (excluded_scenario and scenario_key != SCENARIO_KEY):
+    if risk_flags or missing_refs or scenario_ambiguous or invalid_source_refs:
         status = "blocked"
     elif blocking_reasons:
         status = "needs_clarification"
@@ -550,7 +684,7 @@ def build_readiness_checks(
     return [
         {
             "check_id": "scenario_detection",
-            "status": "pass" if scenario_key == SCENARIO_KEY else "block",
+            "status": "pass" if scenario_key in REFERENCE_BY_SCENARIO else "block",
             "value": scenario_key,
         },
         {
@@ -600,7 +734,7 @@ def build_handoff(
     readiness: dict[str, Any],
 ) -> dict[str, Any]:
     candidate_next_skill = None
-    if scenario_key == SCENARIO_KEY:
+    if scenario_key in REFERENCE_BY_SCENARIO:
         if task_type in ANALYSIS_TASK_TYPES:
             candidate_next_skill = "analysis"
         elif task_type == "notification_request":
@@ -613,7 +747,11 @@ def build_handoff(
         if readiness.get("status") == "ready"
         else None,
         "candidate_next_skill": candidate_next_skill,
-        "required_refs": SCENARIO_REFERENCE_FILES if scenario_key == SCENARIO_KEY else [],
+        "required_refs": (
+            [REFERENCE_BY_SCENARIO[scenario_key]]
+            if scenario_key in REFERENCE_BY_SCENARIO
+            else []
+        ),
         "required_inputs": readiness.get("clarification_fields", []),
         "blocked_until": readiness.get("blocking_reasons", []),
     }
@@ -651,44 +789,58 @@ def build_workflow_plan(
         }
 
     if task_type == "notification_request":
-        prerequisites.append(
-            {
-                "skill": "analysis",
-                "task_type": "low_label_rate_grading",
-                "required_before": "notification",
-                "reason": "notification_requires_analysis_artifact",
-            }
+        missing_analysis = "missing_analysis_artifact" in readiness.get(
+            "blocking_reasons", []
         )
-        steps.extend(
-            [
+        if missing_analysis:
+            prerequisites.append(
+                {
+                    "skill": "analysis",
+                    "task_type": "low_label_rate_grading",
+                    "required_before": "notification",
+                    "reason": "notification_requires_analysis_artifact",
+                }
+            )
+            steps.append(
                 {
                     "step": 2,
                     "skill": "analysis",
                     "task_type": "low_label_rate_grading",
                     "status": "required",
-                },
-                {
-                    "step": 3,
-                    "skill": "notification",
-                    "task_type": "notification_request",
-                    "status": "blocked_until_analysis_artifact",
-                },
-            ]
+                }
+            )
+        steps.append(
+            {
+                "step": 3 if missing_analysis else 2,
+                "skill": "notification",
+                "task_type": "notification_request",
+                "status": (
+                    "blocked_until_analysis_artifact"
+                    if missing_analysis
+                    else "ready"
+                ),
+            }
         )
         return {
             "status": "blocked"
             if readiness.get("status") == "blocked"
             else (
                 "ready_with_prerequisite"
-                if "missing_analysis_artifact" in readiness.get("blocking_reasons", [])
+                if missing_analysis
                 else readiness.get("status")
             ),
-            "intent_type": "analysis_then_notification",
+            "intent_type": (
+                "analysis_then_notification" if missing_analysis else "notification"
+            ),
             "steps": steps,
             "prerequisites": prerequisites,
             "requires_host_send_confirmation": True,
             "candidate_scenarios": scenario_candidates,
-            "next_action": "run_analysis_prerequisite",
+            "next_action": (
+                "run_analysis_prerequisite"
+                if missing_analysis
+                else handoff.get("next_skill") or "clarify_inputs"
+            ),
         }
 
     if task_type == "resolution_tracking":

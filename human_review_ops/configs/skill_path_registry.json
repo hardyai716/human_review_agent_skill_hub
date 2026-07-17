@@ -90,6 +90,7 @@
         "plus1_agreed_strategy_updates": {
           "canonical": "human_review_ops/skills/efficiency-label-rate-ops/assets/efficiency-label-rate/plus1_agreed_strategy_updates.json",
           "legacy": [
+            "human_review_ops/skills/analysis/assets/efficiency-label-rate/plus1_agreed_strategy_updates.json",
             "human_review_ops/references/scenarios/efficiency-label-rate/plus1_agreed_strategy_updates.json"
           ]
         },
@@ -108,66 +109,12 @@
       },
       "references": {
         "scenario_bundle": {
-          "canonical": "human_review_ops/skills/efficiency-label-rate-ops/references/scenarios/efficiency-label-rate.md",
+          "canonical": "human_review_ops/skills/efficiency-label-rate-ops/references/scenario_contract.md",
           "legacy": [
             "human_review_ops/skills/perception/references/scenarios/efficiency-label-rate.md",
             "human_review_ops/skills/analysis/references/scenarios/efficiency-label-rate.md",
             "human_review_ops/skills/notification/references/scenarios/efficiency-label-rate.md",
             "human_review_ops/skills/resolution/references/scenarios/efficiency-label-rate.md"
-          ]
-        },
-        "scenario_manifest": {
-          "canonical": "human_review_ops/skills/efficiency-label-rate-ops/references/scenario_manifest.md",
-          "legacy": [
-            "human_review_ops/references/scenarios/efficiency-label-rate/scenario_manifest.md"
-          ]
-        },
-        "metric_contract": {
-          "canonical": "human_review_ops/skills/efficiency-label-rate-ops/references/metric_contract.md",
-          "legacy": [
-            "human_review_ops/references/scenarios/efficiency-label-rate/metric_contract.md"
-          ]
-        },
-        "dataset_reference": {
-          "canonical": "human_review_ops/skills/efficiency-label-rate-ops/references/dataset_reference.md",
-          "legacy": [
-            "human_review_ops/references/scenarios/efficiency-label-rate/dataset_reference.md"
-          ]
-        },
-        "analysis": {
-          "canonical": "human_review_ops/skills/efficiency-label-rate-ops/references/analysis.md",
-          "legacy": [
-            "human_review_ops/references/scenarios/efficiency-label-rate/analysis.md"
-          ]
-        },
-        "notification_templates": {
-          "canonical": "human_review_ops/skills/efficiency-label-rate-ops/references/notification_templates.md",
-          "legacy": [
-            "human_review_ops/references/scenarios/efficiency-label-rate/notification_templates.md"
-          ]
-        },
-        "owner_routing": {
-          "canonical": "human_review_ops/skills/efficiency-label-rate-ops/references/owner_routing.md",
-          "legacy": [
-            "human_review_ops/references/scenarios/efficiency-label-rate/owner_routing.md"
-          ]
-        },
-        "state_machine": {
-          "canonical": "human_review_ops/skills/efficiency-label-rate-ops/references/state_machine.md",
-          "legacy": [
-            "human_review_ops/references/scenarios/efficiency-label-rate/state_machine.md"
-          ]
-        },
-        "sla": {
-          "canonical": "human_review_ops/skills/efficiency-label-rate-ops/references/sla.md",
-          "legacy": [
-            "human_review_ops/references/scenarios/efficiency-label-rate/sla.md"
-          ]
-        },
-        "examples": {
-          "canonical": "human_review_ops/skills/efficiency-label-rate-ops/references/examples.md",
-          "legacy": [
-            "human_review_ops/references/scenarios/efficiency-label-rate/examples.md"
           ]
         }
       }

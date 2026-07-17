@@ -1,6 +1,6 @@
 ---
 name: tracking-ops-resolution
-description: "当用户需要记录人审运营事件的人工跟踪 (manual tracking)、状态流转、闭环检查、继续观察或复查计划时使用；用于 efficiency-label-rate 等场景的本地调试闭环，不发送通知、不写线上状态。"
+description: "内部通用解决能力：仅消费已验证的通知草稿、send_plan 与人工处理信息，生成 manual tracking、状态流转和闭环检查；场景级 Skill 已命中时由其显式委派，不直接竞争原始请求，不发送通知、不写线上状态。"
 allowed-tools:
   - Read
   - Bash
@@ -40,18 +40,18 @@ allowed-tools:
 
 - `scenario_key`：例如 `efficiency-label-rate`。
 - `current_state`：当前状态机节点。
-- `analysis_result`：分析摘要、分级、证据和来源页脚。
 - `notification_draft`：通知草稿或其文件引用。
 - `send_plan`：发送计划 (send_plan)，用于校验是否真实发送、是否仍阻断。
-- `manual_action`：人工动作，例如确认 POC、要求复盘、继续观察。
 
 可选输入：
 
+- `manual_action`：人工动作，例如确认 POC、要求复盘、继续观察。
 - `manual_response`：负责人 (POC) 或运营同学回复。
 - `evidence_refs`：报表、卡片哈希、source_footer、通知草稿、send_plan、`综合_剔除+1同意`、`汇总统计_剔除+1同意` 等引用；举报流转方向还需保留 `enpool_reason`、日均人审完结量、日均打标量和举报打标率证据。
 - `resolution_note`：处理结论。
 - `follow_up_due`：建议复查时间。
 - `operator`：记录人或当前执行者。
+- `operator_confirmation`：人工是否确认本次本地闭环；未确认时不可关闭。
 
 ## 输出
 
@@ -95,9 +95,11 @@ allowed-tools:
 {
   "schema_version": "stage_2_manual_tracking.v1",
   "scenario_key": "efficiency-label-rate",
-  "tracking_mode": "local_debug_only",
-  "overall_status": "pending_manual_confirmation",
-  "tracking_records": [],
+  "manual_tracking": {
+    "tracking_mode": "local_debug_only",
+    "overall_status": "pending_manual_confirmation",
+    "tracking_records": []
+  },
   "closure_check": {
     "can_close": false,
     "missing_before_close": []
@@ -126,7 +128,8 @@ allowed-tools:
 
 常见路径：
 
-- `NOTIFICATION_DRAFTED -> MANUAL_TRACKING_RECORDED -> DEBUG_CLOSED_AFTER_MANUAL_REVIEW`
+- 三件套或人工确认缺失：`NOTIFICATION_DRAFTED -> MANUAL_TRACKING_RECORDED`，下一状态保持 `MANUAL_TRACKING_RECORDED`。
+- 三件套完整且人工确认：`MANUAL_TRACKING_RECORDED -> DEBUG_CLOSED`。
 - 数据未就绪：进入 `DATA_NOT_READY`，不关闭业务问题。
 - 权限不足：进入 `PERMISSION_BLOCKED`。
 - 需要真实发送、线上写状态或高风险动作：进入 `HUMAN_REVIEW_REQUIRED`。
@@ -175,7 +178,7 @@ allowed-tools:
 脚本示例：
 
 ```bash
-python3 human_review_ops/skills/resolution/scripts/build_label_rate_manual_tracking.py --notification-draft <notification_draft.json> --send-plan <send_plan.json> --output <manual_tracking.json> --state-machine-ref references/scenarios/efficiency-label-rate.md#状态机
+python3 human_review_ops/skills/resolution/scripts/build_label_rate_manual_tracking.py --notification-draft <notification_draft.json> --send-plan <send_plan.json> --output <manual_tracking.json> --manual-action <action> --evidence-ref <ref> --resolution-note <note> --operator-confirmed
 ```
 
 脚本只写本地输出文件；不得把它包装成线上状态写入。
@@ -227,13 +230,13 @@ python3 scripts/selfcheck.py
   "state_machine": {
     "previous_state": "NOTIFICATION_DRAFTED",
     "current_state": "MANUAL_TRACKING_RECORDED",
-    "next_state": "DEBUG_CLOSED_AFTER_MANUAL_REVIEW"
+    "next_state": "MANUAL_TRACKING_RECORDED"
   },
   "closure_check": {
     "can_close": false,
     "missing_before_close": [
-      "poc_open_id_confirmation",
-      "human_confirmation",
+      "manual_action",
+      "operator_confirmation",
       "manual_response_or_resolution_note"
     ]
   },

@@ -4,7 +4,7 @@
   "runtime": ["python>=3.9"],
   "release_policy": {
     "standalone_smoke_command": "python3 scripts/selfcheck.py",
-    "side_effects": "dry-run only; no SQL execution, no notification send, no online state write",
+    "side_effects": "default dry-run/read-only; local files allowed; online Sheet import requires explicit opt-in; no notification send or online state write",
     "forbid_absolute_paths": true,
     "forbid_real_tokens": true
   },
@@ -75,7 +75,8 @@
       ],
       "assets": [
         "analysis/assets/README.md",
-        "analysis/assets/test-prompts.json"
+        "analysis/assets/test-prompts.json",
+        "analysis/assets/efficiency-label-rate/plus1_agreed_strategy_updates.json"
       ],
       "scripts": [
         {
@@ -115,6 +116,7 @@
       "release_assets": [
         "analysis/SKILL.md",
         "analysis/assets/test-prompts.json",
+        "analysis/assets/efficiency-label-rate/plus1_agreed_strategy_updates.json",
         "analysis/references/common.md",
         "analysis/references/scenario-index.md",
         "analysis/references/methods/query_plan.md",
@@ -150,8 +152,8 @@
           "entrypoint": "python3 scripts/label_rate_notification_artifacts.py --source <analysis_result.jsonl> --output-dir <output>",
           "smoke_command": "python3 scripts/selfcheck.py",
           "side_effects": [
-            "none",
-            "conditional_online_write: --import-sheet or auto_import_sheet=true imports XLSX into Feishu Sheet and writes sheet_url; default disabled"
+            "local_file_write",
+            "online_write_requires_explicit_opt_in"
           ],
           "outputs": [
             "notification_draft.json",
@@ -187,8 +189,7 @@
           "entrypoint": "module:import_xlsx_as_feishu_sheet",
           "smoke_command": "python3 scripts/selfcheck.py",
           "side_effects": [
-            "none",
-            "conditional_online_write: import_xlsx_as_feishu_sheet writes a Feishu Sheet only when explicitly invoked by an opt-in caller"
+            "online_write_requires_explicit_opt_in"
           ],
           "outputs": ["sheet_import_result.json", "sheet_url"]
         },
@@ -267,16 +268,7 @@
       "references": [
         "efficiency-label-rate-ops/references/common.md",
         "efficiency-label-rate-ops/references/scenario-index.md",
-        "efficiency-label-rate-ops/references/scenarios/efficiency-label-rate.md",
-        "efficiency-label-rate-ops/references/scenario_manifest.md",
-        "efficiency-label-rate-ops/references/metric_contract.md",
-        "efficiency-label-rate-ops/references/dataset_reference.md",
-        "efficiency-label-rate-ops/references/analysis.md",
-        "efficiency-label-rate-ops/references/notification_templates.md",
-        "efficiency-label-rate-ops/references/owner_routing.md",
-        "efficiency-label-rate-ops/references/state_machine.md",
-        "efficiency-label-rate-ops/references/sla.md",
-        "efficiency-label-rate-ops/references/examples.md"
+        "efficiency-label-rate-ops/references/scenario_contract.md"
       ],
       "assets": [
         "efficiency-label-rate-ops/assets/README.md",
@@ -306,8 +298,8 @@
           "entrypoint": "python3 scripts/label_rate_notification_artifacts.py --source <analysis_result.jsonl> --output-dir <output>",
           "smoke_command": "python3 scripts/selfcheck.py",
           "side_effects": [
-            "none",
-            "conditional_online_write: --import-sheet or auto_import_sheet=true imports XLSX into Feishu Sheet and writes sheet_url; default disabled"
+            "local_file_write",
+            "online_write_requires_explicit_opt_in"
           ],
           "outputs": ["notification_draft.json", "send_plan.json", "poc_routing_plan.json", "CSV/XLSX report", "Card JSON"]
         },
@@ -337,8 +329,7 @@
           "entrypoint": "module:import_xlsx_as_feishu_sheet",
           "smoke_command": "python3 scripts/selfcheck.py",
           "side_effects": [
-            "none",
-            "conditional_online_write: import_xlsx_as_feishu_sheet writes a Feishu Sheet only when explicitly invoked by an opt-in caller"
+            "online_write_requires_explicit_opt_in"
           ],
           "outputs": ["sheet_import_result.json", "sheet_url"]
         },
@@ -369,16 +360,7 @@
         "efficiency-label-rate-ops/assets/efficiency-label-rate/plus1_agreed_strategy_updates.json",
         "efficiency-label-rate-ops/references/common.md",
         "efficiency-label-rate-ops/references/scenario-index.md",
-        "efficiency-label-rate-ops/references/scenarios/efficiency-label-rate.md",
-        "efficiency-label-rate-ops/references/scenario_manifest.md",
-        "efficiency-label-rate-ops/references/metric_contract.md",
-        "efficiency-label-rate-ops/references/dataset_reference.md",
-        "efficiency-label-rate-ops/references/analysis.md",
-        "efficiency-label-rate-ops/references/notification_templates.md",
-        "efficiency-label-rate-ops/references/owner_routing.md",
-        "efficiency-label-rate-ops/references/state_machine.md",
-        "efficiency-label-rate-ops/references/sla.md",
-        "efficiency-label-rate-ops/references/examples.md",
+        "efficiency-label-rate-ops/references/scenario_contract.md",
         "efficiency-label-rate-ops/scripts/label_rate_perception.py",
         "efficiency-label-rate-ops/scripts/label_rate_analysis.py",
         "efficiency-label-rate-ops/scripts/label_rate_notification_artifacts.py",

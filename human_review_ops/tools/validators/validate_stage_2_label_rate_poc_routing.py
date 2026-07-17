@@ -166,8 +166,14 @@ def assert_plan_header(plan: dict[str, Any]) -> None:
         raise AssertionError("routing_key must be mach_root_label_name.")
     if plan.get("default_recipient") != "self":
         raise AssertionError("default_recipient must be self.")
-    if plan.get("real_poc_mapping_used") is not True:
-        raise AssertionError("real POC mapping must be used.")
+    comprehensive_group_count = plan.get(
+        "comprehensive_strategy_group_count",
+        plan.get("comprehensive_reason_count"),
+    )
+    if comprehensive_group_count and plan.get("real_poc_mapping_used") is not True:
+        raise AssertionError("real POC mapping must be used when rows exist.")
+    if not comprehensive_group_count and plan.get("real_poc_mapping_used") is not False:
+        raise AssertionError("zero-row dry-run must not claim real POC mapping was used.")
     if plan.get("contact_resolution_status") != "name_only":
         raise AssertionError("contact_resolution_status must be name_only.")
     if not isinstance(plan.get("poc_summary"), list):

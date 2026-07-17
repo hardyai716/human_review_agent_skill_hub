@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.bytedance.local/human-review-ops/perception-result.schema.json",
+  "title": "HumanReviewOpsPerceptionResult",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schema_version",
+    "scenario_key",
+    "scenario_candidates",
+    "task_type",
+    "run_mode",
+    "metric_ids",
+    "retrieval_policy",
+    "readiness",
+    "handoff",
+    "workflow_plan",
+    "safety"
+  ],
+  "properties": {
+    "schema_version": {"type": "string"},
+    "scenario_key": {"type": "string"},
+    "scenario_candidates": {"type": "array"},
+    "task_type": {"type": "string"},
+    "run_mode": {
+      "type": "string",
+      "enum": [
+        "debug_only",
+        "query_only",
+        "notification_only",
+        "resolution_only",
+        "partial_workflow"
+      ]
+    },
+    "metric_ids": {"type": "array", "items": {"type": "string"}},
+    "retrieval_policy": {"type": "object"},
+    "readiness": {
+      "type": "object",
+      "required": [
+        "status",
+        "blocking_reasons",
+        "clarification_fields",
+        "human_confirmation_required"
+      ]
+    },
+    "handoff": {"type": "object"},
+    "workflow_plan": {"type": "object"},
+    "safety": {"type": "object"}
+  }
+}

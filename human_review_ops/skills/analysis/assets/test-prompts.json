@@ -12,7 +12,7 @@
       "expected": {
         "trigger": true,
         "scenario_key": "efficiency-label-rate",
-        "task_type": "readonly_analysis",
+        "task_type": "low_label_rate_grading",
         "output_contract": [
           "query_plan",
           "readonly_execution",
@@ -21,7 +21,7 @@
           "provenance"
         ],
         "must_include_constraints": [
-          "total_review_in_cnt > 100",
+          "notice_has_no_review_in_threshold",
           "label_rate = SUM(label_cnt) / SUM(review_done_cnt)",
           "bracket_dataset_field_syntax",
           "default_grading_dimensions=mach_root_label_name×strategy_id×strategy_name",
@@ -62,7 +62,7 @@
       "expected": {
         "trigger": true,
         "scenario_key": "efficiency-auto-disposal-accuracy",
-        "task_type": "readonly_analysis",
+        "task_type": "auto_disposal_accuracy_trend",
         "output_contract": [
           "query_plan",
           "readonly_execution",
@@ -90,7 +90,7 @@
       "expected": {
         "trigger": true,
         "scenario_key": "quality-inspection-accuracy",
-        "task_type": "readonly_analysis",
+        "task_type": "quality_inspection_trend",
         "output_contract": [
           "query_plan",
           "readonly_execution",
