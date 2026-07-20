@@ -3,13 +3,15 @@
   "scenario_key": "efficiency-label-rate",
   "source": {
     "type": "lark_sheet",
-    "spreadsheet_token_env": "HUMAN_REVIEW_OPS_PLUS1_SHEET_TOKEN",
-    "sheet_id": "0301e2",
-    "sheet_name": "Sheet1",
-    "range": "A1:N1000",
-    "read_at": "2026-07-14",
+    "url": "https://bytedance.larkoffice.com/wiki/XjcwwUp4KiMdsNk0k7uc7aCEnrd",
+    "sheet_id": "zXKBBM",
+    "sheet_name": "保持不变明细表",
+    "range": "A1:V",
+    "read_at": "2026-07-20",
     "refresh_policy": "current_sheet_authoritative",
-    "filter": "+1评估 == 同意"
+    "filter": "+1评估 == 同意",
+    "excluded_agreed_without_strategy_id": 16,
+    "excluded_reason": "report_flow strategies keyed by reason are handled separately"
   },
   "raw_agreed_count": 72,
   "unique_strategy_count": 71,

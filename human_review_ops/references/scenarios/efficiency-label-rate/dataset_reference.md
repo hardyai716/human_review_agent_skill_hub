@@ -123,9 +123,9 @@
 | `更新日期` | 同一策略在原始飞书表中的 `更新日期` | 命中且存在日期时输出 `YYYY-MM-DD`；历史同意清单中无当前日期的策略输出空。 |
 | `+1同意日期是否在本次统计周期前` | `是否+1同意`、`更新日期`、当前统计周期开始日期 | `是否+1同意 = 是` 且 `更新日期 < 当前统计周期开始日期` 时输出 `是`，否则输出 `否`。 |
 
-资产来源由环境配置 `HUMAN_REVIEW_OPS_PLUS1_SHEET_TOKEN` 指向，筛选条件为 `+1评估 = 同意`。发布资产不得固化真实 token。该清单会持续更新，默认每天第一次使用该策略清单时必须只读刷新飞书表格，并用当前表内容覆盖本地 `plus1_agreed_strategy_updates.json`；日内重复使用可复用当日已刷新的本地资产。
+资产来源由 `plus1_agreed_strategy_updates.json.source` 声明的治理飞书表指向，筛选条件为 `+1评估 = 同意`。发布资产不得固化真实 token。该清单会持续更新，默认每天第一次使用该策略清单时必须只读刷新飞书表格，并用当前表内容覆盖本地 `plus1_agreed_strategy_updates.json`；日内重复使用可复用当日已刷新的本地资产。
 
-全等级报表除保留完整 `综合` 外，还必须输出 `综合_剔除+1同意`：以当前统计周期开始日期为 cutoff，剔除 `是否+1同意 = 是` 且 `更新日期 < cutoff` 的策略。示例：周期为 `2026-07-06` 至 `2026-07-12` 时，剔除 `2026-07-06` 之前已同意的策略；`更新日期` 为空或不早于 `2026-07-06` 的行保留。
+全等级报表除保留完整 `综合` 外，还必须输出 `综合_剔除+1同意`：以当前统计周期开始日期为 cutoff，单策略维度剔除 `是否+1同意 = 是` 且 `更新日期 < cutoff` 的策略；风险域维度在其本期和上期成员策略聚合前应用同一剔除集合。示例：周期为 `2026-07-06` 至 `2026-07-12` 时，剔除 `2026-07-06` 之前已同意的策略；`更新日期` 为空或不早于 `2026-07-06` 的行保留。
 
 汇总统计也必须成对输出：`汇总统计` 基于完整 `综合` 聚合，`汇总统计_剔除+1同意` 基于 `综合_剔除+1同意` 聚合，二者字段结构保持一致。汇总统计中的 `低效策略打标率` 必须与表内展示量一致，按 `低效策略日均打标量 / 低效策略日均完审量` 计算。
 
@@ -229,7 +229,7 @@ AND `[一轮队列名称]` NOT LIKE '%特殊%'
 - 可空维度做 `ifNull` / `coalesce` / `case` 归一化后，内部别名不得与底表物理字段或 Aeolus 展示字段同名，统一使用 `*_key`。例如必须写 `ifNull(`[机审一级标签]`, '（空/机审一级标签）') AS mach_root_label_key` 并 `GROUP BY mach_root_label_key`，外层再 `mach_root_label_key AS mach_root_label_name`。禁止写 `AS mach_root_label_name GROUP BY mach_root_label_name`，否则 Aeolus / ClickHouse 可能解析到原始字段，导致 NULL 维度桶丢失。
 - 空机审一级标签补映射也必须输出到内部稳定别名 `mach_root_label_key`，不得直接写为展示字段 `mach_root_label_name` 后参与 `GROUP BY`。
 - 默认低打标率分级不得按 `reason` 分组；`reason` 只保留为样本过滤字段，即必须继续排除 `recall_skip_L6` 和 `fatal_output`。
-- 风险域爆量类查询必须先按 `mach_root_label_key × strategy_id_key × strategy_name_key` 筛出低效策略，再按 `mach_root_label_key` 汇总。风险域维度输出时 `strategy_id`、`strategy_name` 置空。
+- 风险域爆量类查询必须先按 `mach_root_label_key × strategy_id_key × strategy_name_key` 筛出低效策略，再从本期和上期成员集剔除统计周期前已 +1 同意的策略；每个成员策略按自身有数天数计算日均后，再按 `mach_root_label_key` 求和。风险域维度输出时 `strategy_id`、`strategy_name` 置空。
 
 ## 查询模板参数化
 

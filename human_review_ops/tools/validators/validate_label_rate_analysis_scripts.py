@@ -108,6 +108,7 @@ LEVEL_WINDOW_SNIPPETS = {
 def main() -> None:
     validate_imported_module_contract()
     validate_explicit_period_contract()
+    validate_risk_domain_plus1_preaggregation_contract()
     validate_report_flow_contract()
     validate_cli_dry_run()
     print("Label-rate analysis scripts OK")
@@ -154,6 +155,81 @@ def validate_explicit_period_contract() -> None:
         "QP-ELR-REAL-LOW-LABEL-RATE-GRADING-20260706-20260712"
     ):
         raise AssertionError("Explicit QueryPlan id must include period.")
+
+
+def validate_risk_domain_plus1_preaggregation_contract() -> None:
+    time_range = label_rate_analysis.build_grading_time_range(
+        start_date="2026-07-13",
+        end_date="2026-07-19",
+    )
+    original_loader = label_rate_analysis.load_plus1_agreed_index
+    test_asset = {
+        "before_cutoff": {"update_date": "2026-07-12"},
+        "on_cutoff": {"update_date": "2026-07-13"},
+        "after_cutoff": {"update_date": "2026-07-14"},
+        "quoted'id": {"update_date": "2026-07-01"},
+        "missing_date": {"update_date": ""},
+    }
+    try:
+        label_rate_analysis.load_plus1_agreed_index = lambda: test_asset
+        excluded_ids = label_rate_analysis.risk_domain_pre_period_plus1_strategy_ids(
+            time_range
+        )
+        if excluded_ids != ["before_cutoff", "quoted'id"]:
+            raise AssertionError(
+                "Risk-domain +1 exclusion must contain only pre-period IDs: "
+                f"{excluded_ids}"
+            )
+
+        risk_sql = label_rate_analysis.risk_domain_spike_source_sql(time_range)
+        filter_prefix = (
+            "ifNull(`[strategy_id]`, '（空/strategy_id）') NOT IN ("
+        )
+        if risk_sql.count(filter_prefix) < 4:
+            raise AssertionError(
+                "Risk-domain source must apply +1 exclusions to current/previous "
+                "aggregate and daily inputs."
+            )
+        for expected in (
+            "COUNT(DISTINCT dt) AS strategy_data_days",
+            "SUM(cur_daily.jin_shen / cur_strategy_days.strategy_data_days)",
+            "SUM(cur_daily.wan_shen / cur_strategy_days.strategy_data_days)",
+            "SUM(prev_daily.jin_shen / prev_strategy_days.strategy_data_days)",
+        ):
+            if expected not in risk_sql:
+                raise AssertionError(
+                    f"Risk-domain strategy-average SQL missing {expected!r}."
+                )
+        if "SUM(avg_review_" in risk_sql:
+            raise AssertionError(
+                "Risk-domain SQL must not nest aggregates through avg_* aliases."
+            )
+        for expected in ("'before_cutoff'", "'quoted''id'"):
+            if expected not in risk_sql:
+                raise AssertionError(
+                    f"Risk-domain +1 exclusion SQL missing {expected!r}."
+                )
+        for unexpected in ("'on_cutoff'", "'after_cutoff'", "'missing_date'"):
+            if unexpected in risk_sql:
+                raise AssertionError(
+                    f"Risk-domain +1 exclusion SQL incorrectly contains {unexpected!r}."
+                )
+
+        unfiltered_strategy_sql = label_rate_analysis.period_aggregate_sql(
+            7,
+            0,
+            time_range,
+        )
+        if filter_prefix in unfiltered_strategy_sql:
+            raise AssertionError(
+                "Single-strategy aggregation must remain unfiltered by +1 status."
+            )
+        if filter_prefix in label_rate_analysis.build_notice_sql(time_range):
+            raise AssertionError(
+                "notice SQL must remain unfiltered by +1 status."
+            )
+    finally:
+        label_rate_analysis.load_plus1_agreed_index = original_loader
 
 
 def validate_cli_dry_run() -> None:
@@ -279,6 +355,11 @@ def assert_query_plan(query_plan: dict[str, Any], levels: list[str]) -> None:
         raise AssertionError("QueryPlan metric_id mismatch.")
     if query_plan["dimensions"] != label_rate_analysis.DIMENSIONS:
         raise AssertionError("QueryPlan dimensions mismatch.")
+    if (
+        "risk_domain_exclude_pre_period_plus1_agreed"
+        not in query_plan["filters"]
+    ):
+        raise AssertionError("QueryPlan missing risk-domain +1 exclusion filter.")
     if query_plan["levels"] != levels:
         raise AssertionError("QueryPlan levels mismatch.")
     if query_plan["level_priority"] != label_rate_analysis.LEVEL_PRIORITY:

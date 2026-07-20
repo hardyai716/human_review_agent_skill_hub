@@ -198,8 +198,10 @@ def assert_level_counts(plan: dict[str, Any]) -> None:
     )
     if not isinstance(comprehensive_group_count, int) or comprehensive_group_count < 0:
         raise AssertionError("comprehensive strategy group count must be non-negative.")
-    if comprehensive_group_count > level_counts.get("notice", 0):
-        raise AssertionError("comprehensive group count cannot exceed notice count.")
+    if comprehensive_group_count > sum(level_counts.values()):
+        raise AssertionError(
+            "comprehensive group count cannot exceed total raw level hits."
+        )
 
 
 def assert_level_rules(plan: dict[str, Any]) -> None:

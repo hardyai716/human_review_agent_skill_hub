@@ -496,6 +496,53 @@ def sql_in_list(values: list[str], indent: str = "    ") -> str:
     return (",\n" + indent).join(quote_sql_string(value) for value in values)
 
 
+def risk_domain_plus1_exclusion_cutoff(
+    time_range: dict[str, Any] | None,
+) -> date:
+    """Return the current-period start used by risk-domain +1 filtering."""
+    if time_range and time_range.get("current_start"):
+        return parse_date_value(str(time_range["current_start"]))
+    return date.today() - timedelta(days=CURRENT_DAYS)
+
+
+def risk_domain_pre_period_plus1_strategy_ids(
+    time_range: dict[str, Any] | None,
+) -> list[str]:
+    """Return +1-agreed strategy IDs that must not enter risk-domain rollups.
+
+    Risk-domain rows aggregate multiple strategy IDs and therefore cannot be
+    corrected by row-level filtering after aggregation. The exclusion cutoff is
+    the current-period start, matching the existing
+    ``综合_剔除+1同意`` contract.
+    """
+    cutoff = risk_domain_plus1_exclusion_cutoff(time_range)
+    plus1_index = load_plus1_agreed_index()
+    excluded_strategy_ids = sorted(
+        strategy_id
+        for strategy_id, entry in plus1_index.items()
+        if (update_date := parse_optional_date(entry.get("update_date"))) is not None
+        and update_date < cutoff
+    )
+    return excluded_strategy_ids
+
+
+def strategy_id_exclusion_filter_sql(
+    excluded_strategy_ids: list[str] | None,
+    indent: str,
+) -> str:
+    """Build a raw-strategy filter for risk-domain pre-aggregation only."""
+    if not excluded_strategy_ids:
+        return ""
+    values = sql_in_list(excluded_strategy_ids, indent + "  ")
+    return "\n".join(
+        [
+            f"{indent}AND ifNull(`[strategy_id]`, '（空/strategy_id）') NOT IN (",
+            f"{indent}  {values}",
+            f"{indent})",
+        ]
+    )
+
+
 def report_flow_filter_sql(indent: str = "  ") -> str:
     return "\n".join(
         [
@@ -805,6 +852,8 @@ def period_aggregate_sql(
     start_days_ago: int,
     end_days_ago: int,
     time_range: dict[str, Any] | None = None,
+    *,
+    excluded_strategy_ids: list[str] | None = None,
 ) -> str:
     p_date_filter = p_date_filter_sql(start_days_ago, end_days_ago, time_range)
     return f"""
@@ -833,6 +882,7 @@ FROM (
   FROM {SOURCE_TABLE}
   WHERE {p_date_filter}
 {base_filter_sql("    ")}
+{strategy_id_exclusion_filter_sql(excluded_strategy_ids, "    ")}
   GROUP BY mach_root_label_key, strategy_id_key, strategy_name_key, dt
 ) daily
 GROUP BY mach_root_label_key, strategy_id_key, strategy_name_key
@@ -848,6 +898,8 @@ def daily_strategy_sql(
     start_days_ago: int,
     end_days_ago: int,
     time_range: dict[str, Any] | None = None,
+    *,
+    excluded_strategy_ids: list[str] | None = None,
 ) -> str:
     p_date_filter = p_date_filter_sql(start_days_ago, end_days_ago, time_range)
     return f"""
@@ -862,15 +914,45 @@ SELECT
 FROM {SOURCE_TABLE}
 WHERE {p_date_filter}
 {base_filter_sql("  ")}
+{strategy_id_exclusion_filter_sql(excluded_strategy_ids, "  ")}
 GROUP BY mach_root_label_key, strategy_id_key, strategy_name_key, dt
 """.strip()
 
 
 def risk_domain_spike_source_sql(time_range: dict[str, Any] | None = None) -> str:
-    cur = f"({period_aggregate_sql(7, 0, time_range)}) cur_strategy"
-    prev = f"({period_aggregate_sql(14, 7, time_range)}) prev_strategy"
-    cur_daily = f"({daily_strategy_sql(7, 0, time_range)}) cur_daily"
-    prev_daily = f"({daily_strategy_sql(14, 7, time_range)}) prev_daily"
+    excluded_strategy_ids = risk_domain_pre_period_plus1_strategy_ids(time_range)
+    cur = f"""(
+{period_aggregate_sql(
+    7,
+    0,
+    time_range,
+    excluded_strategy_ids=excluded_strategy_ids,
+)}
+) cur_strategy"""
+    prev = f"""(
+{period_aggregate_sql(
+    14,
+    7,
+    time_range,
+    excluded_strategy_ids=excluded_strategy_ids,
+)}
+) prev_strategy"""
+    cur_daily = f"""(
+{daily_strategy_sql(
+    7,
+    0,
+    time_range,
+    excluded_strategy_ids=excluded_strategy_ids,
+)}
+) cur_daily"""
+    prev_daily = f"""(
+{daily_strategy_sql(
+    14,
+    7,
+    time_range,
+    excluded_strategy_ids=excluded_strategy_ids,
+)}
+) prev_daily"""
     return f"""
 (
   WITH
@@ -884,37 +966,73 @@ def risk_domain_spike_source_sql(time_range: dict[str, Any] | None = None) -> st
     FROM {prev}
     WHERE label_rate < 0.1
   ),
+  cur_strategy_days AS (
+    SELECT
+      mach_root_label_key,
+      strategy_id_key,
+      strategy_name_key,
+      COUNT(DISTINCT dt) AS strategy_data_days
+    FROM {cur_daily}
+    GROUP BY mach_root_label_key, strategy_id_key, strategy_name_key
+  ),
+  prev_strategy_days AS (
+    SELECT
+      mach_root_label_key,
+      strategy_id_key,
+      strategy_name_key,
+      COUNT(DISTINCT dt) AS strategy_data_days
+    FROM {prev_daily}
+    GROUP BY mach_root_label_key, strategy_id_key, strategy_name_key
+  ),
   cur_domain AS (
     SELECT
       cur_daily.mach_root_label_key AS mach_root_label_name,
       '' AS strategy_id,
       '' AS strategy_name,
-      COUNT(DISTINCT cur_daily.dt) AS data_days,
+      MAX(cur_strategy_days.strategy_data_days) AS data_days,
       MAX(cur_daily.dt) AS max_data_date,
       SUM(cur_daily.jin_shen) AS total_review_in_cnt,
       SUM(cur_daily.wan_shen) AS total_review_done_cnt,
       SUM(cur_daily.da_biao) AS total_label_cnt,
-      SUM(cur_daily.jin_shen) / COUNT(DISTINCT cur_daily.dt) AS avg_review_in_cnt,
-      SUM(cur_daily.wan_shen) / COUNT(DISTINCT cur_daily.dt) AS avg_review_done_cnt,
-      SUM(cur_daily.da_biao) / COUNT(DISTINCT cur_daily.dt) AS avg_label_cnt,
-      if(SUM(cur_daily.wan_shen) = 0, 0, SUM(cur_daily.da_biao) / SUM(cur_daily.wan_shen)) AS label_rate
+      SUM(cur_daily.jin_shen / cur_strategy_days.strategy_data_days) AS avg_review_in_cnt,
+      SUM(cur_daily.wan_shen / cur_strategy_days.strategy_data_days) AS avg_review_done_cnt,
+      SUM(cur_daily.da_biao / cur_strategy_days.strategy_data_days) AS avg_label_cnt,
+      if(
+        SUM(cur_daily.wan_shen / cur_strategy_days.strategy_data_days) = 0,
+        0,
+        SUM(cur_daily.da_biao / cur_strategy_days.strategy_data_days)
+        / SUM(cur_daily.wan_shen / cur_strategy_days.strategy_data_days)
+      ) AS label_rate
     FROM {cur_daily}
     INNER JOIN cur_low_keys
       ON cur_daily.mach_root_label_key = cur_low_keys.mach_root_label_name
      AND cur_daily.strategy_id_key = cur_low_keys.strategy_id
      AND cur_daily.strategy_name_key = cur_low_keys.strategy_name
+    INNER JOIN cur_strategy_days
+      ON cur_daily.mach_root_label_key = cur_strategy_days.mach_root_label_key
+     AND cur_daily.strategy_id_key = cur_strategy_days.strategy_id_key
+     AND cur_daily.strategy_name_key = cur_strategy_days.strategy_name_key
     GROUP BY cur_daily.mach_root_label_key
   ),
   prev_domain AS (
     SELECT
       prev_daily.mach_root_label_key AS mach_root_label_name,
-      SUM(prev_daily.jin_shen) / COUNT(DISTINCT prev_daily.dt) AS prev_avg_review_in_cnt,
-      if(SUM(prev_daily.wan_shen) = 0, 0, SUM(prev_daily.da_biao) / SUM(prev_daily.wan_shen)) AS prev_label_rate
+      SUM(prev_daily.jin_shen / prev_strategy_days.strategy_data_days) AS prev_avg_review_in_cnt,
+      if(
+        SUM(prev_daily.wan_shen / prev_strategy_days.strategy_data_days) = 0,
+        0,
+        SUM(prev_daily.da_biao / prev_strategy_days.strategy_data_days)
+        / SUM(prev_daily.wan_shen / prev_strategy_days.strategy_data_days)
+      ) AS prev_label_rate
     FROM {prev_daily}
     INNER JOIN prev_low_keys
       ON prev_daily.mach_root_label_key = prev_low_keys.mach_root_label_name
      AND prev_daily.strategy_id_key = prev_low_keys.strategy_id
      AND prev_daily.strategy_name_key = prev_low_keys.strategy_name
+    INNER JOIN prev_strategy_days
+      ON prev_daily.mach_root_label_key = prev_strategy_days.mach_root_label_key
+     AND prev_daily.strategy_id_key = prev_strategy_days.strategy_id_key
+     AND prev_daily.strategy_name_key = prev_strategy_days.strategy_name_key
     GROUP BY prev_daily.mach_root_label_key
   )
   SELECT
@@ -1445,6 +1563,7 @@ def build_query_plan(
             "label_rate_lt_thresholds",
             "default_three_dimension_strategy_grain",
             "risk_domain_low_strategy_rollup",
+            "risk_domain_exclude_pre_period_plus1_agreed",
         ],
         "levels": levels,
         "level_priority": LEVEL_PRIORITY,
