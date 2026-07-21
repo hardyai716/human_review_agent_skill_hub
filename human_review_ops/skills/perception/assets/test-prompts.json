@@ -94,6 +94,24 @@
       }
     },
     {
+      "id": "perception-should-trigger-weekly-filtered-summary-comparison",
+      "category": "should-trigger",
+      "coverage": [
+        "efficiency-label-rate",
+        "weekly-comparison",
+        "notification-routing"
+      ],
+      "prompt": "对比 2026-07-06 至 2026-07-12 和 2026-07-13 至 2026-07-19 的汇总统计_剔除+1同意，按截图格式生成飞书表格，并在我确认后推送链接。",
+      "expected": {
+        "trigger": true,
+        "scenario_key": "efficiency-label-rate",
+        "task_type": "notification_request",
+        "workflow_intent": "analysis_then_notification",
+        "requires_host_send_confirmation": true,
+        "rationale": "两段显式周期的剔除口径汇总对比需要先完成两个周期的全等级只读分级，再生成飞书表格和发送草稿。"
+      }
+    },
+    {
       "id": "perception-trigger-and-block-overreach-execution",
       "category": "should-trigger",
       "coverage": [

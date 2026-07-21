@@ -26,6 +26,10 @@ from label_rate_notification_artifacts import (  # noqa: E402
     build_level_top_rows,
     flatten_level_top_rows,
 )
+from label_rate_weekly_summary_comparison import (  # noqa: E402
+    COMPARISON_SHEET_NAME,
+    build_weekly_summary_comparison,
+)
 from render_label_rate_grading_card import card_design_check  # noqa: E402
 
 FORBIDDEN_CARD_CONTRACT_TERMS = (
@@ -369,6 +373,7 @@ def main() -> None:
         )
         validate_artifacts(artifacts)
     validate_sheet_import_optin()
+    validate_weekly_filtered_summary_comparison()
     print("Label-rate notification scripts smoke OK.")
 
 
@@ -466,6 +471,79 @@ def validate_sheet_import_optin() -> None:
         import_result = read_json(optin_output_dir / "sheet_import_result.json")
         if import_result.get("status") != "success":
             raise AssertionError("sheet import result must record success.")
+
+
+def validate_weekly_filtered_summary_comparison() -> None:
+    with tempfile.TemporaryDirectory(prefix="label-rate-weekly-comparison-") as tmp:
+        tmp_path = Path(tmp)
+        previous_path = tmp_path / "previous" / "汇总统计_剔除+1同意.csv"
+        current_path = tmp_path / "current" / "汇总统计_剔除+1同意.csv"
+        header = (
+            "机审一级标签,POC,低效策略数,低效策略日均进审量,"
+            "低效策略日均完审量,低效策略日均打标量,低效策略打标率\n"
+        )
+        previous_path.parent.mkdir(parents=True)
+        current_path.parent.mkdir(parents=True)
+        previous_path.write_text(
+            "\ufeff" + header
+            + "国家安全,杜衡,2,100,100,5,0.05\n"
+            + "偏激社会情绪和涉外言论,张发奇,1,30,30,3,0.10\n",
+            encoding="utf-8",
+        )
+        current_path.write_text(
+            "\ufeff" + header
+            + "国家安全,杜衡,1,120,120,12,0.10\n"
+            + "领导人,宋诗慧,1,80,80,4,0.05\n",
+            encoding="utf-8",
+        )
+        artifacts = build_weekly_summary_comparison(
+            previous_summary_path=previous_path,
+            current_summary_path=current_path,
+            previous_start_date="2026-07-06",
+            previous_end_date="2026-07-12",
+            current_start_date="2026-07-13",
+            current_end_date="2026-07-19",
+            output_dir=tmp_path / "output",
+        )
+
+        if artifacts.sheet_url is not None:
+            raise AssertionError("comparison must not import a Sheet by default.")
+        if artifacts.online_write_attempted or artifacts.online_write_executed:
+            raise AssertionError("comparison must keep online writes opt-in.")
+        if len(artifacts.comparison_rows) != 3:
+            raise AssertionError("comparison must retain the union of both periods.")
+        if artifacts.comparison_rows[0]["avg_review_done_delta"] != 20:
+            raise AssertionError("comparison delta mismatch.")
+        if artifacts.comparison_rows[-1]["previous_strategy_count"] != 0:
+            raise AssertionError("current-only summary key must retain previous zero.")
+        totals = artifacts.totals
+        if totals["previous_strategy_count"] != 3:
+            raise AssertionError("comparison previous total strategy count mismatch.")
+        if totals["current_strategy_count"] != 2:
+            raise AssertionError("comparison current total strategy count mismatch.")
+        if totals["previous_label_rate"] != 8 / 130:
+            raise AssertionError("comparison previous weighted label rate mismatch.")
+        if totals["current_label_rate"] != 16 / 200:
+            raise AssertionError("comparison current weighted label rate mismatch.")
+
+        workbook = load_workbook(artifacts.workbook_path, data_only=False)
+        try:
+            sheet = workbook[COMPARISON_SHEET_NAME]
+            if sheet.freeze_panes != "C3":
+                raise AssertionError("comparison workbook must freeze two headers and dimensions.")
+            if "A1:A2" not in {str(item) for item in sheet.merged_cells.ranges}:
+                raise AssertionError("comparison workbook missing grouped header merge.")
+            if sheet["G3"].value != 20:
+                raise AssertionError("comparison workbook delta cell mismatch.")
+            color = sheet["G3"].fill.fgColor.rgb or ""
+            if not color.endswith("F4CCCC"):
+                raise AssertionError("positive comparison delta must be highlighted red.")
+            if sheet["H5"].value != "/":
+                raise AssertionError("zero-denominator growth must render as slash.")
+            if "数据源：" not in str(sheet["A8"].value):
+                raise AssertionError("comparison workbook missing source footer.")
+        finally:
+            workbook.close()
 
 
 if __name__ == "__main__":

@@ -164,6 +164,20 @@
           ]
         },
         {
+          "path": "notification/scripts/label_rate_weekly_summary_comparison.py",
+          "entrypoint": "python3 scripts/label_rate_weekly_summary_comparison.py --previous-summary <previous>/汇总统计_剔除+1同意.csv --current-summary <current>/汇总统计_剔除+1同意.csv --previous-start-date YYYY-MM-DD --previous-end-date YYYY-MM-DD --current-start-date YYYY-MM-DD --current-end-date YYYY-MM-DD --output-dir <output>",
+          "smoke_command": "python3 scripts/label_rate_weekly_summary_comparison.py --help",
+          "side_effects": [
+            "local_file_write",
+            "online_write_requires_explicit_opt_in"
+          ],
+          "outputs": [
+            "weekly_summary_comparison.json",
+            "weekly comparison XLSX",
+            "optional sheet_url"
+          ]
+        },
+        {
           "path": "notification/scripts/render_label_rate_grading_card.py",
           "entrypoint": "module:render_grading_card",
           "smoke_command": "python3 scripts/selfcheck.py",
@@ -213,6 +227,7 @@
         "notification/assets/efficiency-label-rate/low_efficiency_grading_card_template.json",
         "notification/assets/efficiency-label-rate/mach_root_label_poc_mapping.json",
         "notification/scripts/label_rate_notification_artifacts.py",
+        "notification/scripts/label_rate_weekly_summary_comparison.py",
         "notification/scripts/render_label_rate_grading_card.py",
         "notification/scripts/resolve_label_rate_poc_routing.py",
         "notification/scripts/card_hash.py",
@@ -304,6 +319,20 @@
           "outputs": ["notification_draft.json", "send_plan.json", "poc_routing_plan.json", "CSV/XLSX report", "Card JSON"]
         },
         {
+          "path": "efficiency-label-rate-ops/scripts/label_rate_weekly_summary_comparison.py",
+          "entrypoint": "python3 scripts/label_rate_weekly_summary_comparison.py --previous-summary <previous>/汇总统计_剔除+1同意.csv --current-summary <current>/汇总统计_剔除+1同意.csv --previous-start-date YYYY-MM-DD --previous-end-date YYYY-MM-DD --current-start-date YYYY-MM-DD --current-end-date YYYY-MM-DD --output-dir <output>",
+          "smoke_command": "python3 scripts/selfcheck.py",
+          "side_effects": [
+            "local_file_write",
+            "online_write_requires_explicit_opt_in"
+          ],
+          "outputs": [
+            "weekly_summary_comparison.json",
+            "weekly comparison XLSX",
+            "optional sheet_url"
+          ]
+        },
+        {
           "path": "efficiency-label-rate-ops/scripts/render_label_rate_grading_card.py",
           "entrypoint": "module:render_grading_card",
           "smoke_command": "python3 scripts/selfcheck.py",
@@ -364,6 +393,7 @@
         "efficiency-label-rate-ops/scripts/label_rate_perception.py",
         "efficiency-label-rate-ops/scripts/label_rate_analysis.py",
         "efficiency-label-rate-ops/scripts/label_rate_notification_artifacts.py",
+        "efficiency-label-rate-ops/scripts/label_rate_weekly_summary_comparison.py",
         "efficiency-label-rate-ops/scripts/render_label_rate_grading_card.py",
         "efficiency-label-rate-ops/scripts/resolve_label_rate_poc_routing.py",
         "efficiency-label-rate-ops/scripts/card_hash.py",

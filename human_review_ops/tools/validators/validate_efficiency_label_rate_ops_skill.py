@@ -58,6 +58,11 @@ COMMANDS = [
     ],
     [
         sys.executable,
+        "human_review_ops/tools/validators/"
+        "validate_label_rate_weekly_summary_comparison_runner.py",
+    ],
+    [
+        sys.executable,
         "human_review_ops/tools/validators/validate_skill_productization.py",
         "--strict",
         "--profile",

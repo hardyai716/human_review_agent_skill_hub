@@ -90,6 +90,34 @@ TOP 低效组合：
 本结果仅为调试草稿，真实触达前需要人工确认。
 ```
 
+## 两周期剔除 +1 同意汇总对比草稿
+
+```text
+【人审效率周对比｜低效策略汇总统计（剔除 +1 同意）】
+
+上周期：{previous_time_window}
+本周期：{current_time_window}
+
+汇总：
+- 低效策略数：{previous_strategy_count} → {current_strategy_count}（{strategy_count_delta}）
+- 低效策略日均完审量：{previous_avg_review_done_cnt} → {current_avg_review_done_cnt}（{avg_review_done_delta}，{avg_review_done_growth_rate}）
+- 低效策略加权打标率：{previous_label_rate} → {current_label_rate}
+
+重点变化：
+{top_positive_delta_rows}
+
+对比表：{sheet_url}
+
+口径：
+- 每个周期分别使用 `汇总统计_剔除+1同意`。
+- 每个周期按 `更新日期 < 当前周期开始日` 剔除 +1 同意策略。
+- 总计打标率 = SUM(日均打标量) / SUM(日均完审量)，不平均行级打标率。
+
+说明：
+- 本通知默认仅为草稿；真实发送、在线表格导入均需用户明确确认。
+- source_footer：{source_footer}
+```
+
 ## 升级草稿
 
 ```text

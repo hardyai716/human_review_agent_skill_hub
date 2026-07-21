@@ -33,6 +33,7 @@ REQUIRED_TOP_LEVEL_FIELDS = {
 def main() -> None:
     validate_ready_case()
     validate_report_flow_case()
+    validate_weekly_comparison_notification_case()
     validate_needs_clarification_case()
     print("Label-rate perception scripts OK")
 
@@ -132,6 +133,29 @@ def validate_report_flow_case() -> None:
         raise AssertionError(f"Report-flow case status mismatch: {readiness}")
     if payload.get("handoff", {}).get("next_skill") != "analysis":
         raise AssertionError("Report-flow case should hand off to analysis.")
+    assert_no_side_effects(payload)
+
+
+def validate_weekly_comparison_notification_case() -> None:
+    payload = run_dry_run(
+        "对比 2026-07-06 至 2026-07-12 和 2026-07-13 至 2026-07-19 "
+        "的汇总统计_剔除+1同意，按截图样式生成飞书表格并在确认后推送。"
+    )
+    assert_common_contract(payload)
+
+    if payload["scenario_key"] != "efficiency-label-rate":
+        raise AssertionError("Weekly comparison scenario_key mismatch.")
+    if payload["task_type"] != "notification_request":
+        raise AssertionError("Weekly comparison must route as notification_request.")
+    workflow = payload.get("workflow_plan", {})
+    if workflow.get("intent_type") != "analysis_then_notification":
+        raise AssertionError(
+            "Weekly comparison must require analysis before notification."
+        )
+    if workflow.get("requires_host_send_confirmation") is not True:
+        raise AssertionError(
+            "Weekly comparison must require host send confirmation."
+        )
     assert_no_side_effects(payload)
 
 

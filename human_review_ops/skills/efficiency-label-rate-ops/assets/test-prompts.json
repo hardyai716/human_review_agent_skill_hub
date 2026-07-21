@@ -61,6 +61,25 @@
       }
     },
     {
+      "id": "label-rate-weekly-filtered-summary-comparison",
+      "category": "should-trigger",
+      "prompt": "先跑 2026-07-06 至 2026-07-12 的全等级低效打标结果，再与 2026-07-13 至 2026-07-19 的汇总统计_剔除+1同意按截图格式对比，生成飞书表格链接并在确认后推送。",
+      "coverage": [
+        "efficiency-label-rate",
+        "weekly-comparison",
+        "filtered-summary",
+        "explicit-period"
+      ],
+      "expected": {
+        "trigger": true,
+        "scenario_key": "efficiency-label-rate",
+        "task_type": "notification_request",
+        "run_mode": "debug_only",
+        "must_block_real_send": true,
+        "must_require_explicit_periods": true
+      }
+    },
+    {
       "id": "auto-disposal-adjacent-scenario",
       "category": "should-not-trigger",
       "prompt": "帮我看自动处置准确率下降的原因。",

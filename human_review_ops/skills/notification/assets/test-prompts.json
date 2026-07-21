@@ -50,6 +50,29 @@
       }
     },
     {
+      "id": "notification-trigger-weekly-filtered-summary-comparison",
+      "category": "should-trigger",
+      "coverage": [
+        "efficiency-label-rate",
+        "weekly-comparison",
+        "filtered-summary",
+        "online-write-checkpoint"
+      ],
+      "prompt": "对比 2026-07-06 至 2026-07-12 和 2026-07-13 至 2026-07-19 的汇总统计_剔除+1同意，按截图式双层表头生成飞书表格，并在我确认后发送链接。",
+      "expected": {
+        "trigger": true,
+        "scenario_key": "efficiency-label-rate",
+        "output_contract": [
+          "weekly_summary_comparison.json",
+          "weekly comparison XLSX",
+          "sheet_url"
+        ],
+        "must_require_explicit_periods": true,
+        "must_weight_total_label_rate": true,
+        "must_block_real_send_without_confirmation": true
+      }
+    },
+    {
       "id": "notification-should-not-trigger-analysis-only",
       "category": "should-not-trigger",
       "coverage": [

@@ -16,6 +16,7 @@ allowed-tools:
 - 用户要求把低打标率 `notice`、`P2`、`P1`、`P0` 结果整理成通知草稿。
 - 用户要求按 `mach_root_label_name` 映射负责人 (POC) 或生成触达对象计划。
 - 用户要求生成飞书 Card 2.0 预览、报表链接说明、升级话术或发送前检查清单。
+- 用户要求对两个明确周期的 `汇总统计_剔除+1同意` 做周环比/截图式对比，并生成飞书表格链接。
 
 ## 禁止使用
 
@@ -51,6 +52,7 @@ allowed-tools:
 - `run_mode`：默认调试模式 (`debug_only`)。
 - `card_title`：卡片标题。
 - `operator_confirmation`：是否已有人工确认；没有则保持阻断。
+- `previous_filtered_summary_csv` / `current_filtered_summary_csv`：两个明确周期各自的 `汇总统计_剔除+1同意.csv`；构建周对比时二者必须成对提供，且周期边界必须显式。
 
 ## 输出
 
@@ -64,6 +66,7 @@ allowed-tools:
 - `escalation_draft`：P0/P1 等需要升级时的话术草稿。
 - `evidence_refs`：引用的分析结果、报表、卡片哈希和来源页脚。
 - `failure_branches`：未映射负责人、缺少 open_id、缺少报表或用户要求真实群发时的处理分支。
+- `weekly_summary_comparison.json` / XLSX：按 `机审一级标签 × POC` 对齐的两周期剔除口径对比，含低效策略数、日均完审量、增量、增幅和加权打标率。
 
 ## 打标率能力矩阵
 
@@ -74,6 +77,7 @@ allowed-tools:
 - 预警维度：`单策略维度` 与 `风险域维度`。
 - 治理标记：`是否+1同意`、`更新日期`、`+1同意日期是否在本次统计周期前`。
 - 报表口径：`综合`、`综合_剔除+1同意`、`汇总统计`、`汇总统计_剔除+1同意`。
+- 两周期对比：仅可消费每个周期独立生成的 `汇总统计_剔除+1同意`；不得以完整口径、不同 cutoff 或过期快照替代。
 - 通知和闭环：POC 路由；`report_flow` 仅有 `enpool_reason` 时 fallback 到 `举报` POC；在线导入门禁 `--import-sheet` / `auto_import_sheet=true` 默认关闭；manual tracking (`manual_tracking`) 只记录本地调试闭环。
 
 ## 工作流
@@ -87,6 +91,7 @@ allowed-tools:
 7. 生成发送计划 (send_plan)：默认只发给用户本人预览，真实群发被阻断。
 8. 做群发门禁：没有人工确认、open_id、目标群和发送权限时，不得生成可执行群发动作。
 9. 输出失败分支和下一步人工确认项；需要闭环记录时交给解决技能。
+10. 用户要求周对比时，先确认两个周期分别已执行真实只读全等级分级，再以 `scripts/label_rate_weekly_summary_comparison.py` 生成截图式对比 XLSX；默认仅落本地，在线导入和外部发送仍由宿主在确认后执行。
 
 ## POC 路由
 
@@ -167,6 +172,7 @@ allowed-tools:
 
 - `scripts/label_rate_notification_artifacts.py`：从打标率分级 `analysis_result` JSONL 生成 `notification_draft.json`、`send_plan.json`、`poc_routing_plan.json`、分等级 CSV、`综合.csv`、`综合_剔除+1同意.csv`、`汇总统计.csv`、`汇总统计_剔除+1同意.csv`、XLSX 报表和 Card JSON；默认只写本地文件、不发送消息、不导入在线表格。只有显式传入 `--import-sheet`（或调用方传 `auto_import_sheet=True`）时才把 XLSX 导入为飞书在线表格，导入失败降级为空链接。
 - `scripts/sheet_importer.py`：通用 XLSX 到飞书电子表格导入工具，提供 `import_xlsx_as_feishu_sheet`，供需要在通知产物中回填 `sheet_url` 的场景复用。
+- `scripts/label_rate_weekly_summary_comparison.py`：消费两个明确周期的 `汇总统计_剔除+1同意.csv`，生成双层分组表头的周对比 XLSX 与 JSON。正向日均完审增量标红，总计打标率按日均打标量/日均完审量加权；`--import-sheet` 是显式在线写入门禁，脚本本身不发送消息。
 - `scripts/resolve_label_rate_poc_routing.py`：从 `analysis_result` JSONL 生成 `poc_routing_plan.json`。
 - `scripts/render_label_rate_grading_card.py`：作为 Python 模块导入，生成飞书 Card 2.0 JSON 和设计检查结果。
 - `scripts/card_hash.py`：计算和校验卡片数据哈希。
@@ -175,6 +181,17 @@ allowed-tools:
 
 ```bash
 python3 human_review_ops/skills/notification/scripts/label_rate_notification_artifacts.py --source <analysis_result.jsonl> --output-dir <notification_output_dir> --sheet-url <optional_sheet_url>
+```
+
+周对比脚本示例：
+
+```bash
+python3 human_review_ops/skills/notification/scripts/label_rate_weekly_summary_comparison.py \
+  --previous-summary <previous>/汇总统计_剔除+1同意.csv \
+  --current-summary <current>/汇总统计_剔除+1同意.csv \
+  --previous-start-date YYYY-MM-DD --previous-end-date YYYY-MM-DD \
+  --current-start-date YYYY-MM-DD --current-end-date YYYY-MM-DD \
+  --output-dir <comparison_output_dir>
 ```
 
 POC 路由脚本示例：
@@ -192,6 +209,7 @@ python3 human_review_ops/skills/notification/scripts/resolve_label_rate_poc_rout
 - 标签未映射负责人 (POC)：列入 `unmapped_labels`，不得真实发送。
 - 只有 POC 姓名、没有 open_id：保持 `requires_contact_resolution_before_real_send=true`。
 - 卡片哈希不一致：阻断发送，要求重新生成卡片。
+- 两个对比输入缺少任一周期、文件名不是 `汇总统计_剔除+1同意.csv`、列缺失或存在重复 `机审一级标签 × POC`：停止，不生成对比结论。
 - 用户要求绕过人工确认群发或拉人入群：拒绝执行，输出门禁失败原因。
 
 ## 验证

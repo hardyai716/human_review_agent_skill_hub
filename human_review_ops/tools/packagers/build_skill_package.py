@@ -122,6 +122,10 @@ SCENARIO_BUNDLE_SCRIPT_SOURCES = [
         "scripts/label_rate_notification_artifacts.py",
     ),
     (
+        "skills/notification/scripts/label_rate_weekly_summary_comparison.py",
+        "scripts/label_rate_weekly_summary_comparison.py",
+    ),
+    (
         "skills/notification/scripts/render_label_rate_grading_card.py",
         "scripts/render_label_rate_grading_card.py",
     ),
@@ -241,7 +245,7 @@ def build_combined_scenario_reference(
 def scenario_bundle_skill_md(scenario_key: str, bundle_name: str) -> str:
     return f"""---
 name: {bundle_name}
-description: "当用户需要处理 {scenario_key} 打标率场景时使用：可识别打标率意图和数据方向，生成 QueryPlan 与只读分析，按 notice/P2/P1/P0 分级，产出报表、通知/Card 草稿、POC 路由和本地 manual tracking；默认 debug_only 与只读，只生成本地草稿/报表/跟踪记录，不真实发送、不写线上状态、不执行在线表格导入，外部动作必须用户确认。"
+description: "当用户需要处理 {scenario_key} 打标率场景时使用：生成只读全等级分级、汇总统计、两周期剔除+1同意对比、报表、通知/Card 草稿、POC 路由和本地跟踪；默认 debug_only，真实发送和在线导入必须用户确认。"
 allowed-tools:
   - Read
   - Bash
@@ -254,6 +258,7 @@ allowed-tools:
 - 用户明确询问打标率、低打标率、低效打标策略、进审量、完审量、打标量、reason、机审一级标签拆解。
 - 用户要求对 `notice/P2/P1/P0` 低效打标策略分级。
 - 用户要求基于既有分析结果生成通知草稿、飞书 Card、XLSX 报表、`sheet_url` 或 `send_plan`。
+- 用户要求比较两个明确周期的 `汇总统计_剔除+1同意`，按截图式格式生成飞书表格或推送链接。
 - 用户要求记录本地人工跟踪、继续观察或闭环检查。
 
 ## 禁止使用
@@ -274,6 +279,7 @@ allowed-tools:
 
 - `raw_user_request` 或上游感知结果。
 - 可选 `analysis_result.jsonl`、`sheet_url`、通知草稿、`send_plan`。
+- 两周期对比可选两个周期独立生成的 `汇总统计_剔除+1同意.csv` 与显式日期边界。
 - 可选时间窗口、维度和运行模式；默认 `debug_only`，即只生成本地草稿、报表和跟踪记录。
 
 ## 运行模式与安全边界
@@ -288,6 +294,7 @@ allowed-tools:
 - 感知结果：`scenario_key`、`task_type`、`readiness`、`workflow_plan`。
 - 分析结果：`QueryPlan`、SQL、`analysis_result`、`source_footer`、`provenance`。
 - 通知产物：`notification_draft.json`、`send_plan.json`、`poc_routing_plan.json`、Card JSON、CSV/XLSX 报表、可选 `sheet_url`。
+- 周对比产物：`weekly_summary_comparison.json`、双层分组表头 XLSX、可选 `sheet_url` 与宿主发送回执。
 - 解决记录：`manual_tracking.json`。
 
 ## 打标率能力矩阵
@@ -299,6 +306,7 @@ allowed-tools:
 - 预警维度：`单策略维度` 与 `风险域维度`。
 - 治理标记：`是否+1同意`、`更新日期`、`+1同意日期是否在本次统计周期前`。
 - 报表口径：`综合`、`综合_剔除+1同意`、`汇总统计`、`汇总统计_剔除+1同意`。
+- 周对比：只比较两个周期各自独立生成的 `汇总统计_剔除+1同意`；按 `机审一级标签 × POC` 合并，增量正值标红，总计打标率按日均量加权。
 - 通知和闭环：POC 路由；`report_flow` 仅有 `enpool_reason` 时 fallback 到 `举报` POC；在线导入门禁 `--import-sheet` / `auto_import_sheet=true` 默认关闭；manual tracking (`manual_tracking`) 只记录本地调试闭环。
 
 ## 工作流
@@ -307,7 +315,8 @@ allowed-tools:
 2. 使用 `references/scenario-index.md` 定位指标契约、数据集说明、分析规则、通知模板和状态机。
 3. 使用 `scripts/label_rate_analysis.py` 生成统一 AnalysisArtifact、QueryPlan、SQL、分级规则和 source_footer；真实只读查询由具备权限的受控执行器执行。
 4. 使用 `scripts/label_rate_notification_artifacts.py` 生成通知草稿、报表、Card 和 send_plan；只有显式授权 `--import-sheet` / `auto_import_sheet=true` 时才导入 XLSX 并回填 `sheet_url`。
-5. 使用 `scripts/build_label_rate_manual_tracking.py` 记录本地人工处理状态；不写线上状态。
+5. 用户要求两周对比时，使用 `scripts/label_rate_weekly_summary_comparison.py` 消费两份剔除口径汇总 CSV，生成截图式对比表；真实查询与发送由宿主在确认后编排。
+6. 使用 `scripts/build_label_rate_manual_tracking.py` 记录本地人工处理状态；不写线上状态。
 
 ## SQL 生成约束
 
@@ -329,6 +338,7 @@ python3 scripts/selfcheck.py
 python3 scripts/label_rate_perception.py --dry-run --request "帮我看近7天低打标率策略，按P0/P1/P2/notice分级。"
 python3 scripts/label_rate_analysis.py --dry-run --levels notice,P2,P1,P0
 python3 scripts/label_rate_notification_artifacts.py --source <analysis_artifact.json_or_jsonl> --output-dir <output>
+python3 scripts/label_rate_weekly_summary_comparison.py --previous-summary <previous>/汇总统计_剔除+1同意.csv --current-summary <current>/汇总统计_剔除+1同意.csv --previous-start-date YYYY-MM-DD --previous-end-date YYYY-MM-DD --current-start-date YYYY-MM-DD --current-end-date YYYY-MM-DD --output-dir <output>
 python3 scripts/build_label_rate_manual_tracking.py --notification-draft <draft.json> --send-plan <send_plan.json> --output <tracking.json>
 ```
 
@@ -337,6 +347,7 @@ python3 scripts/build_label_rate_manual_tracking.py --notification-draft <draft.
 - 场景不唯一：停止并要求 calling_agent 补充场景。
 - 时间窗口或维度缺失：只输出 readiness，不进入查询。
 - 缺少分析结果：不生成通知草稿，要求先补齐分析产物。
+- 两周期对比缺少任一剔除口径汇总、周期不明确、字段缺失或重复 `机审一级标签 × POC`：停止，不生成对比结论。
 - 缺少人工确认：保持 `group_send_blocked=true` 和 `sent=false`。
 - 缺少证据三件套：不关闭事件，只记录继续跟进。
 
@@ -461,6 +472,25 @@ def scenario_bundle_test_prompts(scenario_key: str, bundle_name: str) -> str:
                 },
             },
             {
+                "id": "label-rate-weekly-filtered-summary-comparison",
+                "category": "should-trigger",
+                "prompt": "先跑 2026-07-06 至 2026-07-12 的全等级低效打标结果，再与 2026-07-13 至 2026-07-19 的汇总统计_剔除+1同意按截图格式对比，生成飞书表格链接并在确认后推送。",
+                "coverage": [
+                    "efficiency-label-rate",
+                    "weekly-comparison",
+                    "filtered-summary",
+                    "explicit-period",
+                ],
+                "expected": {
+                    "trigger": True,
+                    "scenario_key": scenario_key,
+                    "task_type": "notification_request",
+                    "run_mode": "debug_only",
+                    "must_block_real_send": True,
+                    "must_require_explicit_periods": True,
+                },
+            },
+            {
                 "id": "auto-disposal-adjacent-scenario",
                 "category": "should-not-trigger",
                 "prompt": "帮我看自动处置准确率下降的原因。",
@@ -512,6 +542,7 @@ import label_rate_analysis as analysis  # noqa: E402
 from build_label_rate_manual_tracking import build_manual_tracking, load_json  # noqa: E402
 from label_rate_notification_artifacts import build_label_rate_notification_artifacts  # noqa: E402
 from label_rate_perception import detect_label_rate_perception  # noqa: E402
+from label_rate_weekly_summary_comparison import build_weekly_summary_comparison  # noqa: E402
 
 
 def run_perception_check() -> None:
@@ -567,6 +598,46 @@ def run_notification_and_resolution_check(records: list[dict]) -> None:
         assert tracking["state_machine"]["next_state"] == "MANUAL_TRACKING_RECORDED"
 
 
+def run_weekly_summary_comparison_check() -> None:
+    with tempfile.TemporaryDirectory(prefix="label-rate-weekly-comparison-") as tmp:
+        tmp_path = Path(tmp)
+        previous_path = tmp_path / "previous" / "汇总统计_剔除+1同意.csv"
+        current_path = tmp_path / "current" / "汇总统计_剔除+1同意.csv"
+        header = (
+            "机审一级标签,POC,低效策略数,低效策略日均进审量,"
+            "低效策略日均完审量,低效策略日均打标量,低效策略打标率\\n"
+        )
+        previous_path.parent.mkdir(parents=True)
+        current_path.parent.mkdir(parents=True)
+        previous_path.write_text(
+            "\\ufeff" + header + "国家安全,杜衡,2,100,100,5,0.05\\n",
+            encoding="utf-8",
+        )
+        current_path.write_text(
+            "\\ufeff" + header
+            + "国家安全,杜衡,1,120,120,12,0.10\\n"
+            + "领导人,宋诗慧,1,80,80,4,0.05\\n",
+            encoding="utf-8",
+        )
+        artifacts = build_weekly_summary_comparison(
+            previous_summary_path=previous_path,
+            current_summary_path=current_path,
+            previous_start_date="2026-07-06",
+            previous_end_date="2026-07-12",
+            current_start_date="2026-07-13",
+            current_end_date="2026-07-19",
+            output_dir=tmp_path / "output",
+        )
+        assert artifacts.workbook_path.exists()
+        assert artifacts.summary_path.exists()
+        assert artifacts.online_write_executed is False
+        assert len(artifacts.comparison_rows) == 2
+        assert artifacts.comparison_rows[0]["avg_review_done_delta"] == 20
+        assert artifacts.totals["previous_strategy_count"] == 2
+        assert artifacts.totals["current_strategy_count"] == 2
+        assert artifacts.totals["current_label_rate"] == 0.08
+
+
 def main() -> None:
     run_perception_check()
     records = build_analysis_records()
@@ -574,6 +645,7 @@ def main() -> None:
     for key in ("QueryPlan", "source_footer", "readonly_execution", "analysis_result"):
         assert key in sample, f"analysis sample missing {key}"
     run_notification_and_resolution_check(records)
+    run_weekly_summary_comparison_check()
     print("efficiency-label-rate scenario bundle selfcheck OK")
 
 

@@ -62,6 +62,8 @@ LABEL_RATE_KEYWORDS = (
     "reason",
     "labelrate",
     "label_rate",
+    "汇总统计_剔除+1同意",
+    "汇总统计剔除+1同意",
 )
 REPORT_FLOW_KEYWORDS = (
     "举报",
