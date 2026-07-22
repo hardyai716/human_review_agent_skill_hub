@@ -310,34 +310,51 @@ def build_plus1_asset_from_sheet(
         raise RuntimeError("+1 agreed strategy sheet returned no rows.")
     headers = rows[0]
     header_index = {header: index for index, header in enumerate(headers) if header}
-    for required in ("strategy_id", "+1评估", "更新日期"):
+    for required in ("strategy_id", "reason", "+1评估", "更新日期"):
         if required not in header_index:
             raise RuntimeError(f"+1 agreed strategy sheet missing column: {required}")
 
     entries_by_id: dict[str, dict[str, Any]] = {}
+    report_flow_entries_by_reason: dict[str, dict[str, Any]] = {}
     raw_agreed_count = 0
+    raw_report_flow_agreed_count = 0
     skipped_agreed_without_strategy_id = 0
+    skipped_agreed_without_reason = 0
     for row in rows[1:]:
         row = row + [""] * (len(headers) - len(row))
         strategy_id = row[header_index["strategy_id"]].strip()
+        reason = row[header_index["reason"]].strip()
         plus1_eval = row[header_index["+1评估"]].strip()
         update_date = normalize_update_date(row[header_index["更新日期"]].strip())
         if plus1_eval != "同意":
             continue
-        # Report-flow策略以 reason 标识、无 strategy_id，按约定暂不纳入本资产；
-        # 举报场景后续在其自身链路单独处理。
         if not strategy_id:
             skipped_agreed_without_strategy_id += 1
-            continue
-        raw_agreed_count += 1
-        existing = entries_by_id.get(strategy_id)
-        if existing is None or update_date > existing.get("update_date", ""):
-            entries_by_id[strategy_id] = {
-                "strategy_id": strategy_id,
-                "plus1_agreed": True,
-                "update_date": update_date,
-                "source_status": "current_sheet_agreed",
-            }
+        else:
+            raw_agreed_count += 1
+            existing = entries_by_id.get(strategy_id)
+            if existing is None or update_date > existing.get("update_date", ""):
+                entries_by_id[strategy_id] = {
+                    "strategy_id": strategy_id,
+                    "plus1_agreed": True,
+                    "update_date": update_date,
+                    "source_status": "current_sheet_agreed",
+                }
+        if not reason:
+            skipped_agreed_without_reason += 1
+        else:
+            raw_report_flow_agreed_count += 1
+            existing_reason = report_flow_entries_by_reason.get(reason)
+            if (
+                existing_reason is None
+                or update_date > existing_reason.get("update_date", "")
+            ):
+                report_flow_entries_by_reason[reason] = {
+                    "reason": reason,
+                    "plus1_agreed": True,
+                    "update_date": update_date,
+                    "source_status": "current_sheet_agreed",
+                }
 
     return {
         "schema_version": "label_rate_plus1_agreed_strategy_updates.v1",
@@ -352,13 +369,17 @@ def build_plus1_asset_from_sheet(
             "refresh_policy": PLUS1_REFRESH_POLICY,
             "filter": "+1评估 == 同意",
             "excluded_agreed_without_strategy_id": skipped_agreed_without_strategy_id,
-            "excluded_reason": (
-                "report_flow strategies keyed by reason are handled separately"
-            ),
+            "excluded_agreed_without_reason": skipped_agreed_without_reason,
         },
         "raw_agreed_count": raw_agreed_count,
+        "raw_report_flow_agreed_count": raw_report_flow_agreed_count,
         "unique_strategy_count": len(entries_by_id),
+        "unique_report_flow_reason_count": len(report_flow_entries_by_reason),
         "entries": sorted(entries_by_id.values(), key=lambda item: item["strategy_id"]),
+        "report_flow_entries": sorted(
+            report_flow_entries_by_reason.values(),
+            key=lambda item: item["reason"],
+        ),
     }
 
 

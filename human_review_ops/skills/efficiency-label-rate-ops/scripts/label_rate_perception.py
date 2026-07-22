@@ -448,8 +448,6 @@ def detect_task_type(canonical: str, scenario_key: str) -> str:
     )
     if explicit_breakdown:
         return "dimension_breakdown"
-    if data_direction == "report_flow" and is_low_label_rate_request(canonical):
-        return "report_flow_low_label_rate"
     if is_low_label_rate_request(canonical):
         return "low_label_rate_grading"
     if contains_any(canonical, TREND_KEYWORDS):

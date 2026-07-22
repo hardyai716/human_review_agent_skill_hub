@@ -45,6 +45,7 @@ CARD_LEVELS = ["P0", "P1", "P2", "notice"]
 FILTERED_COMPREHENSIVE_CSV = "综合_剔除+1同意.csv"
 FILTERED_SUMMARY_CSV = "汇总统计_剔除+1同意.csv"
 LEVEL_COLUMN_SPECS = [
+    ("data_source", "数据来源"),
     ("warning_dimension", "预警维度"),
     ("severity_level", "预警等级"),
     ("mach_root_label_name", "机审一级标签"),
@@ -65,6 +66,7 @@ LEVEL_COLUMN_SPECS = [
     ),
 ]
 SUMMARY_COLUMN_SPECS = [
+    ("data_source", "数据来源"),
     ("mach_root_label_name", "机审一级标签"),
     ("POC", "POC"),
     ("low_efficiency_strategy_count", "低效策略数"),
@@ -388,11 +390,12 @@ def normalize_report_flow_row(
     return {
         **row,
         "data_direction": "report_flow",
+        "data_source": "举报流转",
         "warning_dimension": "举报原因维度",
         "severity_level": "notice",
         "severity_priority": 3,
-        "mach_root_label_name": "",
-        "strategy_id": "",
+        "mach_root_label_name": "举报",
+        "strategy_id": reason,
         "strategy_name": reason,
         "enpool_reason": reason,
         "POC": poc_name,
@@ -1065,17 +1068,19 @@ def build_send_plan(
 
 
 def build_label_poc_summary_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    grouped: dict[tuple[str, str], dict[str, Any]] = {}
+    grouped: dict[tuple[str, str, str], dict[str, Any]] = {}
     for row in rows:
         key = (
+            str(row.get("data_source") or ""),
             str(row.get("mach_root_label_name", "")),
             str(row.get("POC") or row.get("poc_name") or "未映射"),
         )
         bucket = grouped.setdefault(
             key,
             {
-                "mach_root_label_name": key[0],
-                "POC": key[1],
+                "data_source": key[0],
+                "mach_root_label_name": key[1],
+                "POC": key[2],
                 "_strategy_names": set(),
                 "_total_review_in_cnt": 0.0,
                 "_total_review_done_cnt": 0.0,
@@ -1106,6 +1111,7 @@ def build_label_poc_summary_rows(rows: list[dict[str, Any]]) -> list[dict[str, A
         avg_label_cnt = round(bucket["_avg_label_cnt"])
         result.append(
             {
+                "data_source": bucket["data_source"],
                 "mach_root_label_name": bucket["mach_root_label_name"],
                 "POC": bucket["POC"],
                 "low_efficiency_strategy_count": len(bucket["_strategy_names"]),
@@ -1121,6 +1127,7 @@ def build_label_poc_summary_rows(rows: list[dict[str, Any]]) -> list[dict[str, A
         result,
         key=lambda item: (
             -float(item["avg_review_done_cnt"]),
+            str(item["data_source"]),
             str(item["mach_root_label_name"]),
             str(item["POC"]),
         ),
@@ -1149,6 +1156,7 @@ def flatten_level_top_rows(
 def build_card_summary_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return [
         {
+            "data_source": row.get("data_source", ""),
             "mach_root_label_name": row.get("mach_root_label_name", ""),
             "POC": row.get("POC", ""),
             "low_efficiency_strategy_count": int(
@@ -1174,6 +1182,7 @@ def build_top_rows(rows: list[dict[str, Any]], top_n: int) -> list[dict[str, Any
                 "rank": index,
                 "level": [{"text": level, "color": LEVEL_COLORS.get(level, "blue")}],
                 "poc_name": row.get("POC") or row.get("poc_name", "未映射"),
+                "data_source": row.get("data_source", ""),
                 "warning_dimension": row.get("warning_dimension", ""),
                 "mach_root_label_name": row.get("mach_root_label_name", ""),
                 "strategy_id": row.get("strategy_id", ""),

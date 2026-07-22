@@ -74,6 +74,17 @@ def main() -> None:
     parser.add_argument("--output-dir")
     parser.add_argument("--send-chat-id")
     parser.add_argument("--send-identity", choices=["bot", "user"], default="bot")
+    parser.add_argument(
+        "--data-direction",
+        choices=["manual_review_detail", "report_flow", "combined", "auto"],
+        default="auto",
+        help=(
+            "Data direction. auto follows perception; report_flow uses the "
+            "举报数据集 and maps enpool_reason to strategy_id/strategy_name; "
+            "combined runs manual_review_detail and report_flow, then merges "
+            "the normalized grading results."
+        ),
+    )
     parser.add_argument("--confirm-send", action="store_true")
     parser.add_argument("--sheet-url")
     parser.add_argument("--no-import-workbook", action="store_true")
@@ -102,15 +113,23 @@ def main() -> None:
     write_json(base / "perception_notification_request.json", original_perception)
     assert_notification_intent_or_raise(original_perception)
     time_range = resolve_grading_time_range(args, original_perception)
+    data_direction = resolve_data_direction(args, original_perception)
     if time_range:
         write_json(base / "resolved_time_range.json", time_range)
+    write_json(base / "resolved_data_direction.json", {"data_direction": data_direction})
 
-    analysis_request = build_analysis_request(original_perception)
+    analysis_request = build_analysis_request(original_perception, data_direction)
     analysis_perception = run_perception(analysis_request)
     write_json(base / "perception_analysis_request.json", analysis_perception)
     assert_analysis_ready_or_raise(analysis_perception)
 
-    stage1_record = run_analysis(args, base, stage1_path, time_range=time_range)
+    stage1_record = run_analysis(
+        args,
+        base,
+        stage1_path,
+        time_range=time_range,
+        data_direction=data_direction,
+    )
 
     sheet_url = args.sheet_url
     artifacts = build_notification(
@@ -148,6 +167,7 @@ def main() -> None:
         "level_counts": stage1_record["readonly_execution"]["level_counts"],
         "row_count": stage1_record["readonly_execution"]["row_count"],
         "period": stage1_record["QueryPlan"]["time_range"],
+        "data_direction": data_direction,
         "sheet_url": sheet_url,
         "message_id": (dispatch_record or {}).get("message_id"),
         "target_chat_id": args.send_chat_id,
@@ -179,8 +199,20 @@ def assert_notification_intent_or_raise(payload: dict[str, Any]) -> None:
         raise RuntimeError(f"unsupported workflow_plan: {workflow}")
 
 
-def build_analysis_request(perception: dict[str, Any]) -> str:
+def build_analysis_request(perception: dict[str, Any], data_direction: str) -> str:
     time_window = perception.get("time_window") or "近7天"
+    if data_direction == "combined":
+        return (
+            f"分别查询{time_window}人审数据集与举报场景低效打标全等级结果，"
+            "举报风险域固定为举报，策略ID和策略名称均使用 enpool_reason，"
+            "最终按统一字段合并输出。"
+        )
+    if data_direction == "report_flow":
+        return (
+            f"查询举报场景{time_window}低效打标 enpool_reason，"
+            "按P0/P1/P2/notice分级；风险域固定为举报，"
+            "策略ID和策略名称均使用 enpool_reason。"
+        )
     return (
         f"查询{time_window}低效打标策略，按P0/P1/P2/notice分级，"
         "默认按机审一级标签、策略ID、策略名称三维分级。"
@@ -205,6 +237,18 @@ def resolve_grading_time_range(
     return None
 
 
+def resolve_data_direction(
+    args: argparse.Namespace,
+    perception: dict[str, Any],
+) -> str:
+    if args.data_direction != "auto":
+        return args.data_direction
+    direction = perception.get("data_direction")
+    if direction in {"manual_review_detail", "report_flow"}:
+        return str(direction)
+    return "manual_review_detail"
+
+
 def parse_date(raw_value: str) -> date:
     return date.fromisoformat(raw_value.strip().replace("/", "-"))
 
@@ -224,27 +268,86 @@ def run_analysis(
     stage1_path: Path,
     *,
     time_range: dict[str, Any] | None,
+    data_direction: str,
 ) -> dict[str, Any]:
-    levels = label_rate_analysis.parse_levels(args.levels)
-    sql_map = label_rate_analysis.sql_by_level(time_range)
-    query_plan = label_rate_analysis.build_query_plan(
-        levels,
-        sql_map,
-        time_range=time_range,
-    )
-    write_json(base / "analysis_query_plan.json", query_plan)
-    write_json(base / "analysis_sql_by_level.json", sql_map)
+    if data_direction == "combined":
+        return run_combined_analysis(
+            args=args,
+            base=base,
+            stage1_path=stage1_path,
+            time_range=time_range,
+        )
 
-    freshness_sql = build_freshness_sql(time_range)
-    freshness = run_aeolus_query(freshness_sql, limit="10")
-    write_json(base / "analysis_freshness_check.json", freshness)
+    records = execute_direction_analysis(
+        args=args,
+        base=base,
+        time_range=time_range,
+        data_direction=data_direction,
+        artifact_prefix="",
+    )
+    write_stage1_records(stage1_path, records)
+    sample = records[1]
+    write_json(
+        base / "analysis_summary.json",
+        {
+            "stage1_result": str(stage1_path),
+            "freshness": load_optional_json(base / "analysis_freshness_check.json")
+            .get("data", {})
+            .get("rows", []),
+            "level_counts": sample["readonly_execution"]["level_counts"],
+            "row_count": sample["readonly_execution"]["row_count"],
+            "source_footer": sample["source_footer"],
+            "data_direction": data_direction,
+        },
+    )
+    return sample
+
+
+def execute_direction_analysis(
+    *,
+    args: argparse.Namespace,
+    base: Path,
+    time_range: dict[str, Any] | None,
+    data_direction: str,
+    artifact_prefix: str,
+) -> list[dict[str, Any]]:
+    levels = label_rate_analysis.parse_levels(args.levels)
+    if data_direction == "report_flow":
+        sql_map = label_rate_analysis.report_flow_sql_by_level(time_range)
+        query_plan = label_rate_analysis.build_report_flow_grading_query_plan(
+            levels,
+            sql_map,
+            time_range=time_range,
+        )
+    else:
+        sql_map = label_rate_analysis.sql_by_level(time_range)
+        query_plan = label_rate_analysis.build_query_plan(
+            levels,
+            sql_map,
+            time_range=time_range,
+        )
+    prefix = f"{artifact_prefix}_" if artifact_prefix else ""
+    write_json(base / f"analysis_query_plan{prefixed_suffix(artifact_prefix)}.json", query_plan)
+    write_json(base / f"analysis_sql_by_level{prefixed_suffix(artifact_prefix)}.json", sql_map)
+
+    freshness_sql = build_freshness_sql(time_range, data_direction=data_direction)
+    freshness = run_aeolus_query(
+        freshness_sql,
+        limit="10",
+        dataset_id=dataset_id_for_data_direction(data_direction),
+    )
+    write_json(base / f"analysis_freshness_check{prefixed_suffix(artifact_prefix)}.json", freshness)
 
     mapping_index = poc_mapping_index(load_poc_mapping())
     payloads: dict[str, dict[str, Any]] = {}
     for level in levels:
-        payload = run_aeolus_query(sql_map[level], limit=QUERY_LIMIT)
+        payload = run_aeolus_query(
+            sql_map[level],
+            limit=QUERY_LIMIT,
+            dataset_id=dataset_id_for_data_direction(data_direction),
+        )
         payloads[level] = payload
-        write_json(base / f"analysis_payload_{level}.json", payload, compact=True)
+        write_json(base / f"analysis_payload_{prefix}{level}.json", payload, compact=True)
 
     records = label_rate_analysis.build_records(
         payloads,
@@ -252,7 +355,398 @@ def run_analysis(
         sql_map,
         row_enricher=lambda row: build_poc_row_enrichment(row, mapping_index),
         time_range=time_range,
+        data_direction=data_direction,
     )
+    write_json(
+        base / f"analysis_summary{prefixed_suffix(artifact_prefix)}.json",
+        {
+            "freshness": freshness["data"]["rows"],
+            "level_counts": records[1]["readonly_execution"]["level_counts"],
+            "row_count": records[1]["readonly_execution"]["row_count"],
+            "source_footer": records[1]["source_footer"],
+            "data_direction": data_direction,
+        },
+    )
+    return records
+
+
+def run_combined_analysis(
+    *,
+    args: argparse.Namespace,
+    base: Path,
+    stage1_path: Path,
+    time_range: dict[str, Any] | None,
+) -> dict[str, Any]:
+    direction_records = [
+        execute_direction_analysis(
+            args=args,
+            base=base,
+            time_range=time_range,
+            data_direction="manual_review_detail",
+            artifact_prefix="manual_review_detail",
+        ),
+        execute_direction_analysis(
+            args=args,
+            base=base,
+            time_range=time_range,
+            data_direction="report_flow",
+            artifact_prefix="report_flow",
+        ),
+    ]
+    combined_records = build_combined_records(direction_records)
+    write_stage1_records(stage1_path, combined_records)
+    sample = combined_records[1]
+    write_json(
+        base / "analysis_query_plan.json",
+        sample["QueryPlan"],
+    )
+    write_json(
+        base / "analysis_summary.json",
+        {
+            "stage1_result": str(stage1_path),
+            "direction_summaries": {
+                records[1]["data_direction"]: {
+                    "level_counts": records[1]["readonly_execution"]["level_counts"],
+                    "row_count": records[1]["readonly_execution"]["row_count"],
+                    "source_footer": records[1]["source_footer"],
+                }
+                for records in direction_records
+            },
+            "level_counts": sample["readonly_execution"]["level_counts"],
+            "row_count": sample["readonly_execution"]["row_count"],
+            "source_footer": sample["source_footer"],
+            "data_direction": "combined",
+        },
+    )
+    return sample
+
+
+def build_combined_records(
+    direction_records: list[list[dict[str, Any]]],
+) -> list[dict[str, Any]]:
+    samples = [records[1] for records in direction_records]
+    assert_combined_sources_ready(samples)
+    levels = samples[0]["QueryPlan"]["levels"]
+    time_range = samples[0]["QueryPlan"]["time_range"]
+    query_plan = build_combined_query_plan(samples)
+    level_results = build_combined_level_results(samples, levels)
+    comprehensive_results = label_rate_analysis.build_comprehensive_results(level_results)
+    level_counts = {
+        level: level_results[level]["row_count"]
+        for level in levels
+    }
+    source_footer = build_combined_source_footer(samples, query_plan)
+    readonly_execution = {
+        "execution_id": f"ROE-{query_plan['query_plan_id']}",
+        "execution_mode": "real_readonly_query",
+        "analysis_mode": "low_label_rate_grading",
+        "status": "success",
+        "source_tier": "governed_dataset",
+        "source_name": "人审明细 + 举报流转",
+        "data_freshness": source_footer["data_freshness"],
+        "level_counts": level_counts,
+        "row_count": len(comprehensive_results),
+        "truncated": any(
+            level_results[level]["truncated"] is not False
+            for level in levels
+        ),
+        "level_results": level_results,
+        "comprehensive_results": comprehensive_results,
+        "evidence_fields": [
+            "data_source",
+            "warning_dimension",
+            "severity_level",
+            "mach_root_label_name",
+            "strategy_id",
+            "strategy_name",
+            "max_data_date",
+            "POC",
+            "poc_name",
+            "avg_review_in_cnt",
+            "avg_review_done_cnt",
+            "avg_label_cnt",
+            "label_rate",
+            "is_plus1_agreed",
+            "plus1_update_date",
+            "plus1_agreed_before_current_period",
+            "hit_rule_ids",
+            "hit_conditions",
+        ],
+        "metric_formula": (
+            "manual_review_detail: "
+            f"{label_rate_analysis.METRIC_FORMULA}; report_flow: "
+            "`report_label_rate` = SUM(`[打标量_report_id]`) / "
+            "SUM(`[人审完结量_report_id]`)"
+        ),
+        "rule_source": label_rate_analysis.RULE_SOURCE,
+        "quality_checks": {
+            "freshness_gate": "passed_for_both_sources",
+            "denominator_not_zero": "passed",
+            "field_mapping_check": "passed_for_manual_and_report_flow",
+            "grain_check": "passed_combined_manual_strategy_and_report_reason",
+            "risk_domain_rollup": "passed_pre_period_plus1_exclusion_by_source",
+            "poc_name_mapping": "passed_name_only",
+            "forbidden_source_check": "passed",
+            "truncation_check": "passed",
+            "grading_rule_check": "passed",
+        },
+        "limitations": sorted(
+            {
+                limitation
+                for sample in samples
+                for limitation in sample["readonly_execution"].get("limitations", [])
+            }
+        ),
+    }
+    query_plan["tool_calls"] = [
+        tool_call
+        for sample in samples
+        for tool_call in sample["QueryPlan"].get("tool_calls", [])
+    ]
+    provenance = {
+        "provenance_id": f"PROV-{query_plan['query_plan_id']}",
+        "scenario_key": SCENARIO_KEY,
+        "query_plan_id": query_plan["query_plan_id"],
+        "execution_id": readonly_execution["execution_id"],
+        "execution_mode": "real_readonly_query",
+        "analysis_mode": "low_label_rate_grading",
+        "source_tier": "governed_dataset",
+        "source_name": readonly_execution["source_name"],
+        "region": REGION,
+        "app_id": f"{label_rate_analysis.APP_ID}+{label_rate_analysis.REPORT_FLOW_APP_ID}",
+        "dataset_id": f"{DATASET_ID}+{label_rate_analysis.REPORT_FLOW_DATASET_ID}",
+        "metric_id": query_plan["metric_id"],
+        "metric_formula": readonly_execution["metric_formula"],
+        "time_range": time_range,
+        "dimensions": query_plan["dimensions"],
+        "filters": query_plan["filters"],
+        "levels": query_plan["levels"],
+        "level_priority": query_plan["level_priority"],
+        "required_hygiene_filters": query_plan["required_hygiene_filters"],
+        "quality_checks": readonly_execution["quality_checks"],
+        "tool_call_ids": query_plan["tool_calls"],
+        "sql_by_level": query_plan["sql_by_level"],
+        "references": {
+            "metric_contract": label_rate_analysis.METRIC_CONTRACT_PATH,
+            "dataset_reference": label_rate_analysis.DATASET_REFERENCE_PATH,
+            "analysis_rule": label_rate_analysis.ANALYSIS_RULE_PATH,
+        },
+        "limitations": readonly_execution["limitations"],
+        "source_footer": source_footer,
+    }
+    analysis_result = label_rate_analysis.build_analysis_result(
+        query_plan=query_plan,
+        readonly_execution=readonly_execution,
+        source_footer=source_footer,
+        provenance=provenance,
+    )
+    environment = {
+        "record_type": "environment",
+        "scenario_key": SCENARIO_KEY,
+        "id": f"{label_rate_analysis.event_id_for_time_range(time_range)}-COMBINED",
+        "period": time_range,
+        "run_mode": "debug_only",
+        "execution_mode": "real_readonly_query",
+        "analysis_mode": "low_label_rate_grading",
+        "data_direction": "combined",
+        "real_query_executed": True,
+        "real_notification_blocked": True,
+        "online_write_blocked": True,
+        "result": "pass",
+    }
+    sample = {
+        "record_type": "sample",
+        "id": f"{label_rate_analysis.event_id_for_time_range(time_range)}-COMBINED",
+        "input": "人审明细与举报流转低打标率全等级结果合并",
+        "run_mode": "debug_only",
+        "scenario_key": SCENARIO_KEY,
+        "task_type": "low_label_rate_grading",
+        "analysis_mode": "low_label_rate_grading",
+        "data_direction": "combined",
+        "source_profile": "manual_review_detail+report_flow_review",
+        "QueryPlan": query_plan,
+        "tool_call_records": [
+            tool_call
+            for sample_item in samples
+            for tool_call in sample_item.get("tool_call_records", [])
+        ],
+        "readonly_execution": readonly_execution,
+        "analysis_result": analysis_result,
+        "source_footer": source_footer,
+        "provenance": provenance,
+        "outputs": [
+            "QueryPlan",
+            "tool_call_record",
+            "readonly_execution",
+            "analysis_result",
+            "source_footer",
+            "provenance",
+        ],
+        "permission_checks": {
+            "tool_calls": query_plan["tool_calls"],
+            "read_only": True,
+            "real_query_executed": True,
+            "real_notification_blocked": True,
+            "online_write_blocked": True,
+        },
+        "result": "pass",
+    }
+    return [environment, sample]
+
+
+def assert_combined_sources_ready(samples: list[dict[str, Any]]) -> None:
+    expected = {"manual_review_detail", "report_flow"}
+    actual = {str(sample.get("data_direction")) for sample in samples}
+    if actual != expected:
+        raise RuntimeError(f"combined flow requires sources {expected}, got {actual}")
+    for sample in samples:
+        execution = sample.get("readonly_execution", {})
+        direction = sample.get("data_direction")
+        if execution.get("status") != "success":
+            raise RuntimeError(
+                f"combined flow source {direction} did not succeed: "
+                f"{execution.get('status')}"
+            )
+        if execution.get("truncated") is not False:
+            raise RuntimeError(f"combined flow source {direction} was truncated")
+
+
+def build_combined_query_plan(samples: list[dict[str, Any]]) -> dict[str, Any]:
+    manual = next(item for item in samples if item["data_direction"] == "manual_review_detail")
+    report = next(item for item in samples if item["data_direction"] == "report_flow")
+    time_range = manual["QueryPlan"]["time_range"]
+    if time_range.get("current_start") and time_range.get("current_end"):
+        start = str(time_range["current_start"]).replace("-", "")
+        end = str(time_range["current_end"]).replace("-", "")
+        query_plan_id = f"QP-ELR-COMBINED-LOW-LABEL-RATE-GRADING-{start}-{end}"
+    else:
+        query_plan_id = "QP-ELR-COMBINED-LOW-LABEL-RATE-GRADING-7D"
+    return {
+        "query_plan_id": query_plan_id,
+        "scenario_key": SCENARIO_KEY,
+        "task_type": "low_label_rate_grading",
+        "analysis_mode": "low_label_rate_grading",
+        "metric_id": "combined_label_rate",
+        "data_direction": "combined",
+        "source_profile": "manual_review_detail+report_flow_review",
+        "metric_entities": (
+            manual["QueryPlan"]["metric_entities"]
+            + report["QueryPlan"]["metric_entities"]
+        ),
+        "time_range": time_range,
+        "dimensions": list(label_rate_analysis.DIMENSIONS),
+        "filters": sorted(
+            {
+                "combined_manual_review_and_report_flow",
+                *manual["QueryPlan"]["filters"],
+                *report["QueryPlan"]["filters"],
+            }
+        ),
+        "levels": manual["QueryPlan"]["levels"],
+        "level_priority": label_rate_analysis.LEVEL_PRIORITY,
+        "required_hygiene_filters": {
+            "manual_review_detail": manual["QueryPlan"]["required_hygiene_filters"],
+            "report_flow": report["QueryPlan"]["required_hygiene_filters"],
+        },
+        "source_priority": ["governed_dataset", "curated_raw_sql"],
+        "allowed_sources": (
+            manual["QueryPlan"]["allowed_sources"]
+            + report["QueryPlan"]["allowed_sources"]
+        ),
+        "forbidden_sources": sorted(
+            set(manual["QueryPlan"]["forbidden_sources"])
+            | set(report["QueryPlan"]["forbidden_sources"])
+        ),
+        "fallback_reason": "combined_manual_review_and_report_flow_grading",
+        "quality_checks": sorted(
+            set(manual["QueryPlan"]["quality_checks"])
+            | set(report["QueryPlan"]["quality_checks"])
+        ),
+        "review_required": False,
+        "execution_mode": "real_readonly_query",
+        "sql_by_level": {
+            "manual_review_detail": manual["QueryPlan"]["sql_by_level"],
+            "report_flow": report["QueryPlan"]["sql_by_level"],
+        },
+        "tool_calls": [],
+    }
+
+
+def build_combined_level_results(
+    samples: list[dict[str, Any]],
+    levels: list[str],
+) -> dict[str, dict[str, Any]]:
+    results: dict[str, dict[str, Any]] = {}
+    for level in levels:
+        rows: list[dict[str, Any]] = []
+        source_row_count = 0
+        truncated = False
+        columns: list[str] = []
+        for sample in samples:
+            level_result = sample["readonly_execution"]["level_results"][level]
+            rows.extend(dict(row) for row in level_result["rows"])
+            source_row_count += int(level_result.get("source_row_count", 0) or 0)
+            truncated = truncated or level_result.get("truncated") is not False
+            for column in level_result.get("columns", []):
+                if column not in columns:
+                    columns.append(column)
+        deduped_rows = label_rate_analysis.dedupe_level_rows(rows, level)
+        results[level] = {
+            "severity_level": level,
+            "severity_priority": label_rate_analysis.LEVEL_PRIORITY[level],
+            "row_count": len(deduped_rows),
+            "source_row_count": source_row_count,
+            "truncated": truncated,
+            "columns": columns,
+            "rows": deduped_rows,
+        }
+    return results
+
+
+def build_combined_source_footer(
+    samples: list[dict[str, Any]],
+    query_plan: dict[str, Any],
+) -> dict[str, Any]:
+    time_range = query_plan["time_range"]
+    return {
+        "source_tier": "governed_dataset",
+        "metric_definition_version": "draft",
+        "data_freshness": " | ".join(
+            sample["source_footer"]["data_freshness"] for sample in samples
+        ),
+        "owner": "人审效率域数据 Owner",
+        "confidence_tier": "high",
+        "review_status": "real_readonly_query_executed",
+        "scenario_key": SCENARIO_KEY,
+        "metric_id": query_plan["metric_id"],
+        "data_direction": "combined",
+        "source_profile": "manual_review_detail+report_flow_review",
+        "quality_checks": query_plan["quality_checks"],
+        "metric_contract_ref": label_rate_analysis.METRIC_CONTRACT_PATH,
+        "dataset_reference_ref": label_rate_analysis.DATASET_REFERENCE_PATH,
+        "analysis_ref": label_rate_analysis.ANALYSIS_RULE_PATH,
+        "query_plan_id": query_plan["query_plan_id"],
+        "time_window": time_range,
+        "data_lag": "uses closed values from each source for the requested period",
+        "source_priority": query_plan["source_priority"],
+        "actual_source": (
+            f"aeolus_dataset:{DATASET_ID}; "
+            f"aeolus_dataset:{label_rate_analysis.REPORT_FLOW_DATASET_ID}"
+        ),
+        "filters": query_plan["filters"],
+        "dimensions": query_plan["dimensions"],
+        "limitations": sorted(
+            {
+                limitation
+                for sample in samples
+                for limitation in sample["source_footer"].get("limitations", [])
+            }
+        ),
+        "run_mode": "debug_only",
+    }
+
+
+def write_stage1_records(stage1_path: Path, records: list[dict[str, Any]]) -> None:
     stage1_path.parent.mkdir(parents=True, exist_ok=True)
     stage1_path.write_text(
         "\n".join(
@@ -262,21 +756,37 @@ def run_analysis(
         + "\n",
         encoding="utf-8",
     )
-    sample = records[1]
-    write_json(
-        base / "analysis_summary.json",
-        {
-            "stage1_result": str(stage1_path),
-            "freshness": freshness["data"]["rows"],
-            "level_counts": sample["readonly_execution"]["level_counts"],
-            "row_count": sample["readonly_execution"]["row_count"],
-            "source_footer": sample["source_footer"],
-        },
-    )
-    return sample
 
 
-def build_freshness_sql(time_range: dict[str, Any] | None) -> str:
+def prefixed_suffix(prefix: str) -> str:
+    return f"_{prefix}" if prefix else ""
+
+
+def load_optional_json(path: Path) -> dict[str, Any]:
+    if not path.exists():
+        return {}
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def build_freshness_sql(
+    time_range: dict[str, Any] | None,
+    *,
+    data_direction: str,
+) -> str:
+    if data_direction == "report_flow":
+        if time_range and time_range.get("current_start") and time_range.get("current_end_exclusive"):
+            where = (
+                f"`[进审日期]` >= '{time_range['current_start']}' "
+                f"AND `[进审日期]` < '{time_range['current_end_exclusive']}'"
+            )
+        else:
+            where = "`[进审日期]` >= today() - 3"
+        return (
+            "SELECT `[进审日期]` AS max_dt, count() AS c "
+            f"FROM {label_rate_analysis.REPORT_FLOW_PHYSICAL_TABLE} "
+            f"WHERE {where} "
+            "GROUP BY max_dt ORDER BY max_dt DESC LIMIT 1"
+        )
     if time_range and time_range.get("current_start") and time_range.get("current_end_exclusive"):
         where = (
             f"`[p_date]` >= '{time_range['current_start']}' "
@@ -291,7 +801,18 @@ def build_freshness_sql(time_range: dict[str, Any] | None) -> str:
     )
 
 
-def run_aeolus_query(sql: str, *, limit: str) -> dict[str, Any]:
+def dataset_id_for_data_direction(data_direction: str) -> str:
+    if data_direction == "report_flow":
+        return label_rate_analysis.REPORT_FLOW_DATASET_ID
+    return DATASET_ID
+
+
+def run_aeolus_query(
+    sql: str,
+    *,
+    limit: str,
+    dataset_id: str = DATASET_ID,
+) -> dict[str, Any]:
     command = [
         "bytedcli",
         "-j",
@@ -299,7 +820,7 @@ def run_aeolus_query(sql: str, *, limit: str) -> dict[str, Any]:
         "query",
         "-r",
         REGION,
-        DATASET_ID,
+        dataset_id,
         sql,
         "--limit",
         limit,

@@ -26,10 +26,10 @@
 
 | 业务概念 | `metric_id` | 口径 | 默认粒度 |
 | --- | --- | --- | --- |
-| 举报打标率 | `report_label_rate` | `SUM(report_label_cnt) / SUM(report_review_done_cnt)` | `day × enpool_reason` |
-| 举报进审量 | `report_review_in_cnt` | 数据集指标 `进审量_report_id` | `day × enpool_reason` |
-| 举报人审完结量 | `report_review_done_cnt` | 数据集指标 `人审完结量_report_id` | `day × enpool_reason` |
-| 举报打标量 | `report_label_cnt` | 数据集指标 `打标量_report_id` | `day × enpool_reason` |
+| 举报打标率 | `report_label_rate` | `SUM(report_label_cnt) / SUM(report_review_done_cnt)` | `day × 举报 × enpool_reason × enpool_reason` |
+| 举报进审量 | `report_review_in_cnt` | 数据集指标 `进审量_report_id` | `day × 举报 × enpool_reason × enpool_reason` |
+| 举报人审完结量 | `report_review_done_cnt` | 数据集指标 `人审完结量_report_id` | `day × 举报 × enpool_reason × enpool_reason` |
+| 举报打标量 | `report_label_cnt` | 数据集指标 `打标量_report_id` | `day × 举报 × enpool_reason × enpool_reason` |
 | 举报日均人审完结量 | `avg_daily_report_review_done_cnt` | `SUM(report_review_done_cnt) / COUNT(DISTINCT 进审日期)` | `enpool_reason` |
 | 举报日均打标量 | `avg_daily_report_label_cnt` | `SUM(report_label_cnt) / COUNT(DISTINCT 进审日期)` | `enpool_reason` |
 
@@ -40,7 +40,7 @@
 - 打标率公式：`打标率 = SUM(打标量) / SUM(完审量)`。
 - 日均公式：`SUM(指标) / COUNT(DISTINCT p_date)`。
 - 举报方向的分子是 `打标量_report_id`，分母是 `人审完结量_report_id`；时间字段统一使用数据集字段 `进审日期`，底层 expr 为 `` `date` ``。
-- 举报方向默认输出字段为 `enpool_reason`、`日均人审完结量`、`日均打标量`、`打标率`。
+- 举报方向低效分级使用与常规人工审核明细一致的 `notice/P2/P1/P0` 规则；其字段映射为 `mach_root_label_name='举报'`，`strategy_id=enpool_reason`，`strategy_name=enpool_reason`。
 - 环比增长率：`(本期日均进审量 - 上期日均进审量) / NULLIF(上期日均进审量, 0)`。
 - 日均增量：`本期日均进审量 - 上期日均进审量`。
 - 低打标率分级默认使用三维单策略粒度：`mach_root_label_name × strategy_id × strategy_name`；`reason` 默认只作为样本清洗过滤字段，不参与默认分级分组。
@@ -142,7 +142,9 @@ AND `[一轮队列名称]` NOT LIKE '%海外%'
 AND `[一轮队列名称]` NOT LIKE '%特殊%'
 ```
 
-举报方向低效规则默认是 `打标率_report_id < 10%` 且 `人审完结量_report_id > 0`。
+举报方向低效规则与常规打标率共用：notice 为 `report_label_rate < 10%`，P2/P1/P0 继续使用单策略和风险域爆量规则；其中“单策略”为 `enpool_reason`，“风险域”为固定值 `举报`。涉及 `+1评估=同意` 的剔除时，举报侧使用“保持不变明细表”的 `reason` 字段匹配结果中的 `enpool_reason`，并沿用 `更新日期 < 当前周期开始日` 的 cutoff。
+
+人审明细与举报流转合并展示时，不改变任一数据源的指标公式；必须分别按各自分母/分子计算并分级，再通过标准化字段合并。合并输出必须包含 `数据来源`，取值为 `人审明细` 或 `举报流转`。
 
 ## 支持维度
 

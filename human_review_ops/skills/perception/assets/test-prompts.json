@@ -82,7 +82,7 @@
       "expected": {
         "trigger": true,
         "scenario_key": "efficiency-label-rate",
-        "task_type": "report_flow_low_label_rate",
+        "task_type": "low_label_rate_grading",
         "data_direction": "report_flow",
         "source_profile": "report_flow_review",
         "time_window": "近七天",

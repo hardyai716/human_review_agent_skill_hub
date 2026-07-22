@@ -28,7 +28,8 @@
 | `data_direction` | source profile | 数据集 | 适用问题 | 主维度 | 口径摘要 |
 | --- | --- | --- | --- | --- | --- |
 | `manual_review_detail` | `community_manual_review` | `[重点模型]-社区_人工审核明细数据` / `3888816` / appId `1128` | 人工审核明细、策略、机审一级标签、`reason` 维度的打标率查询和低效策略治理。 | 默认分级：`mach_root_label_name`、`strategy_id`、`strategy_name`；可选拆解：`reason` | `打标量__reviewid / 完审量_reviewid` |
-| `report_flow` | `report_flow_review` | `举报流转任务明细数据集` / `3952594` / appId `555137` | 举报场景、举报流转、`enpool_reason`、`report_id`、一轮/终轮队列维度的打标率查询。 | `enpool_reason` | `打标量_report_id / 人审完结量_report_id` |
+| `report_flow` | `report_flow_review` | `举报流转任务明细数据集` / `3952594` / appId `555137` | 举报场景、举报流转、`enpool_reason`、`report_id`、一轮/终轮队列维度的打标率查询和低效分级。 | 分级时固定 `mach_root_label_name=举报`，`strategy_id=strategy_name=enpool_reason` | `打标量_report_id / 人审完结量_report_id` |
+| `combined` | `manual_review_detail+report_flow_review` | 同时使用 `3888816` 与 `3952594` | 将人审数据集打标率结果与举报场景结果合并展示。 | 两源分别分级后按标准字段合并，额外输出 `数据来源` | 各源使用各自口径，不做跨源二次聚合 |
 
 ## 参考来源
 
@@ -60,7 +61,7 @@
 
 ## 方向识别规则
 
-- 命中 `举报`、`举报场景`、`举报流转`、`enpool_reason`、`report_id`、`一轮队列`、`终轮队列`、`举报流转任务明细数据集`、`3952594` 时，设置 `data_direction=report_flow`。
+- 命中 `举报`、`举报场景`、`举报流转`、`enpool_reason`、`report_id`、`一轮队列`、`终轮队列`、`举报流转任务明细数据集`、`3952594` 时，设置 `data_direction=report_flow`；低效分级仍使用 `low_label_rate_grading`，风险域固定为 `举报`，策略 ID 和策略名称均填 `enpool_reason`。
 - 命中 `机审一级标签`、`策略ID`、`策略名称`、`reason` 且未出现举报相关字段时，默认 `data_direction=manual_review_detail`。其中低效分级默认按 `机审一级标签 × 策略ID × 策略名称`，`reason` 仅在用户明确要求拆解时作为分组维度。
 - 用户只说“打标率 reason”且上下文无举报字段时，默认 `manual_review_detail`；若同时出现 `举报` 或 `enpool_reason`，必须切换到 `report_flow`。
 - 方向不唯一时，感知阶段应输出澄清问题，不得同时拼接两个数据源字段。
@@ -102,10 +103,10 @@
 
 | 业务概念 | `metric_id` | 口径 | 默认粒度 |
 | --- | --- | --- | --- |
-| 举报打标率 | `report_label_rate` | `SUM(report_label_cnt) / SUM(report_review_done_cnt)` | `day × enpool_reason` |
-| 举报进审量 | `report_review_in_cnt` | 数据集指标 `进审量_report_id` | `day × enpool_reason` |
-| 举报人审完结量 | `report_review_done_cnt` | 数据集指标 `人审完结量_report_id` | `day × enpool_reason` |
-| 举报打标量 | `report_label_cnt` | 数据集指标 `打标量_report_id` | `day × enpool_reason` |
+| 举报打标率 | `report_label_rate` | `SUM(report_label_cnt) / SUM(report_review_done_cnt)` | `day × 举报 × enpool_reason × enpool_reason` |
+| 举报进审量 | `report_review_in_cnt` | 数据集指标 `进审量_report_id` | `day × 举报 × enpool_reason × enpool_reason` |
+| 举报人审完结量 | `report_review_done_cnt` | 数据集指标 `人审完结量_report_id` | `day × 举报 × enpool_reason × enpool_reason` |
+| 举报打标量 | `report_label_cnt` | 数据集指标 `打标量_report_id` | `day × 举报 × enpool_reason × enpool_reason` |
 | 举报日均人审完结量 | `avg_daily_report_review_done_cnt` | `SUM(report_review_done_cnt) / COUNT(DISTINCT 进审日期)` | `enpool_reason` |
 | 举报日均打标量 | `avg_daily_report_label_cnt` | `SUM(report_label_cnt) / COUNT(DISTINCT 进审日期)` | `enpool_reason` |
 
@@ -116,7 +117,7 @@
 - 打标率公式：`打标率 = SUM(打标量) / SUM(完审量)`。
 - 日均公式：`SUM(指标) / COUNT(DISTINCT p_date)`。
 - 举报方向的分子是 `打标量_report_id`，分母是 `人审完结量_report_id`；时间字段统一使用数据集字段 `进审日期`，底层 expr 为 `` `date` ``。
-- 举报方向默认输出字段为 `enpool_reason`、`日均人审完结量`、`日均打标量`、`打标率`。
+- 举报方向低效分级使用与常规人工审核明细一致的 `notice/P2/P1/P0` 规则；其字段映射为 `mach_root_label_name='举报'`，`strategy_id=enpool_reason`，`strategy_name=enpool_reason`。
 - 环比增长率：`(本期日均进审量 - 上期日均进审量) / NULLIF(上期日均进审量, 0)`。
 - 日均增量：`本期日均进审量 - 上期日均进审量`。
 - 低打标率分级默认使用三维单策略粒度：`mach_root_label_name × strategy_id × strategy_name`；`reason` 默认只作为样本清洗过滤字段，不参与默认分级分组。
@@ -218,7 +219,9 @@ AND `[一轮队列名称]` NOT LIKE '%海外%'
 AND `[一轮队列名称]` NOT LIKE '%特殊%'
 ```
 
-举报方向低效规则默认是 `打标率_report_id < 10%` 且 `人审完结量_report_id > 0`。
+举报方向低效规则与常规打标率共用：notice 为 `report_label_rate < 10%`，P2/P1/P0 继续使用单策略和风险域爆量规则；其中“单策略”为 `enpool_reason`，“风险域”为固定值 `举报`。涉及 `+1评估=同意` 的剔除时，举报侧使用“保持不变明细表”的 `reason` 字段匹配结果中的 `enpool_reason`，并沿用 `更新日期 < 当前周期开始日` 的 cutoff。
+
+人审明细与举报流转合并展示时，不改变任一数据源的指标公式；必须分别按各自分母/分子计算并分级，再通过标准化字段合并。合并输出必须包含 `数据来源`，取值为 `人审明细` 或 `举报流转`。
 
 ## 支持维度
 
@@ -313,7 +316,7 @@ AND `[一轮队列名称]` NOT LIKE '%特殊%'
 - 分子指标：`打标量_report_id`
 - 分母指标：`人审完结量_report_id`
 - 规模指标：`进审量_report_id`
-- 主维度：`enpool_reason`
+- 分级维度：`mach_root_label_name='举报'`、`strategy_id=enpool_reason`、`strategy_name=enpool_reason`
 - 日期字段：`进审日期`，expr 为 `` `date` ``。
 - 直接使用逻辑表名 `Hive-sql-0` 查询会报 unknown table；2026-07-13 通过 `system.query_log` 定位到物理表 `aeolus_data_db_aeolus_sagittarius_mini_202511.aeolus_data_table_22_3373535_migrate_v1_prod`。正式模板优先使用数据集语义字段，必要时可在 provenance 中记录该物理表。
 
@@ -389,15 +392,15 @@ AND `[一轮队列名称]` NOT LIKE '%特殊%'
 
 | 输出字段 | 来源 | 说明 |
 | --- | --- | --- |
-| `是否+1同意` | `strategy_id` 命中 `+1评估=同意` 策略资产 | 命中输出 `是`，未命中输出 `否`；风险域维度因策略 ID 为空默认 `否`。 |
+| `是否+1同意` | 人审按 `strategy_id` 命中 `+1评估=同意` 策略资产；举报按 `reason` 命中同一资产，并映射到结果中的 `enpool_reason` | 命中输出 `是`，未命中输出 `否`。 |
 | `更新日期` | 同一策略在原始飞书表中的 `更新日期` | 命中且存在日期时输出 `YYYY-MM-DD`；历史同意清单中无当前日期的策略输出空。 |
 | `+1同意日期是否在本次统计周期前` | `是否+1同意`、`更新日期`、当前统计周期开始日期 | `是否+1同意 = 是` 且 `更新日期 < 当前统计周期开始日期` 时输出 `是`，否则输出 `否`。 |
 
-资产来源由 `plus1_agreed_strategy_updates.json.source` 声明的治理飞书表指向，筛选条件为 `+1评估 = 同意`。发布资产不得固化真实 token。该清单会持续更新，默认每天第一次使用该策略清单时必须只读刷新飞书表格，并用当前表内容覆盖本地 `plus1_agreed_strategy_updates.json`；日内重复使用可复用当日已刷新的本地资产。
+资产来源由 `plus1_agreed_strategy_updates.json.source` 声明的治理飞书表指向，筛选条件为 `+1评估 = 同意`。资产必须同时保存 `entries`（人审 `strategy_id` 索引）与 `report_flow_entries`（举报 `reason` 索引）；`reason` 是“保持不变明细表”中举报对应字段，运行时与举报结果的 `enpool_reason` 对齐。发布资产不得固化真实 token。该清单会持续更新，默认每天第一次使用该策略清单时必须只读刷新飞书表格，并用当前表内容覆盖本地 `plus1_agreed_strategy_updates.json`；日内重复使用可复用当日已刷新的本地资产。
 
-全等级报表除保留完整 `综合` 外，还必须输出 `综合_剔除+1同意`：以当前统计周期开始日期为 cutoff，单策略维度剔除 `是否+1同意 = 是` 且 `更新日期 < cutoff` 的策略；风险域维度在其本期和上期成员策略聚合前应用同一剔除集合。示例：周期为 `2026-07-06` 至 `2026-07-12` 时，剔除 `2026-07-06` 之前已同意的策略；`更新日期` 为空或不早于 `2026-07-06` 的行保留。
+全等级报表除保留完整 `综合` 外，还必须输出 `综合_剔除+1同意`：以当前统计周期开始日期为 cutoff，单策略维度剔除 `是否+1同意 = 是` 且 `更新日期 < cutoff` 的策略；风险域维度在其本期和上期成员策略聚合前应用同一剔除集合。人审风险域剔除 `strategy_id`，举报风险域剔除 `reason/enpool_reason`。示例：周期为 `2026-07-06` 至 `2026-07-12` 时，剔除 `2026-07-06` 之前已同意的策略；`更新日期` 为空或不早于 `2026-07-06` 的行保留。
 
-汇总统计也必须成对输出：`汇总统计` 基于完整 `综合` 聚合，`汇总统计_剔除+1同意` 基于 `综合_剔除+1同意` 聚合，二者字段结构保持一致。汇总统计中的 `低效策略打标率` 必须与表内展示量一致，按 `低效策略日均打标量 / 低效策略日均完审量` 计算。
+汇总统计也必须成对输出：`汇总统计` 基于完整 `综合` 聚合，`汇总统计_剔除+1同意` 基于 `综合_剔除+1同意` 聚合，二者字段结构保持一致。合并人审与举报结果时必须输出 `数据来源`，取值为 `人审明细` 或 `举报流转`，汇总统计按 `数据来源 × 机审一级标签 × POC` 分组。汇总统计中的 `低效策略打标率` 必须与表内展示量一致，按 `低效策略日均打标量 / 低效策略日均完审量` 计算。
 
 ## 字段映射：举报流转
 
@@ -456,7 +459,7 @@ AND `[一轮队列名称]` NOT LIKE '%海外%'
 AND `[一轮队列名称]` NOT LIKE '%特殊%'
 ```
 
-举报方向低效查询默认 `HAVING [人审完结量_report_id] > 0 AND [打标率_report_id] < 0.1`，输出 `enpool_reason`、日均人审完结量、日均打标量和打标率。
+举报方向低效分级默认先按 `进审日期 × enpool_reason` 汇总出进审量、人审完结量、打标量，再映射为 `举报 × enpool_reason × enpool_reason` 并复用常规 `notice/P2/P1/P0` 规则。输出字段结构与常规打标率分级一致。
 
 ## 扩展维度发现
 
@@ -628,11 +631,48 @@ AND `[一轮队列名称]` NOT LIKE '%特殊%'
 期望：
 
 - 命中 `efficiency-label-rate`。
-- `data_direction=report_flow`，`source_profile=report_flow_review`。
+- `data_direction=report_flow`，`source_profile=report_flow_review`，`task_type=low_label_rate_grading`。
 - 使用 Dataset `3952594` / appId `555137`。
 - 时间字段使用 `进审日期`。
-- 输出字段为 `enpool_reason`、`日均人审完结量`、`日均打标量`、`打标率`。
+- 输出字段结构与常规分级一致，其中 `机审一级标签=举报`，`策略ID=enpool_reason`，`策略名称=enpool_reason`。
 - 不得走人工审核明细 Dataset `3888816`。
+
+### 合并人审与举报结果
+
+输入：
+
+```text
+把举报场景的全等级结果和人审数据集下的打标率结果合并到一起，并剔除 +1评估=同意。
+```
+
+期望：
+
+- 设置 `data_direction=combined`，分别执行人审 `3888816` 与举报 `3952594` 的只读分级查询。
+- 合并表新增 `数据来源` 列，取值为 `人审明细` / `举报流转`。
+- `综合_剔除+1同意` 中，人审按 `strategy_id` 剔除，举报按“保持不变明细表”的 `reason` 匹配 `enpool_reason` 剔除。
+- 举报风险域固定为 `举报`，并参与 P2/P1/P0 的风险域爆量规则。
+
+推荐调用：
+
+```bash
+python3 human_review_ops/tools/runners/run_label_rate_formal_flow.py \
+  --data-direction combined \
+  --start-date 2026-07-14 \
+  --end-date 2026-07-20 \
+  --run-id 20260721_combined_0714_0720_full_levels \
+  --no-import-workbook
+
+python3 human_review_ops/tools/runners/run_stage_2_label_rate_notification_draft.py \
+  --source human_review_ops/evals/efficiency-label-rate/stage_1_runs/20260721_combined_0714_0720_full_levels_formal_skill_flow_results.jsonl \
+  --output-dir human_review_ops/evals/efficiency-label-rate/stage_2_runs/20260721_combined_0714_0720_full_levels_formal_skill_flow \
+  --top-n 10 \
+  --import-workbook \
+  --send-user-id <open_id> \
+  --identity bot \
+  --title '人审明细+举报流转低效打标全等级结果（2026-07-14~2026-07-20）'
+```
+
+若表格已导入但卡片发送失败，第二条命令改用 `--sheet-url <已生成的飞书表格链接>`，不要重复导入 workbook。
 
 ### 用户指定未列举维度
 

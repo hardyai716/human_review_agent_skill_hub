@@ -180,20 +180,27 @@ def validate_prompt_cases(skill_name: str, cases: list[dict[str, Any]]) -> list[
             has_reason_breakdown = True
         dimensions = expected.get("dimensions")
         if task_type == "low_label_rate_grading" and isinstance(dimensions, list):
-            if "reason" in dimensions:
+            if "reason" in dimensions and not is_report_flow:
                 failures.append(
                     f"{skill_name}:{case_id} default low_label_rate_grading "
                     "must not include reason in dimensions"
                 )
-            expected_dims = {
-                "mach_root_label_name",
-                "strategy_id",
-                "strategy_name",
-            }
-            if dimensions and set(dimensions) != expected_dims:
-                failures.append(
-                    f"{skill_name}:{case_id} default dimensions mismatch: {dimensions}"
-                )
+            if is_report_flow:
+                if dimensions and dimensions != ["enpool_reason"]:
+                    failures.append(
+                        f"{skill_name}:{case_id} report_flow dimensions mismatch: "
+                        f"{dimensions}"
+                    )
+            else:
+                expected_dims = {
+                    "mach_root_label_name",
+                    "strategy_id",
+                    "strategy_name",
+                }
+                if dimensions and set(dimensions) != expected_dims:
+                    failures.append(
+                        f"{skill_name}:{case_id} default dimensions mismatch: {dimensions}"
+                    )
     if skill_name in REQUIRES_REASON_BREAKDOWN_SAMPLE and not has_reason_breakdown:
         failures.append(
             f"{skill_name} must include an explicit reason dimension_breakdown prompt"

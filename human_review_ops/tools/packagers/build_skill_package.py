@@ -259,6 +259,7 @@ allowed-tools:
 - 用户要求对 `notice/P2/P1/P0` 低效打标策略分级。
 - 用户要求基于既有分析结果生成通知草稿、飞书 Card、XLSX 报表、`sheet_url` 或 `send_plan`。
 - 用户要求比较两个明确周期的 `汇总统计_剔除+1同意`，按截图式格式生成飞书表格或推送链接。
+- 用户要求把人审数据集与举报场景的低效打标全等级结果合并输出或推送。
 - 用户要求记录本地人工跟踪、继续观察或闭环检查。
 
 ## 禁止使用
@@ -301,12 +302,13 @@ allowed-tools:
 
 本 Skill 独立覆盖以下打标率能力口径，单独安装时即可按这些规则执行。
 
-- 数据方向：`manual_review_detail`（3888816）与 `report_flow`（3952594 / `enpool_reason`）。
+- 数据方向：`manual_review_detail`（3888816）、`report_flow`（3952594 / `enpool_reason`）与 `combined`（两源分别查询后合并）。
 - 默认分级：`mach_root_label_name × strategy_id × strategy_name`；`reason` 不作为默认分组，只用于样本清洗或显式 `dimension_breakdown`。
 - 预警维度：`单策略维度` 与 `风险域维度`。
 - 治理标记：`是否+1同意`、`更新日期`、`+1同意日期是否在本次统计周期前`。
 - 报表口径：`综合`、`综合_剔除+1同意`、`汇总统计`、`汇总统计_剔除+1同意`。
 - 周对比：只比较两个周期各自独立生成的 `汇总统计_剔除+1同意`；按 `机审一级标签 × POC` 合并，增量正值标红，总计打标率按日均量加权。
+- 合并输出：`combined` 模式先分别执行人审明细与举报流转两套全等级 QueryPlan，再按统一字段合并；报表新增 `数据来源`，取值为 `人审明细` / `举报流转`。
 - 通知和闭环：POC 路由；`report_flow` 仅有 `enpool_reason` 时 fallback 到 `举报` POC；在线导入门禁 `--import-sheet` / `auto_import_sheet=true` 默认关闭；manual tracking (`manual_tracking`) 只记录本地调试闭环。
 
 ## 工作流
@@ -317,6 +319,32 @@ allowed-tools:
 4. 使用 `scripts/label_rate_notification_artifacts.py` 生成通知草稿、报表、Card 和 send_plan；只有显式授权 `--import-sheet` / `auto_import_sheet=true` 时才导入 XLSX 并回填 `sheet_url`。
 5. 用户要求两周对比时，使用 `scripts/label_rate_weekly_summary_comparison.py` 消费两份剔除口径汇总 CSV，生成截图式对比表；真实查询与发送由宿主在确认后编排。
 6. 使用 `scripts/build_label_rate_manual_tracking.py` 记录本地人工处理状态；不写线上状态。
+
+## 常用宿主调用
+
+本包内脚本负责生成 QueryPlan、SQL、通知草稿、Card 和本地报表；真实 Aeolus 查询、飞书导入和发送由宿主 runner 或 calling_agent 负责。仓库内完整 runner 命令见 `references/scenario_contract.md#analysismd` 的模式 F 说明，以及项目 `tools/runners/README.md`。
+
+### 单数据源全等级查询
+
+- `manual_review_detail`：使用人审明细数据集 `3888816`，默认三维为 `mach_root_label_name × strategy_id × strategy_name`。
+- `report_flow`：使用举报流转数据集 `3952594`，风险域固定为 `举报`，`strategy_id=strategy_name=enpool_reason`。
+- 宿主参数必须显式传入 `data_direction`、`start_date`、`end_date` 和 `run_id`；默认不导入飞书表格。
+
+### 人审明细 + 举报流转合并查询
+
+`combined` 执行逻辑：
+
+- 人审明细使用 `3888816`，举报流转使用 `3952594`。
+- 两源分别执行 `notice/P2/P1/P0` QueryPlan，不跨数据集拼接 SQL。
+- 标准化后合并为同一套 `P0/P1/P2/Notice/综合/综合_剔除+1同意/汇总统计/汇总统计_剔除+1同意`。
+- 合并表必须包含 `数据来源`；汇总统计按 `数据来源 × 机审一级标签 × POC` 分组。
+- `+1评估=同意` 剔除：人审按 `strategy_id`，举报按“保持不变明细表”的 `reason` 匹配 `enpool_reason`；cutoff 仍为 `更新日期 < 当前周期开始日`。
+
+### 导入飞书表格并私聊推送
+
+宿主先产出 Stage 1 JSONL，再调用通知产物脚本生成 XLSX 与 Card。仅用户明确要求时才传入在线导入和发送参数：`import_workbook=true`、`send_user_id=<open_id>`、`identity=bot|user`、`title=<标题>`。
+
+如已导入表格但发送失败，必须复用既有 `sheet_url` 重发，避免重复创建在线表格。若命中飞书幂等键导致返回旧消息，应使用新的 idempotency key 或直接调用发送函数生成唯一 key。
 
 ## SQL 生成约束
 
@@ -348,6 +376,8 @@ python3 scripts/build_label_rate_manual_tracking.py --notification-draft <draft.
 - 时间窗口或维度缺失：只输出 readiness，不进入查询。
 - 缺少分析结果：不生成通知草稿，要求先补齐分析产物。
 - 两周期对比缺少任一剔除口径汇总、周期不明确、字段缺失或重复 `机审一级标签 × POC`：停止，不生成对比结论。
+- `combined` 任一数据源查询失败、超时或结果截断：停止合并；可单独重试失败的数据源，再用已成功的 Stage 1 结果合并。
+- 飞书 Card 发送失败但表格已导入：复用既有 `sheet_url` 重新生成 / 重发卡片，不重复导入 workbook。
 - 缺少人工确认：保持 `group_send_blocked=true` 和 `sent=false`。
 - 缺少证据三件套：不关闭事件，只记录继续跟进。
 

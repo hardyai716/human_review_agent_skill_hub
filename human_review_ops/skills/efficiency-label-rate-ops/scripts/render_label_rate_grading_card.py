@@ -131,6 +131,12 @@ def table_columns() -> list[dict[str, Any]]:
             "data_type": "text",
             "width": "110px",
         },
+        {
+            "name": "data_source",
+            "display_name": "数据来源",
+            "data_type": "text",
+            "width": "100px",
+        },
         {"name": "poc_name", "display_name": "POC", "data_type": "text", "width": "100px"},
         {
             "name": "mach_root_label_name",
@@ -194,6 +200,12 @@ def table_columns() -> list[dict[str, Any]]:
 
 def summary_table_columns() -> list[dict[str, Any]]:
     return [
+        {
+            "name": "data_source",
+            "display_name": "数据来源",
+            "data_type": "text",
+            "width": "100px",
+        },
         {
             "name": "mach_root_label_name",
             "display_name": "机审一级标签",

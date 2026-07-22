@@ -2,7 +2,7 @@
   "schema_version": "human_review_ops_scenario_bundle_manifest.v1",
   "bundle_name": "efficiency-label-rate-ops",
   "scenario_key": "efficiency-label-rate",
-  "generated_at": "2026-07-21T09:11:05.579005+00:00",
+  "generated_at": "2026-07-22T03:29:19.065440+00:00",
   "source_of_truth": "human_review_ops/skills/efficiency-label-rate-ops/references/scenario_contract.md",
   "check_command": "python3 scripts/selfcheck.py",
   "runtime_dependencies": [
@@ -19,7 +19,7 @@
     {
       "kind": "generated_skill_md",
       "target": "human_review_ops/skills/efficiency-label-rate-ops/SKILL.md",
-      "target_sha256": "ee825b034ce43c96a96a1e603c1e74e0d2c6779d173db5772c6e6d1f1d58f698"
+      "target_sha256": "e92b7a2747e472b04d793b2fb748b22764cbdb4eee366f4ad393cdd49505d014"
     },
     {
       "kind": "generated_common",
@@ -34,23 +34,23 @@
     {
       "kind": "generated_combined_scenario_reference",
       "target": "human_review_ops/skills/efficiency-label-rate-ops/references/scenario_contract.md",
-      "target_sha256": "ca8321cf484cd1c4765efe105b4a854ef1f0721469048be425fc3a27848f12cd",
+      "target_sha256": "1c535e8fe0fff98adfafdfa83e0ca06dc4f983b4c379943ad47882970037d7c9",
       "build_sources": [
         {
           "path": "human_review_ops/references/scenarios/efficiency-label-rate/scenario_manifest.md",
-          "sha256": "d2d30247b28f82ea58b132322aa7ec9cca4efa395ffd4ea40c1ef430889f061d"
+          "sha256": "46a7918b3b93f0152522f1add2721acae0003f5566d475f12ba0b0cb2f7f9ff6"
         },
         {
           "path": "human_review_ops/references/scenarios/efficiency-label-rate/metric_contract.md",
-          "sha256": "36b7e5d544d7bc08cc8da2d10568f59d6a3309aea651e448d8b269d34cfc4d68"
+          "sha256": "56467e6b3c9dd849f5efdc832e367a3d251ec6d8aaf1750ec6017a3058cf815e"
         },
         {
           "path": "human_review_ops/references/scenarios/efficiency-label-rate/dataset_reference.md",
-          "sha256": "ee9533918fa10d005e7ecee182098e4b7f1d2a0452328d8a2d1e91e2d8005d47"
+          "sha256": "8448d3fe120241e46168f488f5b998d850d1db90be7e5f60d73529ee8f427319"
         },
         {
           "path": "human_review_ops/references/scenarios/efficiency-label-rate/analysis.md",
-          "sha256": "79584189d43f720ff60d784690d3a10e8a2e948e1e924d9b0c885f94facfc238"
+          "sha256": "7fb25ad50d3935e8f4946193756e9e4c0ff5ef9e572826bbfd96e1c8a868556e"
         },
         {
           "path": "human_review_ops/references/scenarios/efficiency-label-rate/notification_templates.md",
@@ -58,7 +58,7 @@
         },
         {
           "path": "human_review_ops/references/scenarios/efficiency-label-rate/owner_routing.md",
-          "sha256": "dc57ff49b6d10fb53f41521aadf0c78c155cb7ef46809112e0cea6144ddbffb4"
+          "sha256": "b02368148b7994bb8e9c68c1337e7ad05e1f8e48934c30b9d7f52b0d87d066b7"
         },
         {
           "path": "human_review_ops/references/scenarios/efficiency-label-rate/state_machine.md",
@@ -70,7 +70,7 @@
         },
         {
           "path": "human_review_ops/references/scenarios/efficiency-label-rate/examples.md",
-          "sha256": "87f3e1c769e0efcbb970d0b3ad36e63eceda75136c8e7f918b1e4e2a3d3c72c0"
+          "sha256": "6d7147998eeb5e965d1ddf90da37b53ad320e3aa7749fe4a473de8cb5a1f135f"
         }
       ]
     },
@@ -93,15 +93,15 @@
       "kind": "copy",
       "build_source": "human_review_ops/references/scenarios/efficiency-label-rate/mach_root_label_poc_mapping.json",
       "target": "human_review_ops/skills/efficiency-label-rate-ops/assets/efficiency-label-rate/mach_root_label_poc_mapping.json",
-      "build_source_sha256": "4f49d76fe647fd26fbb7d918653a263b5e4c36118a1632929f1de64dfd11475b",
-      "target_sha256": "4f49d76fe647fd26fbb7d918653a263b5e4c36118a1632929f1de64dfd11475b"
+      "build_source_sha256": "af7ec7765c91996e61a22180e8207ac39517ac02190c7c98ad54a5122a35e851",
+      "target_sha256": "af7ec7765c91996e61a22180e8207ac39517ac02190c7c98ad54a5122a35e851"
     },
     {
       "kind": "copy",
       "build_source": "human_review_ops/references/scenarios/efficiency-label-rate/plus1_agreed_strategy_updates.json",
       "target": "human_review_ops/skills/efficiency-label-rate-ops/assets/efficiency-label-rate/plus1_agreed_strategy_updates.json",
-      "build_source_sha256": "cb2d9b218c04c0e035a07a5a310fc0a42cab9f374541560a2a7c99a54989e816",
-      "target_sha256": "cb2d9b218c04c0e035a07a5a310fc0a42cab9f374541560a2a7c99a54989e816"
+      "build_source_sha256": "4e45209362caea5b1fbf1b2287659e466d775b3ea1615ce67de8ec54f6894a05",
+      "target_sha256": "4e45209362caea5b1fbf1b2287659e466d775b3ea1615ce67de8ec54f6894a05"
     },
     {
       "kind": "copy",
@@ -121,22 +121,22 @@
       "kind": "copy",
       "build_source": "human_review_ops/skills/perception/scripts/label_rate_perception.py",
       "target": "human_review_ops/skills/efficiency-label-rate-ops/scripts/label_rate_perception.py",
-      "build_source_sha256": "161e1b32dd0d52e83b1383b586d260a9eb2c215a0566702751f15a917d0f3d1d",
-      "target_sha256": "825c844d5bfb4a2289f5797748f4e1fd183659582b9539d511d258ffd1836e36"
+      "build_source_sha256": "4b3cf45734bd038c7a7bcf79bb3dd400f548a7c3cbb4555482b9b30d027c3df8",
+      "target_sha256": "af91fbec6ca11eea6fbfc97818b71e34f782dcc01a7d95217b0fc71525018f52"
     },
     {
       "kind": "copy",
       "build_source": "human_review_ops/skills/analysis/scripts/label_rate_analysis.py",
       "target": "human_review_ops/skills/efficiency-label-rate-ops/scripts/label_rate_analysis.py",
-      "build_source_sha256": "0f2488e4aa15ecfa69c8394853e6f694c9b4bbe685166ac3ed92b6f3f0b6b966",
-      "target_sha256": "a7439852dd55c762a5e6dce7f61b61ef0c4a348504b9e75787adb3a82141f5c8"
+      "build_source_sha256": "2ae515a6f5a8ffe62a0ef557da82bc66df1cf9a938ceff26bb1901d46be260a9",
+      "target_sha256": "0fe016529afe8cb71f7298abe48f5907fe281ba6d159d417579cccf765dabb54"
     },
     {
       "kind": "copy",
       "build_source": "human_review_ops/skills/notification/scripts/label_rate_notification_artifacts.py",
       "target": "human_review_ops/skills/efficiency-label-rate-ops/scripts/label_rate_notification_artifacts.py",
-      "build_source_sha256": "5161eb186b85837c203b7bf8539558876db3cfb9ea06a3bc3b37460c5dcacec4",
-      "target_sha256": "4273a19758ca2f68abca19f7013dbcbf468d2ea7ddb09e13cdd557fe1899f08d",
+      "build_source_sha256": "c61229b6424c8f9218a067d1d9536ed450d19cd4f46e66cbeac163b57020f5e9",
+      "target_sha256": "ce38d055e0cca60a09a1be64e01bd8853ac791ce06c0515bdbeb77e4a4df62e4",
       "side_effects": "local_files_only; optional_online_sheet_write_explicit_opt_in"
     },
     {
@@ -150,8 +150,8 @@
       "kind": "copy",
       "build_source": "human_review_ops/skills/notification/scripts/render_label_rate_grading_card.py",
       "target": "human_review_ops/skills/efficiency-label-rate-ops/scripts/render_label_rate_grading_card.py",
-      "build_source_sha256": "38403f90ed20e9333984249838edc94bf49403f67f142901aef4a861cf05c13c",
-      "target_sha256": "38403f90ed20e9333984249838edc94bf49403f67f142901aef4a861cf05c13c"
+      "build_source_sha256": "d44c75d616e04a89887d0894081146d60982ef83dc01c9f6acc57d7def2c830f",
+      "target_sha256": "d44c75d616e04a89887d0894081146d60982ef83dc01c9f6acc57d7def2c830f"
     },
     {
       "kind": "copy",

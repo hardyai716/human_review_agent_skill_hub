@@ -88,11 +88,48 @@
 期望：
 
 - 命中 `efficiency-label-rate`。
-- `data_direction=report_flow`，`source_profile=report_flow_review`。
+- `data_direction=report_flow`，`source_profile=report_flow_review`，`task_type=low_label_rate_grading`。
 - 使用 Dataset `3952594` / appId `555137`。
 - 时间字段使用 `进审日期`。
-- 输出字段为 `enpool_reason`、`日均人审完结量`、`日均打标量`、`打标率`。
+- 输出字段结构与常规分级一致，其中 `机审一级标签=举报`，`策略ID=enpool_reason`，`策略名称=enpool_reason`。
 - 不得走人工审核明细 Dataset `3888816`。
+
+### 合并人审与举报结果
+
+输入：
+
+```text
+把举报场景的全等级结果和人审数据集下的打标率结果合并到一起，并剔除 +1评估=同意。
+```
+
+期望：
+
+- 设置 `data_direction=combined`，分别执行人审 `3888816` 与举报 `3952594` 的只读分级查询。
+- 合并表新增 `数据来源` 列，取值为 `人审明细` / `举报流转`。
+- `综合_剔除+1同意` 中，人审按 `strategy_id` 剔除，举报按“保持不变明细表”的 `reason` 匹配 `enpool_reason` 剔除。
+- 举报风险域固定为 `举报`，并参与 P2/P1/P0 的风险域爆量规则。
+
+推荐调用：
+
+```bash
+python3 human_review_ops/tools/runners/run_label_rate_formal_flow.py \
+  --data-direction combined \
+  --start-date 2026-07-14 \
+  --end-date 2026-07-20 \
+  --run-id 20260721_combined_0714_0720_full_levels \
+  --no-import-workbook
+
+python3 human_review_ops/tools/runners/run_stage_2_label_rate_notification_draft.py \
+  --source human_review_ops/evals/efficiency-label-rate/stage_1_runs/20260721_combined_0714_0720_full_levels_formal_skill_flow_results.jsonl \
+  --output-dir human_review_ops/evals/efficiency-label-rate/stage_2_runs/20260721_combined_0714_0720_full_levels_formal_skill_flow \
+  --top-n 10 \
+  --import-workbook \
+  --send-user-id <open_id> \
+  --identity bot \
+  --title '人审明细+举报流转低效打标全等级结果（2026-07-14~2026-07-20）'
+```
+
+若表格已导入但卡片发送失败，第二条命令改用 `--sheet-url <已生成的飞书表格链接>`，不要重复导入 workbook。
 
 ### 用户指定未列举维度
 

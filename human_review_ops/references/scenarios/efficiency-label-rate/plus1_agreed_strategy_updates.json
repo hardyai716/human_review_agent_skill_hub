@@ -7,14 +7,16 @@
     "sheet_id": "zXKBBM",
     "sheet_name": "保持不变明细表",
     "range": "A1:V",
-    "read_at": "2026-07-20",
+    "read_at": "2026-07-21",
     "refresh_policy": "current_sheet_authoritative",
     "filter": "+1评估 == 同意",
     "excluded_agreed_without_strategy_id": 16,
-    "excluded_reason": "report_flow strategies keyed by reason are handled separately"
+    "excluded_agreed_without_reason": 2
   },
   "raw_agreed_count": 72,
+  "raw_report_flow_agreed_count": 86,
   "unique_strategy_count": 71,
+  "unique_report_flow_reason_count": 82,
   "entries": [
     {
       "strategy_id": "10001819210",
@@ -438,6 +440,500 @@
     },
     {
       "strategy_id": "15857110",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    }
+  ],
+  "report_flow_entries": [
+    {
+      "reason": "HJT_20da_lixi_ai_face_review",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "LS_jubao_content_recall",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "LS_keywords_LLM",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "ZL_antidirt_11482_aigc_asr_aigc_review",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "ZL_comment_trans_video_12_gaofen_renshen",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "ZL_egaohongsejingdian_text_recall_300_renshen",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "ZL_eva_113041_political_metaphor_quit_smoke_review",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "ZL_eva_216584_political_metaphor_gowest_review",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "ZL_eva_227415_general_multi_rept_review",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "ZL_eva_n1_statue_neg_review",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "ZL_mhgw_gaoshi_300_vv_review",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "ZL_shmgsj_rag",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "ZL_user_list_zl_general_high_risk_user_review",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "ZL_yingshe_eva_laojiu_selfsee",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "cartoon_dalai_duan_review",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "cartoon_leader_19",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "cartoon_leader_weini",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "cartoon_leader_xp_recall",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "children_baifo_review",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "commerce_star_35wvv",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "core_protection_gov_user",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "cpc_user_politic_rept_cnt_review",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "cybercop_bigv_long_unstreviewed",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "dazi_attack_n1_review",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "de_report_native_religion_culture_fopai_auto_review",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "direct_review_sensitive_word",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "eva_party_state_millitary_gov_general_lv2_risk_user_political_report_cmt_review",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "eva_shanhaijing_name_auto_review",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "eva_underage_tamiao_auto_review",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "expert_redivist_party_state_report_count_10_item_review",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "extremist_hate_japan_highfrequency_user_review",
+      "plus1_agreed": true,
+      "update_date": "2026-07-03",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "fcdqz_zhouwang_300vv",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "fenlie_buwanzhnegditu_songshen",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "fewshot_eva_3364_19n2_backview",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "general_fever_review_agent_politic",
+      "plus1_agreed": true,
+      "update_date": "2026-06-28",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "general_fever_review_high_value",
+      "plus1_agreed": true,
+      "update_date": "2026-07-03",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "gov_b_leader",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "gov_b_political_account",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "gov_b_sensitive_words",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "gov_political_account",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "hard_miss_HJT_review",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "high_bvv_pgc_0vv_review",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "high_risk_dedup_social_current_affairs_sh",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "hit_insultN1",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "hit_sid_gandalf_PF",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "hit_sid_gandalf_dalai",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "hit_sid_gandalf_lkq",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "india_dl_review",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "intention_mercenary_review",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "item_report_politics_10",
+      "plus1_agreed": true,
+      "update_date": "2026-07-09",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "item_report_politics_10_top1",
+      "plus1_agreed": true,
+      "update_date": "2026-07-09",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "item_report_politics_bullet_comments_rate",
+      "plus1_agreed": true,
+      "update_date": "2026-07-09",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "item_report_politics_comment_highvv_sz",
+      "plus1_agreed": true,
+      "update_date": "2026-07-09",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "item_report_politics_comment_highvv_szcj",
+      "plus1_agreed": true,
+      "update_date": "2026-07-09",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "item_report_politics_comment_n1",
+      "plus1_agreed": true,
+      "update_date": "2026-07-09",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "jiduan_nacuimeihua_songshen",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "leader_dalai_v2_oversea",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "leader_mao_antidirt_unrecommend_review",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "model_llm_pe_antidirt_11618_shiwudeyueliang_poor_life_review",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "model_llm_safe_mind_leader_beyond_rule_leader_name_chinese_charactor_zl_friend_see_review",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "norecommen_doublejin_zhuai",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "political_satire_highfrequency_user_review",
+      "plus1_agreed": true,
+      "update_date": "2026-07-03",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "report_desc_attack1",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "report_politics_N1_xth2",
+      "plus1_agreed": true,
+      "update_date": "2026-07-09",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "report_politics_ZL_ai01",
+      "plus1_agreed": true,
+      "update_date": "2026-07-09",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "report_politics_leader_asr_n1",
+      "plus1_agreed": true,
+      "update_date": "2026-07-09",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "report_politics_ls_ocr",
+      "plus1_agreed": true,
+      "update_date": "2026-07-09",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "report_politics_ls_title",
+      "plus1_agreed": true,
+      "update_date": "2026-07-09",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "report_politics_ls_wc",
+      "plus1_agreed": true,
+      "update_date": "2026-07-09",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "report_politics_szrm_pj",
+      "plus1_agreed": true,
+      "update_date": "2026-07-09",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "safety_antidirt_5742_bigv_long_unstreviewed",
+      "plus1_agreed": true,
+      "update_date": "2026-07-09",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "short_hit_nlp_title_ms_foreign",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "shyhgj_country_relation_300vv",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "similiar_n1_review",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "tongzhihua_shezheng_review",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "tuxiang_cangtou",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "wy_sid_eva_review",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "xiejiao_falungongall_songshen",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "xinjiang_review_area_ug",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "xize_sensitive_ls",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "xueshanshizi_eva_33346_v6_2_jinshen",
+      "plus1_agreed": true,
+      "update_date": "2026-06-23",
+      "source_status": "current_sheet_agreed"
+    },
+    {
+      "reason": "zl_eva_0shot_recall_gaojiazhi_renshen",
       "plus1_agreed": true,
       "update_date": "2026-06-23",
       "source_status": "current_sheet_agreed"

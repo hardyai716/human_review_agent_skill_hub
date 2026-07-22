@@ -111,7 +111,7 @@ def validate_report_flow_case() -> None:
 
     if payload["scenario_key"] != "efficiency-label-rate":
         raise AssertionError("Report-flow case scenario_key mismatch.")
-    if payload["task_type"] != "report_flow_low_label_rate":
+    if payload["task_type"] != "low_label_rate_grading":
         raise AssertionError(f"Report-flow case task_type mismatch: {payload['task_type']}")
     if payload.get("data_direction") != "report_flow":
         raise AssertionError("Report-flow case must set data_direction=report_flow.")

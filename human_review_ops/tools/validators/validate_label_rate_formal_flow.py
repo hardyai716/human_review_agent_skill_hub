@@ -65,9 +65,15 @@ def validate(output_dir: Path, *, expect_sent: bool) -> None:
 def assert_notification_perception(payload: dict[str, Any]) -> None:
     if payload.get("scenario_key") != "efficiency-label-rate":
         raise AssertionError("notification perception scenario mismatch.")
+    workflow = payload.get("workflow_plan", {})
+    if payload.get("task_type") == "low_label_rate_grading":
+        if workflow.get("intent_type") != "analysis":
+            raise AssertionError("analysis-only workflow_plan intent mismatch.")
+        if workflow.get("next_action") != "analysis":
+            raise AssertionError("analysis-only workflow_plan next_action mismatch.")
+        return
     if payload.get("task_type") != "notification_request":
         raise AssertionError("notification perception task_type mismatch.")
-    workflow = payload.get("workflow_plan", {})
     if workflow.get("intent_type") != "analysis_then_notification":
         raise AssertionError("workflow_plan must identify analysis_then_notification.")
     if workflow.get("next_action") != "run_analysis_prerequisite":
@@ -93,7 +99,11 @@ def assert_analysis_perception(payload: dict[str, Any]) -> None:
 def assert_query_plan(query_plan: dict[str, Any]) -> None:
     if query_plan.get("scenario_key") != "efficiency-label-rate":
         raise AssertionError("QueryPlan scenario mismatch.")
-    if query_plan.get("metric_id") != "label_rate":
+    if query_plan.get("metric_id") not in {
+        "label_rate",
+        "report_label_rate",
+        "combined_label_rate",
+    }:
         raise AssertionError("QueryPlan metric mismatch.")
     if set(query_plan.get("levels", [])) != {"notice", "P2", "P1", "P0"}:
         raise AssertionError("QueryPlan levels mismatch.")
@@ -108,7 +118,11 @@ def assert_analysis_summary(summary: dict[str, Any]) -> None:
     if summary.get("row_count", 0) < max(counts.values()):
         raise AssertionError("analysis_summary row_count is inconsistent.")
     source_footer = summary.get("source_footer", {})
-    if source_footer.get("metric_id") != "label_rate":
+    if source_footer.get("metric_id") not in {
+        "label_rate",
+        "report_label_rate",
+        "combined_label_rate",
+    }:
         raise AssertionError("source_footer metric mismatch.")
 
 

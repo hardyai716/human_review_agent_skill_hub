@@ -9,7 +9,7 @@
 | `low_label_rate_grading` | 用户明确问低效策略、P0/P1/P2/notice、低打标 reason 清单 | 四级分级清单 + 综合去重清单 |
 | `weekly_filtered_summary_comparison` | 用户要求比较两个明确周期的 `汇总统计_剔除+1同意`，通常要求截图式表格或飞书链接 | 两周期周环比表 + 溯源脚注 + 可选飞书表格链接 |
 | `dimension_breakdown` | 用户要求按机审一级标签、场景、项目或其他维度拆解 | `dimensions × reason` 明细 + `dimensions` 汇总 |
-| `report_flow_low_label_rate` | 用户询问举报场景、举报流转或 `enpool_reason` 下的低打标率 | `enpool_reason` 低效清单 + evidence |
+| `low_label_rate_grading` + `data_direction=report_flow` | 用户询问举报场景、举报流转或 `enpool_reason` 下的低打标率分级 | 固定风险域 `举报` 的 `notice/P2/P1/P0` 全等级清单 |
 
 ## 通用分析顺序
 
@@ -180,33 +180,88 @@
 
 如果用户指定的维度不在 `metric_contract.md` 支持维度中，必须先通过 Semantic Layer / 数据集字段发现确认字段，不能直接拼字段名。
 
-## 模式 E：举报流转低打标率
+## 模式 E：举报流转低打标率分级
 
 适用于 `data_direction=report_flow`，即用户明确提到举报、举报场景、举报流转、`enpool_reason`、`report_id`、一轮队列或终轮队列。
 
 字段和口径：
 
 - 时间字段：`进审日期`。
-- 主维度：`enpool_reason`。
+- 风险域：固定填充为 `举报`。
+- 策略 ID：填充为 `enpool_reason`。
+- 策略名称：填充为 `enpool_reason`。
 - 分母：`人审完结量_report_id`。
 - 分子：`打标量_report_id`。
 - 打标率：`打标率_report_id`。
-- 低效条件：`打标率_report_id < 10%` 且 `人审完结量_report_id > 0`。
+- 低效条件和 P 级规则：沿用模式 B 的 notice/P2/P1/P0，仅把常规策略三维替换成 `举报 × enpool_reason × enpool_reason`。
 
 默认输出：
 
-- `enpool_reason`
-- `日均人审完结量`
+- `预警维度`
+- `预警等级`
+- `数据来源=举报流转`
+- `机审一级标签=举报`
+- `策略ID=enpool_reason`
+- `策略名称=enpool_reason`
+- `日均进审量`
+- `日均完审量`
 - `日均打标量`
 - `打标率`
+- `命中规则`
 
 SQL 约束：
 
 - 必须使用 Dataset `3952594` / appId `555137`。
 - 必须复用 `dataset_reference.md#默认过滤：举报流转` 中的基础筛选。
+- `+1评估 = 同意` 剔除逻辑沿用人审链路，但举报侧使用“保持不变明细表”的 `reason` 字段匹配结果中的 `enpool_reason`；风险域爆量分支必须在聚合 `举报` 前剔除 `更新日期 < 当前周期开始日` 的已同意 reason。
 - 不得使用人工审核明细 Dataset `3888816` 的 `reason`、`完审量_reviewid`、`打标量__reviewid`。
 - 如果直接逻辑表名不可用，可使用 query_log 中确认的物理表作为受控 fallback，并在 provenance 中记录。
-- 指标字段已经是聚合表达式时，不要放入未按维度聚合的子查询中二次聚合；应在同一层按 `enpool_reason` 聚合，或改写成底层 raw formula。
+- 指标字段已经是聚合表达式时，不要直接 `SUM([打标率_report_id])` 或对已聚合比率二次聚合；应先在 `进审日期 × enpool_reason` 日粒度聚合出进审、完审、打标量，再复用常规分级 SQL 模板。
+
+## 模式 F：人审明细 + 举报流转合并全等级分级
+
+适用于用户要求将举报场景结果与人审数据集下的打标率结果合并展示。
+
+执行规则：
+
+- 不跨数据集拼接单条 SQL；必须分别执行 `manual_review_detail` 与 `report_flow` 两套 QueryPlan，再在标准化结果层合并。
+- 合并前两套结果都必须标准化为同一列结构：`数据来源`、`预警维度`、`预警等级`、`机审一级标签`、`策略ID`、`策略名称`、`POC`、日均量、打标率、命中规则、`+1` 治理字段。
+- `数据来源` 取值固定为 `人审明细` / `举报流转`，去重与汇总都必须保留该来源边界。
+- `综合_剔除+1同意` 的 cutoff 规则不变：`更新日期 < 当前周期开始日`。人审按 `strategy_id` 剔除，举报按 `reason/enpool_reason` 剔除。
+- 举报风险域固定为 `举报`，继续参与 P2/P1/P0 的风险域爆量规则；成员粒度为 `enpool_reason`。
+
+### 模式 F 宿主调用
+
+`combined` 是常用正式交付能力，推荐通过仓库宿主 runner 编排：
+
+```bash
+python3 human_review_ops/tools/runners/run_label_rate_formal_flow.py \
+  --data-direction combined \
+  --start-date YYYY-MM-DD \
+  --end-date YYYY-MM-DD \
+  --run-id <run_id> \
+  --no-import-workbook
+```
+
+执行完成后，使用 Stage 1 JSONL 生成飞书表格和卡片：
+
+```bash
+python3 human_review_ops/tools/runners/run_stage_2_label_rate_notification_draft.py \
+  --source human_review_ops/evals/efficiency-label-rate/stage_1_runs/<run_id>_formal_skill_flow_results.jsonl \
+  --output-dir human_review_ops/evals/efficiency-label-rate/stage_2_runs/<run_id>_formal_skill_flow \
+  --top-n 10 \
+  --import-workbook \
+  --send-user-id <open_id> \
+  --identity bot \
+  --title '<标题>'
+```
+
+执行注意事项：
+
+- `run_label_rate_formal_flow.py --data-direction combined` 会先跑人审 `manual_review_detail`，再跑举报 `report_flow`；任一数据源失败、超时或截断时必须停止合并。
+- 如果人审已成功、举报超时，可单独重跑 `--data-direction report_flow`，再用两份 Stage 1 样本合并；合并后仍必须通过 `validate_label_rate_combined_flow.py` 或 formal-flow 结构校验。
+- 如果 `--import-workbook` 已成功但 Card 发送失败，后续重试必须传入既有 `--sheet-url`，避免重复创建飞书表格。
+- 飞书卡片使用 Card 2.0；汇总表和 Top 明细表都必须声明并填充 `数据来源` 字段，否则发送会被飞书 schema 拒绝。
 
 ## 停止条件
 

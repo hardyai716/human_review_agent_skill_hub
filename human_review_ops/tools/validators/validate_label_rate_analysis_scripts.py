@@ -281,22 +281,29 @@ def validate_cli_dry_run() -> None:
 
 
 def validate_report_flow_contract() -> None:
-    sql = label_rate_analysis.build_report_flow_low_label_rate_sql()
+    sql_map = label_rate_analysis.report_flow_sql_by_level()
+    if set(sql_map) != {"notice", "P2", "P1", "P0"}:
+        raise AssertionError("Report-flow SQL must generate all grading levels.")
+    sql = sql_map["notice"]
     required_snippets = [
         "`[进审日期]` >= today() - 7",
         "`[进审日期]` < today()",
-        "ifNull(`[enpool_reason]`, '（空/enpool_reason）') AS enpool_reason_key",
-        "enpool_reason_key AS enpool_reason",
-        "SUM(report_review_done_cnt) / count(distinct review_date_key) AS avg_report_review_done_cnt",
-        "SUM(report_label_cnt) / count(distinct review_date_key) AS avg_report_label_cnt",
-        "SUM(report_label_cnt) / nullIf(SUM(report_review_done_cnt), 0) AS report_label_rate",
+        "'举报' AS mach_root_label_key",
+        "ifNull(`[enpool_reason]`, '（空/enpool_reason）') AS strategy_id_key",
+        "ifNull(`[enpool_reason]`, '（空/enpool_reason）') AS strategy_name_key",
+        "`[进审量_report_id]` AS jin_shen",
+        "`[人审完结量_report_id]` AS wan_shen",
+        "`[打标量_report_id]` AS da_biao",
+        "cur.mach_root_label_name AS mach_root_label_name",
+        "cur.strategy_id AS strategy_id",
+        "cur.strategy_name AS strategy_name",
         "`[终轮队列名称]` IN",
         "`[一轮队列名称]` IN",
         "`[任务类型]` IN ('关注-【举报专项】任务链路流转')",
         "`[一轮队列名称]` NOT LIKE '%兜底%'",
-        "GROUP BY enpool_reason_key",
-        "HAVING SUM(report_review_done_cnt) > 0",
-        "AND SUM(report_label_cnt) / nullIf(SUM(report_review_done_cnt), 0) < 0.1",
+        "GROUP BY mach_root_label_key, strategy_id_key, strategy_name_key",
+        "HAVING SUM(wan_shen) > 0",
+        "cur.label_rate < 0.1",
     ]
     for snippet in required_snippets:
         if snippet not in sql:
@@ -310,11 +317,25 @@ def validate_report_flow_contract() -> None:
         "3888816",
     ]
     for snippet in forbidden_snippets:
-        if snippet in sql:
-            raise AssertionError(f"Report-flow SQL contains forbidden snippet: {snippet}")
+        for level, level_sql in sql_map.items():
+            if snippet in level_sql:
+                raise AssertionError(
+                    f"Report-flow {level} SQL contains forbidden snippet: {snippet}"
+                )
+    for level in ("P2", "P1", "P0"):
+        if "风险域维度" not in sql_map[level]:
+            raise AssertionError(f"Report-flow {level} SQL missing risk-domain branch.")
+        if "SUM(cur_daily.jin_shen / cur_strategy_days.strategy_data_days)" not in sql_map[level]:
+            raise AssertionError(
+                f"Report-flow {level} risk-domain SQL must use strategy daily averages."
+            )
 
     payload = label_rate_analysis.build_report_flow_dry_run_payload(dry_run=True)
     query_plan = payload["QueryPlan"]
+    if payload.get("task_type") != "low_label_rate_grading":
+        raise AssertionError("Report-flow grading task_type mismatch.")
+    if payload.get("analysis_mode") != "low_label_rate_grading":
+        raise AssertionError("Report-flow grading analysis_mode mismatch.")
     if query_plan.get("data_direction") != "report_flow":
         raise AssertionError("Report-flow QueryPlan data_direction mismatch.")
     if query_plan.get("source_profile") != "report_flow_review":
@@ -325,8 +346,10 @@ def validate_report_flow_contract() -> None:
         raise AssertionError("Report-flow QueryPlan dataset mismatch.")
     if query_plan.get("time_range", {}).get("date_field") != "进审日期":
         raise AssertionError("Report-flow QueryPlan must use 进审日期.")
-    if query_plan.get("dimensions") != ["enpool_reason"]:
+    if query_plan.get("dimensions") != label_rate_analysis.DIMENSIONS:
         raise AssertionError("Report-flow QueryPlan dimensions mismatch.")
+    if set(query_plan.get("sql_by_level", {})) != {"notice", "P2", "P1", "P0"}:
+        raise AssertionError("Report-flow QueryPlan must expose sql_by_level.")
     if payload.get("safety", {}).get("sql_executed") is not False:
         raise AssertionError("Report-flow dry-run must not execute SQL.")
     explicit = label_rate_analysis.build_report_flow_dry_run_payload(
@@ -336,10 +359,10 @@ def validate_report_flow_contract() -> None:
             end_date="2026-07-12",
         ),
     )
-    explicit_sql = explicit["QueryPlan"]["sql"]
-    if "today()" in explicit_sql:
+    explicit_sql_map = explicit["QueryPlan"]["sql_by_level"]
+    if any("today()" in level_sql for level_sql in explicit_sql_map.values()):
         raise AssertionError("Explicit report-flow SQL must not contain today().")
-    if "`[进审日期]` >= '2026-07-06'" not in explicit_sql:
+    if "`[进审日期]` >= '2026-07-06'" not in explicit_sql_map["notice"]:
         raise AssertionError("Explicit report-flow SQL missing start date.")
 
 

@@ -114,7 +114,7 @@ allowed-tools:
 2. 读取 `references/common.md` 和 `references/scenario-index.md`，先确认可用场景列表。
 3. 按场景索引加载最小必要参考资料；命中打标率时只加载 `references/scenarios/efficiency-label-rate.md`。
 4. 识别 `scenario_key`。无法唯一识别时输出 `scenario_key=unknown` 并要求澄清。
-5. 识别场景专属 `task_type`；打标率包括 `label_rate_trend`、`label_rate_ranking`、`low_label_rate_grading`、`report_flow_low_label_rate`、`dimension_breakdown`，相邻场景按各自 reference 词表输出。两个周期的剔除口径对比若要求飞书交付，识别为 `notification_request` 并写入 analysis 前置依赖；复合诉求按最终用户目标识别。
+5. 识别场景专属 `task_type`；打标率包括 `label_rate_trend`、`label_rate_ranking`、`low_label_rate_grading`、`dimension_breakdown`，相邻场景按各自 reference 词表输出。举报方向低效分级同样识别为 `low_label_rate_grading`，并保留 `data_direction=report_flow`。两个周期的剔除口径对比若要求飞书交付，识别为 `notification_request` 并写入 analysis 前置依赖；复合诉求按最终用户目标识别。
 6. 识别 `metric_ids`。打标率场景默认使用 `label_rate`，相关证据指标包括 `review_in_cnt`、`review_done_cnt`、`label_cnt`。
 7. 建立 `retrieval_policy`：默认参考资料优先、语义层优先、只读查询需先有查询计划 (QueryPlan)、禁止通知和线上写入。
 8. 做就绪检查：指标口径、时间窗口、维度、权限风险、敏感字段、越权动作、是否需要人工确认。
