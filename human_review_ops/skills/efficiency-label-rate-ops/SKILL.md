@@ -1,6 +1,6 @@
 ---
 name: efficiency-label-rate-ops
-description: "当用户需要处理 efficiency-label-rate 打标率场景时使用：生成只读全等级分级、汇总统计、两周期剔除+1同意对比、报表、通知/Card 草稿、POC 路由和本地跟踪；默认 debug_only，真实发送和在线导入必须用户确认。"
+description: "当用户需要处理 efficiency-label-rate 打标率场景时使用：生成只读全等级分级、汇总统计、两周期剔除+1同意对比、报表、飞书 Card JSON、显式私聊推送、POC 路由和本地跟踪；默认 debug_only，真实发送和在线导入必须用户确认。"
 allowed-tools:
   - Read
   - Bash
@@ -26,7 +26,7 @@ allowed-tools:
 
 ## 🔴 CHECKPOINT · 安全边界
 
-- 真实群发、拉群或外部通知发送：必须先由 calling_agent 获得用户明确确认；本包只生成草稿和 send_plan。
+- 真实群发、拉群或外部通知发送：必须先由 calling_agent 获得用户明确确认；用户明确要求私聊推送时，本包必须发送生成的 Card JSON，不得降级为纯文本或 Markdown 摘要。
 - 在线表格导入（`--import-sheet` / `auto_import_sheet=true`）：默认关闭，确认后才写入飞书 Sheet 并回填 `sheet_url`。
 - 线上状态写入、关闭事件或改业务工单：禁止由本包直接执行，只能生成本地 `manual_tracking.json`。
 - 敏感身份解析、open_id 反查或扩散：必须单独确认授权；默认保持已有 POC 映射，不主动解析。
@@ -49,7 +49,7 @@ allowed-tools:
 
 - 感知结果：`scenario_key`、`task_type`、`readiness`、`workflow_plan`。
 - 分析结果：`QueryPlan`、SQL、`analysis_result`、`source_footer`、`provenance`。
-- 通知产物：`notification_draft.json`、`send_plan.json`、`poc_routing_plan.json`、Card JSON、CSV/XLSX 报表、可选 `sheet_url`。
+- 通知产物：`notification_draft.json`、`send_plan.json`、`poc_routing_plan.json`、Card JSON、CSV/XLSX 报表、可选 `sheet_url` 与私聊推送 `message_id`。
 - 周对比产物：`weekly_summary_comparison.json`、双层分组表头 XLSX、可选 `sheet_url` 与宿主发送回执。
 - 解决记录：`manual_tracking.json`。
 
@@ -64,20 +64,20 @@ allowed-tools:
 - 报表口径：`综合`、`综合_剔除+1同意`、`汇总统计`、`汇总统计_剔除+1同意`。
 - 周对比：只比较两个周期各自独立生成的 `汇总统计_剔除+1同意`；按 `机审一级标签 × POC` 合并，增量正值标红，总计打标率按日均量加权。
 - 合并输出：`combined` 模式先分别执行人审明细与举报流转两套全等级 QueryPlan，再按统一字段合并；报表新增 `数据来源`，取值为 `人审明细` / `举报流转`。
-- 通知和闭环：POC 路由；`report_flow` 仅有 `enpool_reason` 时 fallback 到 `举报` POC；在线导入门禁 `--import-sheet` / `auto_import_sheet=true` 默认关闭；manual tracking (`manual_tracking`) 只记录本地调试闭环。
+- 通知和闭环：POC 路由；`report_flow` 仅有 `enpool_reason` 时 fallback 到 `举报` POC；在线导入门禁 `--import-sheet` / `auto_import_sheet=true` 默认关闭；显式 `--send-user-id` 只允许发送生成的飞书 interactive Card JSON；manual tracking (`manual_tracking`) 只记录本地调试闭环。
 
 ## 工作流
 
 1. 使用 `scripts/label_rate_perception.py` 识别场景、任务类型和运行模式。
 2. 使用 `references/scenario-index.md` 定位指标契约、数据集说明、分析规则、通知模板和状态机。
 3. 使用 `scripts/label_rate_analysis.py` 生成统一 AnalysisArtifact、QueryPlan、SQL、分级规则和 source_footer；真实只读查询由具备权限的受控执行器执行。
-4. 使用 `scripts/label_rate_notification_artifacts.py` 生成通知草稿、报表、Card 和 send_plan；只有显式授权 `--import-sheet` / `auto_import_sheet=true` 时才导入 XLSX 并回填 `sheet_url`。
+4. 使用 `scripts/label_rate_notification_artifacts.py` 生成通知草稿、报表、Card 和 send_plan；只有显式授权 `--import-sheet` / `auto_import_sheet=true` 时才导入 XLSX 并回填 `sheet_url`；只有显式传入 `--send-user-id` 时才私聊发送生成的 Card JSON。
 5. 用户要求两周对比时，使用 `scripts/label_rate_weekly_summary_comparison.py` 消费两份剔除口径汇总 CSV，生成截图式对比表；真实查询与发送由宿主在确认后编排。
 6. 使用 `scripts/build_label_rate_manual_tracking.py` 记录本地人工处理状态；不写线上状态。
 
 ## 常用宿主调用
 
-本包内脚本负责生成 QueryPlan、SQL、通知草稿、Card 和本地报表；真实 Aeolus 查询、飞书导入和发送由宿主 runner 或 calling_agent 负责。仓库内完整 runner 命令见 `references/scenario_contract.md#analysismd` 的模式 F 说明，以及项目 `tools/runners/README.md`。
+本包内脚本负责生成 QueryPlan、SQL、通知草稿、Card、本地报表，并可在显式 `--send-user-id` 时发送飞书 interactive Card；真实 Aeolus 查询仍由具备权限的宿主 runner 或 calling_agent 负责。仓库内完整 runner 命令见 `references/scenario_contract.md#analysismd` 的模式 F 说明，以及项目 `tools/runners/README.md`。
 
 ### 单数据源全等级查询
 
@@ -97,7 +97,9 @@ allowed-tools:
 
 ### 导入飞书表格并私聊推送
 
-宿主先产出 Stage 1 JSONL，再调用通知产物脚本生成 XLSX 与 Card。仅用户明确要求时才传入在线导入和发送参数：`import_workbook=true`、`send_user_id=<open_id>`、`identity=bot|user`、`title=<标题>`。
+宿主先产出 Stage 1 JSONL，再调用通知产物脚本生成 XLSX 与 Card。仅用户明确要求时才传入在线导入和发送参数：`--import-sheet`、`--send-user-id <open_id>`、`--identity bot|user`、`--title <标题>`。
+
+推送硬约束：发送内容必须来自 `publish/low_efficiency_grading.card.json`，使用 `lark-cli im +messages-send --msg-type interactive --content <card_json>`；不得把同一结果改写为纯文本、Markdown 或普通链接消息，除非 Card 发送失败且用户明确同意降级。
 
 如已导入表格但发送失败，必须复用既有 `sheet_url` 重发，避免重复创建在线表格。若命中飞书幂等键导致返回旧消息，应使用新的 idempotency key 或直接调用发送函数生成唯一 key。
 
@@ -121,6 +123,7 @@ python3 scripts/selfcheck.py
 python3 scripts/label_rate_perception.py --dry-run --request "帮我看近7天低打标率策略，按P0/P1/P2/notice分级。"
 python3 scripts/label_rate_analysis.py --dry-run --levels notice,P2,P1,P0
 python3 scripts/label_rate_notification_artifacts.py --source <analysis_artifact.json_or_jsonl> --output-dir <output>
+python3 scripts/label_rate_notification_artifacts.py --source <analysis_artifact.json_or_jsonl> --output-dir <output> --import-sheet --send-user-id <open_id> --identity bot --title '<标题>'
 python3 scripts/label_rate_weekly_summary_comparison.py --previous-summary <previous>/汇总统计_剔除+1同意.csv --current-summary <current>/汇总统计_剔除+1同意.csv --previous-start-date YYYY-MM-DD --previous-end-date YYYY-MM-DD --current-start-date YYYY-MM-DD --current-end-date YYYY-MM-DD --output-dir <output>
 python3 scripts/build_label_rate_manual_tracking.py --notification-draft <draft.json> --send-plan <send_plan.json> --output <tracking.json>
 ```

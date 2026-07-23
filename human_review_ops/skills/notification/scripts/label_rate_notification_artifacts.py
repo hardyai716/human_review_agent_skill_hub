@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build reusable label-rate notification artifacts without sending messages."""
+"""Build reusable label-rate notification artifacts and optional Card pushes."""
 
 from __future__ import annotations
 
@@ -28,7 +28,7 @@ from resolve_label_rate_poc_routing import (
     poc_mapping_index,
     resolve_row_poc,
 )
-from sheet_importer import import_xlsx_as_feishu_sheet
+from sheet_importer import import_xlsx_as_feishu_sheet, run_lark_cli
 
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -125,7 +125,8 @@ def main() -> None:
         description=(
             "Build notification_draft, send_plan, CSV/XLSX reports, POC routing, "
             "and Card JSON for a label-rate grading analysis_result JSONL. "
-            "This script never sends Feishu messages."
+            "When --send-user-id is provided, the generated Feishu interactive "
+            "Card JSON is sent to that user."
         )
     )
     parser.add_argument("--source", required=True)
@@ -142,6 +143,14 @@ def main() -> None:
     )
     parser.add_argument("--identity", choices=["bot", "user"], default="bot")
     parser.add_argument("--title", default="近7天低效打标策略全等级结果")
+    parser.add_argument(
+        "--send-user-id",
+        help=(
+            "Feishu open_id for a direct-message push. Sends the generated "
+            "interactive Card JSON; does not downgrade to text/markdown."
+        ),
+    )
+    parser.add_argument("--idempotency-key")
     args = parser.parse_args()
 
     if args.top_n <= 0:
@@ -154,18 +163,83 @@ def main() -> None:
         sheet_url=args.sheet_url,
         identity=args.identity,
         title=args.title,
-        self_send_requested=False,
+        self_send_requested=bool(args.send_user_id),
         sent_payload=None,
-        target_user_id=None,
+        target_user_id=args.send_user_id,
         target_chat_id=None,
         auto_import_sheet=args.import_sheet,
     )
+
+    sent_payload = send_card_if_requested(args, artifacts.card.card_path)
+    if sent_payload is not None:
+        write_json(Path(args.output_dir) / "lark_send_result.json", sent_payload)
+        sheet_url = artifacts.summary.get("sheet_url") or args.sheet_url
+        artifacts = build_label_rate_notification_artifacts(
+            source_path=Path(args.source),
+            output_dir=Path(args.output_dir),
+            top_n=args.top_n,
+            sheet_url=sheet_url,
+            identity=args.identity,
+            title=args.title,
+            self_send_requested=True,
+            sent_payload=sent_payload,
+            target_user_id=args.send_user_id,
+            target_chat_id=None,
+            auto_import_sheet=args.import_sheet,
+        )
     print(
         "Label-rate notification artifacts wrote "
         f"{relative_to_root(artifacts.output_dir)}; sent="
         f"{artifacts.publish_summary['sent']}; message_id="
         f"{artifacts.publish_summary['message_id']}"
     )
+
+
+def send_card_if_requested(
+    args: argparse.Namespace,
+    card_path: Path,
+) -> dict[str, Any] | None:
+    if not args.send_user_id:
+        return None
+    idempotency_key = args.idempotency_key or safe_idempotency_key(
+        f"{REPORT_TYPE}-{Path(args.output_dir).name}-{args.send_user_id}"
+    )
+    return send_interactive_card(
+        card_path=card_path,
+        user_id=args.send_user_id,
+        identity=args.identity,
+        idempotency_key=idempotency_key,
+    )
+
+
+def send_interactive_card(
+    *,
+    card_path: Path,
+    user_id: str,
+    identity: str,
+    idempotency_key: str,
+) -> dict[str, Any]:
+    payload = run_lark_cli(
+        [
+            "lark-cli",
+            "im",
+            "+messages-send",
+            "--json",
+            "--as",
+            identity,
+            "--user-id",
+            user_id,
+            "--msg-type",
+            "interactive",
+            "--content",
+            card_path.read_text(encoding="utf-8"),
+            "--idempotency-key",
+            idempotency_key,
+        ]
+    )
+    if payload.get("ok") is not True:
+        raise RuntimeError(f"Feishu Card send failed: {payload}")
+    return payload
 
 
 def build_label_rate_notification_artifacts(
@@ -1295,6 +1369,12 @@ def sanitize_send_payload(payload: dict[str, Any] | None) -> dict[str, Any] | No
         "message_id": data.get("message_id") if isinstance(data, dict) else None,
         "create_time": data.get("create_time") if isinstance(data, dict) else None,
     }
+
+
+def safe_idempotency_key(raw: str) -> str:
+    key = re.sub(r"[^A-Za-z0-9-]+", "-", raw).strip("-")
+    key = re.sub(r"-{2,}", "-", key)
+    return key[-50:] or "label-rate-card"
 
 
 if __name__ == "__main__":

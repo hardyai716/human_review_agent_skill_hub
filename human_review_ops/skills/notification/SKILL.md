@@ -170,7 +170,7 @@ allowed-tools:
 
 可用脚本：
 
-- `scripts/label_rate_notification_artifacts.py`：从打标率分级 `analysis_result` JSONL 生成 `notification_draft.json`、`send_plan.json`、`poc_routing_plan.json`、分等级 CSV、`综合.csv`、`综合_剔除+1同意.csv`、`汇总统计.csv`、`汇总统计_剔除+1同意.csv`、XLSX 报表和 Card JSON；默认只写本地文件、不发送消息、不导入在线表格。只有显式传入 `--import-sheet`（或调用方传 `auto_import_sheet=True`）时才把 XLSX 导入为飞书在线表格，导入失败降级为空链接。
+- `scripts/label_rate_notification_artifacts.py`：从打标率分级 `analysis_result` JSONL 生成 `notification_draft.json`、`send_plan.json`、`poc_routing_plan.json`、分等级 CSV、`综合.csv`、`综合_剔除+1同意.csv`、`汇总统计.csv`、`汇总统计_剔除+1同意.csv`、XLSX 报表和 Card JSON；默认只写本地文件、不发送消息、不导入在线表格。只有显式传入 `--import-sheet`（或调用方传 `auto_import_sheet=True`）时才把 XLSX 导入为飞书在线表格，导入失败降级为空链接；只有显式传入 `--send-user-id <open_id>` 时才私聊发送生成的 interactive Card JSON，不得降级为纯文本或 Markdown。
 - `scripts/sheet_importer.py`：通用 XLSX 到飞书电子表格导入工具，提供 `import_xlsx_as_feishu_sheet`，供需要在通知产物中回填 `sheet_url` 的场景复用。
 - `scripts/label_rate_weekly_summary_comparison.py`：消费两个明确周期的 `汇总统计_剔除+1同意.csv`，生成双层分组表头的周对比 XLSX 与 JSON。正向日均完审增量标红，总计打标率按日均打标量/日均完审量加权；`--import-sheet` 是显式在线写入门禁，脚本本身不发送消息。
 - `scripts/resolve_label_rate_poc_routing.py`：从 `analysis_result` JSONL 生成 `poc_routing_plan.json`。
@@ -181,6 +181,7 @@ allowed-tools:
 
 ```bash
 python3 human_review_ops/skills/notification/scripts/label_rate_notification_artifacts.py --source <analysis_result.jsonl> --output-dir <notification_output_dir> --sheet-url <optional_sheet_url>
+python3 human_review_ops/skills/notification/scripts/label_rate_notification_artifacts.py --source <analysis_result.jsonl> --output-dir <notification_output_dir> --import-sheet --send-user-id <open_id> --identity bot --title '<标题>'
 ```
 
 周对比脚本示例：

@@ -2,7 +2,7 @@
   "schema_version": "human_review_ops_scenario_bundle_manifest.v1",
   "bundle_name": "efficiency-label-rate-ops",
   "scenario_key": "efficiency-label-rate",
-  "generated_at": "2026-07-22T03:29:19.065440+00:00",
+  "generated_at": "2026-07-23T09:22:40.949905+00:00",
   "source_of_truth": "human_review_ops/skills/efficiency-label-rate-ops/references/scenario_contract.md",
   "check_command": "python3 scripts/selfcheck.py",
   "runtime_dependencies": [
@@ -19,7 +19,7 @@
     {
       "kind": "generated_skill_md",
       "target": "human_review_ops/skills/efficiency-label-rate-ops/SKILL.md",
-      "target_sha256": "e92b7a2747e472b04d793b2fb748b22764cbdb4eee366f4ad393cdd49505d014"
+      "target_sha256": "55a610110bcddb1836b05106906144274e631c2843a4361fbcbeab6e7ccff4ba"
     },
     {
       "kind": "generated_common",
@@ -135,9 +135,9 @@
       "kind": "copy",
       "build_source": "human_review_ops/skills/notification/scripts/label_rate_notification_artifacts.py",
       "target": "human_review_ops/skills/efficiency-label-rate-ops/scripts/label_rate_notification_artifacts.py",
-      "build_source_sha256": "c61229b6424c8f9218a067d1d9536ed450d19cd4f46e66cbeac163b57020f5e9",
-      "target_sha256": "ce38d055e0cca60a09a1be64e01bd8853ac791ce06c0515bdbeb77e4a4df62e4",
-      "side_effects": "local_files_only; optional_online_sheet_write_explicit_opt_in"
+      "build_source_sha256": "dca4a9781087cf3a415e4eba4abc85c9c980000dfd3df01cf8c5699b2b7f25c2",
+      "target_sha256": "e9db77f2f795b4a802f0c59cb052d5bb47625946046a081d01af805b1bb34aee",
+      "side_effects": "local_files_only; optional_online_sheet_write_explicit_opt_in; optional_interactive_card_dm_send_explicit_opt_in"
     },
     {
       "kind": "copy",
